@@ -7,10 +7,11 @@ RUN mkdir -p $GOBIN
 
 COPY . $GOPATH/src/github.com/grafana/grafana
 
-RUN yum install -y golang make && \
+RUN yum install -y golang make git && \
     cd $GOPATH/src/github.com/grafana/grafana && \
     go run build.go build && \
-    yum erase -y golang make && yum clean all
+    yum erase -y golang make git && yum clean all && \
+    rm -rf .git
 
 LABEL io.k8s.display-name="Grafana" \
       io.k8s.description="" \
