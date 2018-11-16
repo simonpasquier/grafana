@@ -10,7 +10,7 @@ COPY . $GOPATH/src/github.com/grafana/grafana
 RUN yum install -y golang make git && \
     cd $GOPATH/src/github.com/grafana/grafana && \
     go run build.go build && \
-    cp $GOPATH/src/github.com/grafana/grafana/bin/linux-`go env GOARCH`/grafana-server /usr/bin/ && \
+    cp $GOPATH/src/github.com/grafana/grafana/bin/linux-$(go env GOARCH)/grafana-server /usr/bin/ && \
     yum erase -y golang make git && yum clean all && \
     rm -rf .git
 
