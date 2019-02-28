@@ -2,9 +2,12 @@
 .dockerignore
 .gitignore
 .github
+.vscode
+bin
 data*
 dist
 docker
+Dockerfile
 docs
 dump.rdb
 node_modules
