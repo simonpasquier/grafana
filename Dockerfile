@@ -1,4 +1,4 @@
-FROM openshift/origin-release:golang-1.10 AS builder
+FROM openshift/origin-release:golang-1.11 AS builder
 
 ENV GOPATH="/go"
 ENV GOBIN="${GOPATH}/bin"
