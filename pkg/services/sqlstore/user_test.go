@@ -176,13 +176,39 @@ func TestUserDataAccess(t *testing.T) {
 				})
 			})
 		})
+
+		Convey("Given one grafana admin user", func() {
+			var err error
+			createUserCmd := &m.CreateUserCommand{
+				Email:   fmt.Sprint("admin", "@test.com"),
+				Name:    fmt.Sprint("admin"),
+				Login:   fmt.Sprint("admin"),
+				IsAdmin: true,
+			}
+			err = CreateUser(context.Background(), createUserCmd)
+			So(err, ShouldBeNil)
+
+			Convey("Cannot make themselves a non-admin", func() {
+				updateUserPermsCmd := m.UpdateUserPermissionsCommand{IsGrafanaAdmin: false, UserId: 1}
+				updatePermsError := UpdateUserPermissions(&updateUserPermsCmd)
+
+				So(updatePermsError, ShouldEqual, m.ErrLastGrafanaAdmin)
+
+				query := m.GetUserByIdQuery{Id: createUserCmd.Result.Id}
+				getUserError := GetUserById(&query)
+
+				So(getUserError, ShouldBeNil)
+
+				So(query.Result.IsAdmin, ShouldEqual, true)
+			})
+		})
 	})
 }
 
 func GetOrgUsersForTest(query *m.GetOrgUsersQuery) error {
 	query.Result = make([]*m.OrgUserDTO, 0)
 	sess := x.Table("org_user")
-	sess.Join("LEFT ", "user", fmt.Sprintf("org_user.user_id=%s.id", x.Dialect().Quote("user")))
+	sess.Join("LEFT ", x.Dialect().Quote("user"), fmt.Sprintf("org_user.user_id=%s.id", x.Dialect().Quote("user")))
 	sess.Where("org_user.org_id=?", query.OrgId)
 	sess.Cols("org_user.org_id", "org_user.user_id", "user.email", "user.login", "org_user.role")
 

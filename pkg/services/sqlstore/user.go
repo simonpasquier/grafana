@@ -2,11 +2,10 @@ package sqlstore
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
-
-	"fmt"
 
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/events"
@@ -48,16 +47,15 @@ func getOrgIdForNewUser(cmd *m.CreateUserCommand, sess *DBSession) (int64, error
 		}
 		if has {
 			return org.Id, nil
+		}
+		if setting.AutoAssignOrgId == 1 {
+			org.Name = "Main Org."
+			org.Id = int64(setting.AutoAssignOrgId)
 		} else {
-			if setting.AutoAssignOrgId == 1 {
-				org.Name = "Main Org."
-				org.Id = int64(setting.AutoAssignOrgId)
-			} else {
-				sqlog.Info("Could not create user: organization id %v does not exist",
-					setting.AutoAssignOrgId)
-				return 0, fmt.Errorf("Could not create user: organization id %v does not exist",
-					setting.AutoAssignOrgId)
-			}
+			sqlog.Info("Could not create user: organization id %v does not exist",
+				setting.AutoAssignOrgId)
+			return 0, fmt.Errorf("Could not create user: organization id %v does not exist",
+				setting.AutoAssignOrgId)
 		}
 	} else {
 		org.Name = cmd.OrgName
@@ -509,8 +507,18 @@ func UpdateUserPermissions(cmd *m.UpdateUserPermissionsCommand) error {
 
 		user.IsAdmin = cmd.IsGrafanaAdmin
 		sess.UseBool("is_admin")
+
 		_, err := sess.ID(user.Id).Update(&user)
-		return err
+		if err != nil {
+			return err
+		}
+
+		// validate that after update there is at least one server admin
+		if err := validateOneAdminLeft(sess); err != nil {
+			return err
+		}
+
+		return nil
 	})
 }
 
@@ -526,4 +534,18 @@ func SetUserHelpFlag(cmd *m.SetUserHelpFlagCommand) error {
 		_, err := sess.ID(cmd.UserId).Cols("help_flags1").Update(&user)
 		return err
 	})
+}
+
+func validateOneAdminLeft(sess *DBSession) error {
+	// validate that there is an admin user left
+	count, err := sess.Where("is_admin=?", true).Count(&m.User{})
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return m.ErrLastGrafanaAdmin
+	}
+
+	return nil
 }
