@@ -37,11 +37,15 @@ export class ConfigCtrl {
 
   postUpdate() {
     if (!this.appModel.enabled) {
-      return;
+      return this.$q.resolve();
     }
-
-    // TODO, whatever you want
-    console.log('Post Update:', this);
+    return this.appEditCtrl.importDashboards().then(() => {
+      this.enabled = true;
+      return {
+        url: "plugins/raintank-kubernetes-app/page/clusters",
+        message: "Kubernetes App enabled!"
+      };
+    });
   }
 }
 ConfigCtrl.templateUrl = 'components/config/config.html';
@@ -55,5 +59,5 @@ If possible a link to a dashboard or custom page should be shown after enabling 
 
 > Our goal is not to have a very extensive documentation but rather have actual
 > code that people can look at. An example implementation of an app can be found
-> in this [example app repo](https://github.com/grafana/grafana/tree/master/public/app/plugins/app/example-app)
+> in this [example app repo](https://github.com/grafana/example-app)
 

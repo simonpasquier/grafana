@@ -57,12 +57,12 @@ const noDataModes = [
 
 const executionErrorModes = [{ text: 'Alerting', value: 'alerting' }, { text: 'Keep Last State', value: 'keep_state' }];
 
-function createReducerPart(model: any) {
+function createReducerPart(model) {
   const def = new QueryPartDef({ type: model.type, defaultParams: [] });
   return new QueryPart(model, def);
 }
 
-function getStateDisplayModel(state: string) {
+function getStateDisplayModel(state) {
   switch (state) {
     case 'ok': {
       return {
@@ -111,7 +111,7 @@ function getStateDisplayModel(state: string) {
   throw { message: 'Unknown alert state' };
 }
 
-function joinEvalMatches(matches: any, separator: string) {
+function joinEvalMatches(matches, separator: string) {
   return _.reduce(
     matches,
     (res, ev) => {
@@ -130,7 +130,7 @@ function joinEvalMatches(matches: any, separator: string) {
   ).join(separator);
 }
 
-function getAlertAnnotationInfo(ah: any) {
+function getAlertAnnotationInfo(ah) {
   // backward compatibility, can be removed in grafana 5.x
   // old way stored evalMatches in data property directly,
   // new way stores it in evalMatches property on new data object

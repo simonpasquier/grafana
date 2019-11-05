@@ -13,7 +13,7 @@ import { Help } from './Help';
 import { StackdriverQuery, MetricDescriptor } from '../types';
 import { getAlignmentPickerData } from '../functions';
 import StackdriverDatasource from '../datasource';
-import { TimeSeries, SelectableValue } from '@grafana/data';
+import { SelectOptionItem } from '@grafana/ui';
 
 export interface Props {
   onQueryChange: (target: StackdriverQuery) => void;
@@ -25,7 +25,7 @@ export interface Props {
 }
 
 interface State extends StackdriverQuery {
-  alignOptions: Array<SelectableValue<string>>;
+  alignOptions: Array<SelectOptionItem<string>>;
   lastQuery: string;
   lastQueryError: string;
   [key: string]: any;
@@ -71,8 +71,8 @@ export class QueryEditor extends React.Component<Props, State> {
     this.props.events.off('data-error', this.onDataError);
   }
 
-  onDataReceived(dataList: TimeSeries[]) {
-    const series = dataList.find((item: any) => item.refId === this.props.target.refId);
+  onDataReceived(dataList) {
+    const series = dataList.find(item => item.refId === this.props.target.refId);
     if (series) {
       this.setState({
         lastQuery: decodeURIComponent(series.meta.rawQuery),
@@ -82,7 +82,7 @@ export class QueryEditor extends React.Component<Props, State> {
     }
   }
 
-  onDataError(err: any) {
+  onDataError(err) {
     let lastQuery;
     let lastQueryError;
     if (err.data && err.data.error) {
@@ -123,7 +123,7 @@ export class QueryEditor extends React.Component<Props, State> {
     );
   };
 
-  onPropertyChange(prop: string, value: string[]) {
+  onPropertyChange(prop, value) {
     this.setState({ [prop]: value }, () => {
       this.props.onQueryChange(this.state);
       this.props.onExecuteQuery();

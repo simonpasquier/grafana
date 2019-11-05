@@ -1,27 +1,24 @@
 import _ from 'lodash';
-import { getValueFormat, getColorFromHexRgbOrName, GrafanaThemeType } from '@grafana/ui';
-import { stringToJsRegex, ScopedVars } from '@grafana/data';
+import moment from 'moment';
+import { getValueFormat, getColorFromHexRgbOrName, GrafanaThemeType, stringToJsRegex } from '@grafana/ui';
 import { ColumnStyle } from '@grafana/ui/src/components/Table/TableCellBuilder';
-import { dateTime } from '@grafana/data';
-import { TemplateSrv } from 'app/features/templating/template_srv';
-import { TableRenderModel, ColumnRender } from './types';
 
 export class TableRenderer {
   formatters: any[];
   colorState: any;
 
   constructor(
-    private panel: { styles: ColumnStyle[]; pageSize: number },
-    private table: TableRenderModel,
-    private isUtc: boolean,
-    private sanitize: (v: any) => any,
-    private templateSrv: TemplateSrv,
+    private panel,
+    private table,
+    private isUtc,
+    private sanitize,
+    private templateSrv,
     private theme?: GrafanaThemeType
   ) {
     this.initColumns();
   }
 
-  setTable(table: TableRenderModel) {
+  setTable(table) {
     this.table = table;
 
     this.initColumns();
@@ -54,8 +51,8 @@ export class TableRenderer {
     }
   }
 
-  getColorForValue(value: number, style: ColumnStyle) {
-    if (!style.thresholds || !style.colors) {
+  getColorForValue(value, style: ColumnStyle) {
+    if (!style.thresholds) {
       return null;
     }
     for (let i = style.thresholds.length; i > 0; i--) {
@@ -66,7 +63,7 @@ export class TableRenderer {
     return getColorFromHexRgbOrName(_.first(style.colors), this.theme);
   }
 
-  defaultCellFormatter(v: any, style: ColumnStyle) {
+  defaultCellFormatter(v, style: ColumnStyle) {
     if (v === null || v === void 0 || v === undefined) {
       return '';
     }
@@ -82,17 +79,19 @@ export class TableRenderer {
     }
   }
 
-  createColumnFormatter(column: ColumnRender) {
+  createColumnFormatter(column) {
     if (!column.style) {
       return this.defaultCellFormatter;
     }
 
     if (column.style.type === 'hidden') {
-      return (v: any): undefined => undefined;
+      return v => {
+        return undefined;
+      };
     }
 
     if (column.style.type === 'date') {
-      return (v: any) => {
+      return v => {
         if (v === undefined || v === null) {
           return '-';
         }
@@ -106,7 +105,7 @@ export class TableRenderer {
           v = parseInt(v, 10);
         }
 
-        let date = dateTime(v);
+        let date = moment(v);
 
         if (this.isUtc) {
           date = date.utc();
@@ -117,7 +116,7 @@ export class TableRenderer {
     }
 
     if (column.style.type === 'string') {
-      return (v: any): any => {
+      return v => {
         if (_.isArray(v)) {
           v = v.join(', ');
         }
@@ -173,7 +172,7 @@ export class TableRenderer {
     if (column.style.type === 'number') {
       const valueFormatter = getValueFormat(column.unit || column.style.unit);
 
-      return (v: any): any => {
+      return v => {
         if (v === null || v === void 0) {
           return '-';
         }
@@ -187,12 +186,12 @@ export class TableRenderer {
       };
     }
 
-    return (value: any) => {
+    return value => {
       return this.defaultCellFormatter(value, column.style);
     };
   }
 
-  setColorState(value: any, style: ColumnStyle) {
+  setColorState(value, style: ColumnStyle) {
     if (!style.colorMode) {
       return;
     }
@@ -209,22 +208,22 @@ export class TableRenderer {
     this.colorState[style.colorMode] = this.getColorForValue(numericValue, style);
   }
 
-  renderRowVariables(rowIndex: number) {
-    const scopedVars: ScopedVars = {};
+  renderRowVariables(rowIndex) {
+    const scopedVars = {};
     let cellVariable;
     const row = this.table.rows[rowIndex];
     for (let i = 0; i < row.length; i++) {
       cellVariable = `__cell_${i}`;
-      scopedVars[cellVariable] = { value: row[i], text: row[i] ? row[i].toString() : '' };
+      scopedVars[cellVariable] = { value: row[i] };
     }
     return scopedVars;
   }
 
-  formatColumnValue(colIndex: number, value: any) {
+  formatColumnValue(colIndex, value) {
     return this.formatters[colIndex] ? this.formatters[colIndex](value) : value;
   }
 
-  renderCell(columnIndex: number, rowIndex: number, value: any, addWidthHack = false) {
+  renderCell(columnIndex, rowIndex, value, addWidthHack = false) {
     value = this.formatColumnValue(columnIndex, value);
 
     const column = this.table.columns[columnIndex];
@@ -267,7 +266,7 @@ export class TableRenderer {
     if (column.style && column.style.link) {
       // Render cell as link
       const scopedVars = this.renderRowVariables(rowIndex);
-      scopedVars['__cell'] = { value: value, text: value ? value.toString() : '' };
+      scopedVars['__cell'] = { value: value };
 
       const cellLink = this.templateSrv.replace(column.style.linkUrl, scopedVars, encodeURIComponent);
       const cellLinkTooltip = this.templateSrv.replace(column.style.linkTooltip, scopedVars);
@@ -305,7 +304,7 @@ export class TableRenderer {
     return columnHtml;
   }
 
-  render(page: number) {
+  render(page) {
     const pageSize = this.panel.pageSize || 100;
     const startPos = page * pageSize;
     const endPos = Math.min(startPos + pageSize, this.table.rows.length);

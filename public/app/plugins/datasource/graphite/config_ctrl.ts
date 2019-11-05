@@ -1,12 +1,10 @@
-import DatasourceSrv from 'app/features/plugins/datasource_srv';
-
 export class GraphiteConfigCtrl {
   static templateUrl = 'public/app/plugins/datasource/graphite/partials/config.html';
   datasourceSrv: any;
   current: any;
 
   /** @ngInject */
-  constructor($scope: any, datasourceSrv: DatasourceSrv) {
+  constructor($scope, datasourceSrv) {
     this.datasourceSrv = datasourceSrv;
     this.current.jsonData = this.current.jsonData || {};
     this.current.jsonData.graphiteVersion = this.current.jsonData.graphiteVersion || '0.9';
@@ -20,10 +18,10 @@ export class GraphiteConfigCtrl {
 
     this.datasourceSrv
       .loadDatasource(this.current.name)
-      .then((ds: any) => {
+      .then(ds => {
         return ds.getVersion();
       })
-      .then((version: any) => {
+      .then(version => {
         this.graphiteVersions.push({ name: version, value: version });
         this.current.jsonData.graphiteVersion = version;
       });

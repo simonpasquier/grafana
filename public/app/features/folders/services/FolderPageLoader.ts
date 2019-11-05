@@ -1,9 +1,7 @@
-import { BackendSrv } from 'app/core/services/backend_srv';
-
 export class FolderPageLoader {
-  constructor(private backendSrv: BackendSrv) {}
+  constructor(private backendSrv) {}
 
-  load(ctrl: any, uid: any, activeChildId: any) {
+  load(ctrl, uid, activeChildId) {
     ctrl.navModel = {
       main: {
         icon: 'fa fa-folder-open',
@@ -38,20 +36,20 @@ export class FolderPageLoader {
       },
     };
 
-    return this.backendSrv.getFolderByUid(uid).then((folder: any) => {
+    return this.backendSrv.getFolderByUid(uid).then(folder => {
       ctrl.folderId = folder.id;
       const folderTitle = folder.title;
       const folderUrl = folder.url;
       ctrl.navModel.main.text = folderTitle;
 
-      const dashTab = ctrl.navModel.main.children.find((child: any) => child.id === 'manage-folder-dashboards');
+      const dashTab = ctrl.navModel.main.children.find(child => child.id === 'manage-folder-dashboards');
       dashTab.url = folderUrl;
 
       if (folder.canAdmin) {
-        const permTab = ctrl.navModel.main.children.find((child: any) => child.id === 'manage-folder-permissions');
+        const permTab = ctrl.navModel.main.children.find(child => child.id === 'manage-folder-permissions');
         permTab.url = folderUrl + '/permissions';
 
-        const settingsTab = ctrl.navModel.main.children.find((child: any) => child.id === 'manage-folder-settings');
+        const settingsTab = ctrl.navModel.main.children.find(child => child.id === 'manage-folder-settings');
         settingsTab.url = folderUrl + '/settings';
       } else {
         ctrl.navModel.main.children = [dashTab];

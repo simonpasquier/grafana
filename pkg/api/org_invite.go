@@ -27,6 +27,10 @@ func GetPendingOrgInvites(c *m.ReqContext) Response {
 }
 
 func AddOrgInvite(c *m.ReqContext, inviteDto dtos.AddInviteForm) Response {
+	if setting.DisableLoginForm {
+		return Error(400, "Cannot invite when login is disabled.", nil)
+	}
+
 	if !inviteDto.Role.IsValid() {
 		return Error(400, "Invalid role specified", nil)
 	}
@@ -39,10 +43,6 @@ func AddOrgInvite(c *m.ReqContext, inviteDto dtos.AddInviteForm) Response {
 		}
 	} else {
 		return inviteExistingUserToOrg(c, userQuery.Result, &inviteDto)
-	}
-
-	if setting.DisableLoginForm {
-		return Error(400, "Cannot invite when login is disabled.", nil)
 	}
 
 	cmd := m.CreateTempUserCommand{}
@@ -188,8 +188,8 @@ func (hs *HTTPServer) CompleteInvite(c *m.ReqContext, completeInvite dtos.Comple
 
 	hs.loginUserWithUser(user, c)
 
-	metrics.MApiUserSignUpCompleted.Inc()
-	metrics.MApiUserSignUpInvite.Inc()
+	metrics.M_Api_User_SignUpCompleted.Inc()
+	metrics.M_Api_User_SignUpInvite.Inc()
 
 	return Success("User created and logged in")
 }

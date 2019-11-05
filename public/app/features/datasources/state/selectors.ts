@@ -1,31 +1,29 @@
-import { DataSourceSettings, DataSourcePluginMeta } from '@grafana/ui';
-import { DataSourcesState } from '../../../types/datasources';
-import { UrlQueryValue } from '@grafana/runtime';
+import { DataSourceSettings, DataSourcePluginMeta } from '@grafana/ui/src/types';
 
-export const getDataSources = (state: DataSourcesState) => {
+export const getDataSources = state => {
   const regex = new RegExp(state.searchQuery, 'i');
 
-  return state.dataSources.filter((dataSource: DataSourceSettings) => {
+  return state.dataSources.filter(dataSource => {
     return regex.test(dataSource.name) || regex.test(dataSource.database);
   });
 };
 
-export const getDataSourceTypes = (state: DataSourcesState) => {
+export const getDataSourceTypes = state => {
   const regex = new RegExp(state.dataSourceTypeSearchQuery, 'i');
 
-  return state.dataSourceTypes.filter((type: DataSourcePluginMeta) => {
+  return state.dataSourceTypes.filter(type => {
     return regex.test(type.name);
   });
 };
 
-export const getDataSource = (state: DataSourcesState, dataSourceId: UrlQueryValue): DataSourceSettings | null => {
-  if (state.dataSource.id === parseInt(dataSourceId as string, 10)) {
+export const getDataSource = (state, dataSourceId): DataSourceSettings | null => {
+  if (state.dataSource.id === parseInt(dataSourceId, 10)) {
     return state.dataSource;
   }
   return {} as DataSourceSettings;
 };
 
-export const getDataSourceMeta = (state: DataSourcesState, type: string): DataSourcePluginMeta => {
+export const getDataSourceMeta = (state, type): DataSourcePluginMeta => {
   if (state.dataSourceMeta.id === type) {
     return state.dataSourceMeta;
   }
@@ -33,6 +31,6 @@ export const getDataSourceMeta = (state: DataSourcesState, type: string): DataSo
   return {} as DataSourcePluginMeta;
 };
 
-export const getDataSourcesSearchQuery = (state: DataSourcesState) => state.searchQuery;
-export const getDataSourcesLayoutMode = (state: DataSourcesState) => state.layoutMode;
-export const getDataSourcesCount = (state: DataSourcesState) => state.dataSourcesCount;
+export const getDataSourcesSearchQuery = state => state.searchQuery;
+export const getDataSourcesLayoutMode = state => state.layoutMode;
+export const getDataSourcesCount = state => state.dataSourcesCount;

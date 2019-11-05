@@ -2,9 +2,10 @@ import _ from 'lodash';
 import Plain from 'slate-plain-serializer';
 
 import QueryField from './query_field';
-import debounce from 'lodash/debounce';
-import { DOMUtil } from '@grafana/ui';
-import { Editor as CoreEditor } from 'slate';
+// import debounce from './utils/debounce';
+// import {getNextCharacter} from './utils/dom';
+import debounce from 'app/features/explore/utils/debounce';
+import { getNextCharacter } from 'app/features/explore/utils/dom';
 
 import { KEYWORDS, functionTokens, operatorTokens, grafanaMacros } from './kusto/kusto';
 // import '../sass/editor.base.scss';
@@ -37,21 +38,21 @@ interface KustoDBSchema {
   Tables?: any;
 }
 
-const defaultSchema: any = () => ({
+const defaultSchema = () => ({
   Databases: {
     Default: {},
   },
 });
 
-const cleanText = (s: string) => s.replace(/[{}[\]="(),!~+\-*/^%]/g, '').trim();
-const wrapText = (text: string) => ({ text });
+const cleanText = s => s.replace(/[{}[\]="(),!~+\-*/^%]/g, '').trim();
+const wrapText = text => ({ text });
 
 export default class KustoQueryField extends QueryField {
   fields: any;
   events: any;
   schema: KustoSchema;
 
-  constructor(props: any, context: any) {
+  constructor(props, context) {
     super(props, context);
     this.schema = defaultSchema();
 
@@ -63,7 +64,7 @@ export default class KustoQueryField extends QueryField {
     this.fetchSchema();
   }
 
-  onTypeahead = (force = false) => {
+  onTypeahead = (force?: boolean) => {
     const selection = window.getSelection();
     if (selection.anchorNode) {
       const wrapperNode = selection.anchorNode.parentElement;
@@ -196,14 +197,14 @@ export default class KustoQueryField extends QueryField {
     }
   };
 
-  applyTypeahead = (editor: CoreEditor, suggestion: { text: any; type: string; deleteBackwards: any }): CoreEditor => {
+  applyTypeahead(change, suggestion) {
     const { typeaheadPrefix, typeaheadContext, typeaheadText } = this.state;
     let suggestionText = suggestion.text || suggestion;
     const move = 0;
 
     // Modify suggestion based on context
 
-    const nextChar = DOMUtil.getNextCharacter();
+    const nextChar = getNextCharacter();
     if (suggestion.type === 'function') {
       if (!nextChar || nextChar !== '(') {
         suggestionText += '(';
@@ -218,6 +219,8 @@ export default class KustoQueryField extends QueryField {
       }
     }
 
+    this.resetTypeahead();
+
     // Remove the current, incomplete text and replace it with the selected suggestion
     const backward = suggestion.deleteBackwards || typeaheadPrefix.length;
     const text = cleanText(typeaheadText);
@@ -226,17 +229,13 @@ export default class KustoQueryField extends QueryField {
     const midWord = typeaheadPrefix && ((suffixLength > 0 && offset > -1) || suggestionText === typeaheadText);
     const forward = midWord ? suffixLength + offset : 0;
 
-    this.resetTypeahead(() =>
-      editor
-        .deleteBackward(backward)
-        .deleteForward(forward)
-        .insertText(suggestionText)
-        .moveForward(move)
-        .focus()
-    );
-
-    return editor;
-  };
+    return change
+      .deleteBackward(backward)
+      .deleteForward(forward)
+      .insertText(suggestionText)
+      .move(move)
+      .focus();
+  }
 
   // private _getFieldsSuggestions(): SuggestionGroup[] {
   //   return [
@@ -355,13 +354,11 @@ export default class KustoQueryField extends QueryField {
   }
 
   getTableSuggestions(db = 'Default'): SuggestionGroup[] {
-    // @ts-ignore
     if (this.schema.Databases[db]) {
       return [
         {
           prefixMatch: true,
           label: 'Tables',
-          // @ts-ignore
           items: _.map(this.schema.Databases[db].Tables, (t: any) => ({ text: t.Name })),
         },
       ];
@@ -428,7 +425,7 @@ export default class KustoQueryField extends QueryField {
 /**
  * Cast schema from App Insights to default Kusto schema
  */
-function castSchema(schema: any) {
+function castSchema(schema) {
   const defaultSchemaTemplate = defaultSchema();
   defaultSchemaTemplate.Databases.Default = schema;
   return defaultSchemaTemplate;

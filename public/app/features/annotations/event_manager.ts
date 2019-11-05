@@ -10,7 +10,7 @@ import {
 } from '@grafana/ui';
 
 import { MetricsPanelCtrl } from 'app/plugins/sdk';
-import { AnnotationEvent } from '@grafana/data';
+import { AnnotationEvent } from '@grafana/ui';
 
 export class EventManager {
   event: AnnotationEvent;
@@ -28,7 +28,7 @@ export class EventManager {
     this.editorOpen = true;
   }
 
-  updateTime(range: { from: any; to: any }) {
+  updateTime(range) {
     if (!this.event) {
       this.event = {};
       this.event.dashboardId = this.panelCtrl.dashboard.id;
@@ -47,17 +47,17 @@ export class EventManager {
     this.panelCtrl.render();
   }
 
-  editEvent(event: AnnotationEvent, elem?: any) {
+  editEvent(event, elem?) {
     this.event = event;
     this.panelCtrl.render();
   }
 
-  addFlotEvents(annotations: any, flotOptions: any) {
+  addFlotEvents(annotations, flotOptions) {
     if (!this.event && annotations.length === 0) {
       return;
     }
 
-    const types: any = {
+    const types = {
       $__alerting: {
         color: ALERTING_COLOR,
         position: 'BOTTOM',
@@ -149,11 +149,11 @@ export class EventManager {
   }
 }
 
-function getRegions(events: AnnotationEvent[]) {
+function getRegions(events) {
   return _.filter(events, 'isRegion');
 }
 
-function addRegionMarking(regions: any[], flotOptions: { grid: { markings: any } }) {
+function addRegionMarking(regions, flotOptions) {
   const markings = flotOptions.grid.markings;
   const defaultColor = DEFAULT_ANNOTATION_COLOR;
   let fillColor;

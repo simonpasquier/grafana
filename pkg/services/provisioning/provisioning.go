@@ -5,8 +5,8 @@ import (
 	"path"
 	"sync"
 
-	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/util/errutil"
+	"github.com/grafana/grafana/pkg/log"
+	"github.com/pkg/errors"
 
 	"github.com/grafana/grafana/pkg/registry"
 	"github.com/grafana/grafana/pkg/services/provisioning/dashboards"
@@ -103,20 +103,20 @@ func (ps *provisioningServiceImpl) Run(ctx context.Context) error {
 func (ps *provisioningServiceImpl) ProvisionDatasources() error {
 	datasourcePath := path.Join(ps.Cfg.ProvisioningPath, "datasources")
 	err := ps.provisionDatasources(datasourcePath)
-	return errutil.Wrap("Datasource provisioning error", err)
+	return errors.Wrap(err, "Datasource provisioning error")
 }
 
 func (ps *provisioningServiceImpl) ProvisionNotifications() error {
 	alertNotificationsPath := path.Join(ps.Cfg.ProvisioningPath, "notifiers")
 	err := ps.provisionNotifiers(alertNotificationsPath)
-	return errutil.Wrap("Alert notification provisioning error", err)
+	return errors.Wrap(err, "Alert notification provisioning error")
 }
 
 func (ps *provisioningServiceImpl) ProvisionDashboards() error {
 	dashboardPath := path.Join(ps.Cfg.ProvisioningPath, "dashboards")
 	dashProvisioner, err := ps.newDashboardProvisioner(dashboardPath)
 	if err != nil {
-		return errutil.Wrap("Failed to create provisioner", err)
+		return errors.Wrap(err, "Failed to create provisioner")
 	}
 
 	ps.mutex.Lock()
@@ -127,7 +127,7 @@ func (ps *provisioningServiceImpl) ProvisionDashboards() error {
 	if err := dashProvisioner.Provision(); err != nil {
 		// If we fail to provision with the new provisioner, mutex will unlock and the polling we restart with the
 		// old provisioner as we did not switch them yet.
-		return errutil.Wrap("Failed to provision dashboards", err)
+		return errors.Wrap(err, "Failed to provision dashboards")
 	}
 	ps.dashboardProvisioner = dashProvisioner
 	return nil

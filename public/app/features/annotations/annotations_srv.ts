@@ -1,5 +1,5 @@
 // Libaries
-import angular, { IQService } from 'angular';
+import angular from 'angular';
 import _ from 'lodash';
 
 // Components
@@ -7,15 +7,10 @@ import './editor_ctrl';
 import coreModule from 'app/core/core_module';
 
 // Utils & Services
-import { dedupAnnotations } from './events_processing';
+import { makeRegions, dedupAnnotations } from './events_processing';
 
 // Types
 import { DashboardModel } from '../dashboard/state/DashboardModel';
-import { AnnotationEvent } from '@grafana/data';
-import DatasourceSrv from '../plugins/datasource_srv';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { TimeSrv } from '../dashboard/services/TimeSrv';
-import { DataSourceApi } from '@grafana/ui';
 
 export class AnnotationsSrv {
   globalAnnotationsPromise: any;
@@ -23,13 +18,7 @@ export class AnnotationsSrv {
   datasourcePromises: any;
 
   /** @ngInject */
-  constructor(
-    private $rootScope: any,
-    private $q: IQService,
-    private datasourceSrv: DatasourceSrv,
-    private backendSrv: BackendSrv,
-    private timeSrv: TimeSrv
-  ) {}
+  constructor(private $rootScope, private $q, private datasourceSrv, private backendSrv, private timeSrv) {}
 
   init(dashboard: DashboardModel) {
     // always clearPromiseCaches when loading new dashboard
@@ -44,12 +33,12 @@ export class AnnotationsSrv {
     this.datasourcePromises = null;
   }
 
-  getAnnotations(options: any) {
+  getAnnotations(options) {
     return this.$q
       .all([this.getGlobalAnnotations(options), this.getAlertStates(options)])
       .then(results => {
         // combine the annotations and flatten results
-        let annotations: AnnotationEvent[] = _.flattenDeep(results[0]);
+        let annotations: any[] = _.flattenDeep(results[0]);
 
         // filter out annotations that do not belong to requesting panel
         annotations = _.filter(annotations, item => {
@@ -61,6 +50,7 @@ export class AnnotationsSrv {
         });
 
         annotations = dedupAnnotations(annotations);
+        annotations = makeRegions(annotations, options);
 
         // look for alert state for this panel
         const alertState: any = _.find(results[1], { panelId: options.panel.id });
@@ -80,7 +70,7 @@ export class AnnotationsSrv {
       });
   }
 
-  getAlertStates(options: any) {
+  getAlertStates(options) {
     if (!options.dashboard.id) {
       return this.$q.when([]);
     }
@@ -104,7 +94,7 @@ export class AnnotationsSrv {
     return this.alertStatesPromise;
   }
 
-  getGlobalAnnotations(options: any) {
+  getGlobalAnnotations(options) {
     const dashboard = options.dashboard;
 
     if (this.globalAnnotationsPromise) {
@@ -127,7 +117,7 @@ export class AnnotationsSrv {
       dsPromises.push(datasourcePromise);
       promises.push(
         datasourcePromise
-          .then((datasource: DataSourceApi) => {
+          .then(datasource => {
             // issue query against data source
             return datasource.annotationQuery({
               range: range,
@@ -151,24 +141,27 @@ export class AnnotationsSrv {
     return this.globalAnnotationsPromise;
   }
 
-  saveAnnotationEvent(annotation: AnnotationEvent) {
+  saveAnnotationEvent(annotation) {
     this.globalAnnotationsPromise = null;
     return this.backendSrv.post('/api/annotations', annotation);
   }
 
-  updateAnnotationEvent(annotation: AnnotationEvent) {
+  updateAnnotationEvent(annotation) {
     this.globalAnnotationsPromise = null;
     return this.backendSrv.put(`/api/annotations/${annotation.id}`, annotation);
   }
 
-  deleteAnnotationEvent(annotation: AnnotationEvent) {
+  deleteAnnotationEvent(annotation) {
     this.globalAnnotationsPromise = null;
-    const deleteUrl = `/api/annotations/${annotation.id}`;
+    let deleteUrl = `/api/annotations/${annotation.id}`;
+    if (annotation.isRegion) {
+      deleteUrl = `/api/annotations/region/${annotation.regionId}`;
+    }
 
     return this.backendSrv.delete(deleteUrl);
   }
 
-  translateQueryResult(annotation: any, results: any) {
+  translateQueryResult(annotation, results) {
     // if annotation has snapshotData
     // make clone and remove it
     if (annotation.snapshotData) {
@@ -178,9 +171,7 @@ export class AnnotationsSrv {
 
     for (const item of results) {
       item.source = annotation;
-      item.isRegion = item.timeEnd && item.time !== item.timeEnd;
     }
-
     return results;
   }
 }

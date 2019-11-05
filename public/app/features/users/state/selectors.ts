@@ -1,6 +1,4 @@
-import { UsersState } from 'app/types';
-
-export const getUsers = (state: UsersState) => {
+export const getUsers = state => {
   const regex = new RegExp(state.searchQuery, 'i');
 
   return state.users.filter(user => {
@@ -8,7 +6,7 @@ export const getUsers = (state: UsersState) => {
   });
 };
 
-export const getInvitees = (state: UsersState) => {
+export const getInvitees = state => {
   const regex = new RegExp(state.searchQuery, 'i');
 
   return state.invitees.filter(invitee => {
@@ -16,5 +14,5 @@ export const getInvitees = (state: UsersState) => {
   });
 };
 
-export const getInviteesCount = (state: UsersState) => state.invitees.length;
-export const getUsersSearchQuery = (state: UsersState) => state.searchQuery;
+export const getInviteesCount = state => state.invitees.length;
+export const getUsersSearchQuery = state => state.searchQuery;

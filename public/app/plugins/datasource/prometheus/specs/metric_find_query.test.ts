@@ -1,29 +1,26 @@
+import moment from 'moment';
 import { PrometheusDatasource } from '../datasource';
 import PrometheusMetricFindQuery from '../metric_find_query';
-//@ts-ignore
 import q from 'q';
-import { toUtc } from '@grafana/data';
-import { DataSourceInstanceSettings } from '@grafana/ui';
-import { PromOptions } from '../types';
 
 describe('PrometheusMetricFindQuery', () => {
-  const instanceSettings = ({
+  const instanceSettings = {
     url: 'proxied',
     directUrl: 'direct',
     user: 'test',
     password: 'mupp',
     jsonData: { httpMethod: 'GET' },
-  } as unknown) as DataSourceInstanceSettings<PromOptions>;
+  };
   const raw = {
-    from: toUtc('2018-04-25 10:00'),
-    to: toUtc('2018-04-25 11:00'),
+    from: moment.utc('2018-04-25 10:00'),
+    to: moment.utc('2018-04-25 11:00'),
   };
   const ctx: any = {
     backendSrvMock: {
       datasourceRequest: jest.fn(() => Promise.resolve({})),
     },
     templateSrvMock: {
-      replace: (a: string) => a,
+      replace: a => a,
     },
     timeSrvMock: {
       timeRange: () => ({

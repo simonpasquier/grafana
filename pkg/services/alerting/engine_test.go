@@ -6,10 +6,9 @@ import (
 	"math"
 	"testing"
 
-	"time"
-
 	"github.com/grafana/grafana/pkg/setting"
 	. "github.com/smartystreets/goconvey/convey"
+	"time"
 )
 
 type FakeEvalHandler struct {
@@ -33,19 +32,18 @@ func (handler *FakeEvalHandler) Eval(evalContext *EvalContext) {
 
 type FakeResultHandler struct{}
 
-func (handler *FakeResultHandler) handle(evalContext *EvalContext) error {
+func (handler *FakeResultHandler) Handle(evalContext *EvalContext) error {
 	return nil
 }
 
 func TestEngineProcessJob(t *testing.T) {
 	Convey("Alerting engine job processing", t, func() {
-		engine := &AlertEngine{}
-		engine.Init()
+		engine := NewEngine()
 		setting.AlertingEvaluationTimeout = 30 * time.Second
 		setting.AlertingNotificationTimeout = 30 * time.Second
 		setting.AlertingMaxAttempts = 3
 		engine.resultHandler = &FakeResultHandler{}
-		job := &Job{running: true, Rule: &Rule{}}
+		job := &Job{Running: true, Rule: &Rule{}}
 
 		Convey("Should trigger retry if needed", func() {
 

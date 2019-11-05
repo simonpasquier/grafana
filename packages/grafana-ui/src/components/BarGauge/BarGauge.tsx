@@ -1,13 +1,12 @@
 // Library
 import React, { PureComponent, CSSProperties, ReactNode } from 'react';
 import tinycolor from 'tinycolor2';
-import { Threshold, TimeSeriesValue, getActiveThreshold, DisplayValue } from '@grafana/data';
 
 // Utils
-import { getColorFromHexRgbOrName } from '../../utils';
+import { getColorFromHexRgbOrName, getThresholdForValue } from '../../utils';
 
 // Types
-import { Themeable, VizOrientation } from '../../types';
+import { DisplayValue, Themeable, TimeSeriesValue, Threshold, VizOrientation } from '../../types';
 
 const MIN_VALUE_HEIGHT = 18;
 const MAX_VALUE_HEIGHT = 50;
@@ -26,8 +25,6 @@ export interface Props extends Themeable {
   orientation: VizOrientation;
   itemSpacing?: number;
   displayMode: 'basic' | 'lcd' | 'gradient';
-  onClick?: React.MouseEventHandler<HTMLElement>;
-  className?: string;
 }
 
 export class BarGauge extends PureComponent<Props> {
@@ -45,20 +42,16 @@ export class BarGauge extends PureComponent<Props> {
   };
 
   render() {
-    const { onClick, className } = this.props;
     const { title } = this.props.value;
-    const styles = getTitleStyles(this.props);
 
     if (!title) {
-      return (
-        <div style={styles.wrapper} onClick={onClick} className={className}>
-          {this.renderBarAndValue()}
-        </div>
-      );
+      return this.renderBarAndValue();
     }
 
+    const styles = getTitleStyles(this.props);
+
     return (
-      <div style={styles.wrapper} onClick={onClick} className={className}>
+      <div style={styles.wrapper}>
         <div style={styles.title}>{title}</div>
         {this.renderBarAndValue()}
       </div>
@@ -93,14 +86,8 @@ export class BarGauge extends PureComponent<Props> {
 
   getCellColor(positionValue: TimeSeriesValue): CellColors {
     const { thresholds, theme, value } = this.props;
-    if (positionValue === null) {
-      return {
-        background: 'gray',
-        border: 'gray',
-      };
-    }
+    const activeThreshold = getThresholdForValue(thresholds, positionValue);
 
-    const activeThreshold = getActiveThreshold(positionValue, thresholds);
     if (activeThreshold !== null) {
       const color = getColorFromHexRgbOrName(activeThreshold.color, theme.type);
 
@@ -486,7 +473,7 @@ export function getBarGradient(props: Props, maxSize: number): string {
 export function getValueColor(props: Props): string {
   const { thresholds, theme, value } = props;
 
-  const activeThreshold = getActiveThreshold(value.numeric, thresholds);
+  const activeThreshold = getThresholdForValue(thresholds, value.numeric);
 
   if (activeThreshold !== null) {
     return getColorFromHexRgbOrName(activeThreshold.color, theme.type);

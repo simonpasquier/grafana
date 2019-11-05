@@ -1,24 +1,15 @@
-import angular, { IQService } from 'angular';
+import angular from 'angular';
 import _ from 'lodash';
 
 import config from 'app/core/config';
 import coreModule from 'app/core/core_module';
 
-import { DataSourceApi } from '@grafana/ui';
+import { DataSourceApi } from '@grafana/ui/src/types';
 import { importPanelPlugin, importDataSourcePlugin, importAppPlugin } from './plugin_loader';
-import DatasourceSrv from './datasource_srv';
 
 /** @ngInject */
-function pluginDirectiveLoader(
-  $compile: any,
-  datasourceSrv: DatasourceSrv,
-  $rootScope: any,
-  $q: IQService,
-  $http: any,
-  $templateCache: any,
-  $timeout: any
-) {
-  function getTemplate(component: { template: any; templateUrl: any }) {
+function pluginDirectiveLoader($compile, datasourceSrv, $rootScope, $q, $http, $templateCache, $timeout) {
+  function getTemplate(component) {
     if (component.template) {
       return $q.when(component.template);
     }
@@ -26,7 +17,7 @@ function pluginDirectiveLoader(
     if (cached) {
       return $q.when(cached);
     }
-    return $http.get(component.templateUrl).then((res: any) => {
+    return $http.get(component.templateUrl).then(res => {
       return res.data;
     });
   }
@@ -41,7 +32,7 @@ function pluginDirectiveLoader(
     return baseUrl + '/' + templateUrl;
   }
 
-  function getPluginComponentDirective(options: any) {
+  function getPluginComponentDirective(options) {
     // handle relative template urls for plugin templates
     options.Component.templateUrl = relativeTemplateUrlToAbs(options.Component.templateUrl, options.baseUrl);
 
@@ -54,7 +45,7 @@ function pluginDirectiveLoader(
         controllerAs: 'ctrl',
         bindToController: true,
         scope: options.bindings,
-        link: (scope: any, elem: any, attrs: any, ctrl: any) => {
+        link: (scope, elem, attrs, ctrl) => {
           if (ctrl.link) {
             ctrl.link(scope, elem, attrs, ctrl);
           }
@@ -66,7 +57,7 @@ function pluginDirectiveLoader(
     };
   }
 
-  function loadPanelComponentInfo(scope: any, attrs: any) {
+  function loadPanelComponentInfo(scope, attrs) {
     const componentInfo: any = {
       name: 'panel-plugin-' + scope.panel.type,
       bindings: { dashboard: '=', panel: '=', row: '=' },
@@ -87,7 +78,7 @@ function pluginDirectiveLoader(
       }
 
       if (PanelCtrl.templatePromise) {
-        return PanelCtrl.templatePromise.then((res: any) => {
+        return PanelCtrl.templatePromise.then(res => {
           return componentInfo;
         });
       }
@@ -96,7 +87,7 @@ function pluginDirectiveLoader(
         PanelCtrl.templateUrl = relativeTemplateUrlToAbs(PanelCtrl.templateUrl, panelInfo.baseUrl);
       }
 
-      PanelCtrl.templatePromise = getTemplate(PanelCtrl).then((template: any) => {
+      PanelCtrl.templatePromise = getTemplate(PanelCtrl).then(template => {
         PanelCtrl.templateUrl = null;
         PanelCtrl.template = `<grafana-panel ctrl="ctrl" class="panel-height-helper">${template}</grafana-panel>`;
         return componentInfo;
@@ -106,7 +97,7 @@ function pluginDirectiveLoader(
     });
   }
 
-  function getModule(scope: any, attrs: any): any {
+  function getModule(scope: any, attrs: any) {
     switch (attrs.type) {
       // QueryCtrl
       case 'query-ctrl': {
@@ -198,7 +189,7 @@ function pluginDirectiveLoader(
     }
   }
 
-  function appendAndCompile(scope: any, elem: JQuery, componentInfo: any) {
+  function appendAndCompile(scope, elem, componentInfo) {
     const child = angular.element(document.createElement(componentInfo.name));
     _.each(componentInfo.attrs, (value, key) => {
       child.attr(key, value);
@@ -220,7 +211,7 @@ function pluginDirectiveLoader(
     });
   }
 
-  function registerPluginComponent(scope: any, elem: JQuery, attrs: any, componentInfo: any) {
+  function registerPluginComponent(scope, elem, attrs, componentInfo) {
     if (componentInfo.notFound) {
       elem.empty();
       return;
@@ -244,12 +235,12 @@ function pluginDirectiveLoader(
 
   return {
     restrict: 'E',
-    link: (scope: any, elem: JQuery, attrs: any) => {
+    link: (scope, elem, attrs) => {
       getModule(scope, attrs)
-        .then((componentInfo: any) => {
+        .then(componentInfo => {
           registerPluginComponent(scope, elem, attrs, componentInfo);
         })
-        .catch((err: any) => {
+        .catch(err => {
           console.log('Plugin component error', err);
         });
     },

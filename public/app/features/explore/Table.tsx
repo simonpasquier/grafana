@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import React, { PureComponent } from 'react';
-import ReactTable, { RowInfo } from 'react-table';
+import ReactTable from 'react-table';
 
 import TableModel from 'app/core/table_model';
 
@@ -14,12 +14,12 @@ interface TableProps {
   onClickCell?: (columnKey: string, rowValue: string) => void;
 }
 
-function prepareRows(rows: any[], columnNames: string[]) {
+function prepareRows(rows, columnNames) {
   return rows.map(cells => _.zipObject(columnNames, cells));
 }
 
 export default class Table extends PureComponent<TableProps> {
-  getCellProps = (state: any, rowInfo: RowInfo, column: any) => {
+  getCellProps = (state, rowInfo, column) => {
     return {
       onClick: (e: React.SyntheticEvent) => {
         // Only handle click on link, not the cell
@@ -44,9 +44,9 @@ export default class Table extends PureComponent<TableProps> {
       accessor: text,
       className: VALUE_REGEX.test(text) ? 'text-right' : '',
       show: text !== 'Time',
-      Cell: (row: any) => (
+      Cell: row => (
         <span className={filterable ? 'link' : ''} title={text + ': ' + row.value}>
-          {typeof row.value === 'string' ? row.value : JSON.stringify(row.value)}
+          {row.value}
         </span>
       ),
     }));

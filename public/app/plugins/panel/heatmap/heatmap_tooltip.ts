@@ -19,7 +19,7 @@ export class HeatmapTooltip {
   mouseOverBucket: boolean;
   originalFillColor: any;
 
-  constructor(elem: JQuery, scope: any) {
+  constructor(elem, scope) {
     this.scope = scope;
     this.dashboard = scope.ctrl.dashboard;
     this.panelCtrl = scope.ctrl;
@@ -35,7 +35,7 @@ export class HeatmapTooltip {
     this.destroy();
   }
 
-  onMouseMove(e: any) {
+  onMouseMove(e) {
     if (!this.panel.tooltip.show) {
       return;
     }
@@ -58,7 +58,7 @@ export class HeatmapTooltip {
     this.tooltip = null;
   }
 
-  show(pos: { panelRelY: any }, data: any) {
+  show(pos, data) {
     if (!this.panel.tooltip.show || !data) {
       return;
     }
@@ -109,7 +109,7 @@ export class HeatmapTooltip {
       if (yData.bounds) {
         if (data.tsBuckets) {
           // Use Y-axis labels
-          const tickFormatter = (valIndex: string | number) => {
+          const tickFormatter = valIndex => {
             return data.tsBucketsFormatted ? data.tsBucketsFormatted[valIndex] : data.tsBuckets[valIndex];
           };
 
@@ -152,13 +152,13 @@ export class HeatmapTooltip {
     this.move(pos);
   }
 
-  getBucketIndexes(pos: { panelRelY?: any; x?: any; y?: any }, data: any) {
+  getBucketIndexes(pos, data) {
     const xBucketIndex = this.getXBucketIndex(pos.x, data);
     const yBucketIndex = this.getYBucketIndex(pos.y, data);
     return { xBucketIndex, yBucketIndex };
   }
 
-  getXBucketIndex(x: number, data: { buckets: any; xBucketSize: number }) {
+  getXBucketIndex(x, data) {
     // First try to find X bucket by checking x pos is in the
     // [bucket.x, bucket.x + xBucketSize] interval
     const xBucket: any = _.find(data.buckets, bucket => {
@@ -167,7 +167,7 @@ export class HeatmapTooltip {
     return xBucket ? xBucket.x : getValueBucketBound(x, data.xBucketSize, 1);
   }
 
-  getYBucketIndex(y: number, data: { tsBuckets: any; yBucketSize: number }) {
+  getYBucketIndex(y, data) {
     if (data.tsBuckets) {
       return Math.floor(y);
     }
@@ -175,17 +175,17 @@ export class HeatmapTooltip {
     return yBucketIndex;
   }
 
-  getSharedTooltipPos(pos: { pageX: any; x: any; pageY: any; panelRelY: number }) {
+  getSharedTooltipPos(pos) {
     // get pageX from position on x axis and pageY from relative position in original panel
     pos.pageX = this.heatmapPanel.offset().left + this.scope.xScale(pos.x);
     pos.pageY = this.heatmapPanel.offset().top + this.scope.chartHeight * pos.panelRelY;
     return pos;
   }
 
-  addHistogram(data: { x: string | number }) {
+  addHistogram(data) {
     const xBucket = this.scope.ctrl.data.buckets[data.x];
     const yBucketSize = this.scope.ctrl.data.yBucketSize;
-    let min: number, max: number, ticks: number;
+    let min, max, ticks;
     if (this.scope.ctrl.data.tsBuckets) {
       min = 0;
       max = this.scope.ctrl.data.tsBuckets.length - 1;
@@ -206,7 +206,7 @@ export class HeatmapTooltip {
     const scale = this.scope.yScale.copy();
     const histXScale = scale.domain([min, max]).range([0, HISTOGRAM_WIDTH]);
 
-    let barWidth: number;
+    let barWidth;
     if (this.panel.yAxis.logBase === 1) {
       barWidth = Math.floor((HISTOGRAM_WIDTH / (max - min)) * yBucketSize * 0.9);
     } else {
@@ -233,19 +233,19 @@ export class HeatmapTooltip {
       .data(histogramData)
       .enter()
       .append('rect')
-      .attr('x', (d: any[]) => {
+      .attr('x', d => {
         return histXScale(d[0]);
       })
       .attr('width', barWidth)
-      .attr('y', (d: any[]) => {
+      .attr('y', d => {
         return HISTOGRAM_HEIGHT - histYScale(d[1]);
       })
-      .attr('height', (d: any[]) => {
+      .attr('height', d => {
         return histYScale(d[1]);
       });
   }
 
-  move(pos: { panelRelY?: any; pageX?: any; pageY?: any }) {
+  move(pos) {
     if (!this.tooltip) {
       return;
     }
@@ -268,9 +268,9 @@ export class HeatmapTooltip {
     return this.tooltip.style('left', left + 'px').style('top', top + 'px');
   }
 
-  countValueFormatter(decimals: number, scaledDecimals: any = null) {
+  countValueFormatter(decimals, scaledDecimals = null) {
     const format = 'short';
-    return (value: number) => {
+    return value => {
       return getValueFormat(format)(value, decimals, scaledDecimals);
     };
   }

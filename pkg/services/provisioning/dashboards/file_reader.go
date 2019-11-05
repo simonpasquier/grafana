@@ -16,7 +16,7 @@ import (
 	"github.com/grafana/grafana/pkg/bus"
 
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/infra/log"
+	"github.com/grafana/grafana/pkg/log"
 	"github.com/grafana/grafana/pkg/models"
 )
 
@@ -53,9 +53,7 @@ func NewDashboardFileReader(cfg *DashboardsAsConfig, log log.Logger) (*fileReade
 
 // pollChanges periodically runs startWalkingDisk based on interval specified in the config.
 func (fr *fileReader) pollChanges(ctx context.Context) {
-
-	// TODO: Fix the staticcheck error
-	ticker := time.Tick(time.Duration(int64(time.Second) * fr.Cfg.UpdateIntervalSeconds)) //nolint:staticcheck
+	ticker := time.Tick(time.Duration(int64(time.Second) * fr.Cfg.UpdateIntervalSeconds))
 	for {
 		select {
 		case <-ticker:
@@ -74,7 +72,9 @@ func (fr *fileReader) startWalkingDisk() error {
 	fr.log.Debug("Start walking disk", "path", fr.Path)
 	resolvedPath := fr.resolvedPath()
 	if _, err := os.Stat(resolvedPath); err != nil {
-		return err
+		if os.IsNotExist(err) {
+			return err
+		}
 	}
 
 	folderId, err := getOrCreateFolderId(fr.Cfg, fr.dashboardProvisioningService)

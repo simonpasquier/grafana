@@ -1,15 +1,6 @@
 import _ from 'lodash';
 import coreModule from '../../core/core_module';
-import { ILocationService } from 'angular';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { NavModelSrv } from 'app/core/nav_model_srv';
 
-export interface PlaylistItem {
-  value: any;
-  id: any;
-  type: string;
-  order: any;
-}
 export class PlaylistEditCtrl {
   filteredDashboards: any = [];
   filteredTags: any = [];
@@ -26,24 +17,18 @@ export class PlaylistEditCtrl {
   isNew: boolean;
 
   /** @ngInject */
-  constructor(
-    private $scope: any,
-    private backendSrv: BackendSrv,
-    private $location: ILocationService,
-    $route: any,
-    navModelSrv: NavModelSrv
-  ) {
+  constructor(private $scope, private backendSrv, private $location, $route, navModelSrv) {
     this.navModel = navModelSrv.getNav('dashboards', 'playlists', 0);
     this.isNew = !$route.current.params.id;
 
     if ($route.current.params.id) {
       const playlistId = $route.current.params.id;
 
-      backendSrv.get('/api/playlists/' + playlistId).then((result: any) => {
+      backendSrv.get('/api/playlists/' + playlistId).then(result => {
         this.playlist = result;
       });
 
-      backendSrv.get('/api/playlists/' + playlistId + '/items').then((result: any) => {
+      backendSrv.get('/api/playlists/' + playlistId + '/items').then(result => {
         this.playlistItems = result;
       });
     }
@@ -63,7 +48,7 @@ export class PlaylistEditCtrl {
     });
   }
 
-  addPlaylistItem(playlistItem: PlaylistItem) {
+  addPlaylistItem(playlistItem) {
     playlistItem.value = playlistItem.id.toString();
     playlistItem.type = 'dashboard_by_id';
     playlistItem.order = this.playlistItems.length + 1;
@@ -72,7 +57,7 @@ export class PlaylistEditCtrl {
     this.filterFoundPlaylistItems();
   }
 
-  addTagPlaylistItem(tag: { term: any }) {
+  addTagPlaylistItem(tag) {
     const playlistItem: any = {
       value: tag.term,
       type: 'dashboard_by_tag',
@@ -84,14 +69,14 @@ export class PlaylistEditCtrl {
     this.filterFoundPlaylistItems();
   }
 
-  removePlaylistItem(playlistItem: PlaylistItem) {
+  removePlaylistItem(playlistItem) {
     _.remove(this.playlistItems, listedPlaylistItem => {
       return playlistItem === listedPlaylistItem;
     });
     this.filterFoundPlaylistItems();
   }
 
-  savePlaylist(playlist: any, playlistItems: PlaylistItem[]) {
+  savePlaylist(playlist, playlistItems) {
     let savePromise;
 
     playlist.items = playlistItems;
@@ -119,15 +104,15 @@ export class PlaylistEditCtrl {
     this.$location.path('/playlists');
   }
 
-  searchStarted(promise: Promise<any>) {
-    promise.then((data: any) => {
+  searchStarted(promise) {
+    promise.then(data => {
       this.dashboardresult = data.dashboardResult;
       this.tagresult = data.tagResult;
       this.filterFoundPlaylistItems();
     });
   }
 
-  movePlaylistItem(playlistItem: PlaylistItem, offset: number) {
+  movePlaylistItem(playlistItem, offset) {
     const currentPosition = this.playlistItems.indexOf(playlistItem);
     const newPosition = currentPosition + offset;
 
@@ -137,11 +122,11 @@ export class PlaylistEditCtrl {
     }
   }
 
-  movePlaylistItemUp(playlistItem: PlaylistItem) {
+  movePlaylistItemUp(playlistItem) {
     this.movePlaylistItem(playlistItem, -1);
   }
 
-  movePlaylistItemDown(playlistItem: PlaylistItem) {
+  movePlaylistItemDown(playlistItem) {
     this.movePlaylistItem(playlistItem, 1);
   }
 }

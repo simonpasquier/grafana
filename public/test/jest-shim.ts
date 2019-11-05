@@ -1,15 +1,15 @@
 declare var global: NodeJS.Global;
 
-(global as any).requestAnimationFrame = (callback: any) => {
+(global as any).requestAnimationFrame = callback => {
   setTimeout(callback, 0);
 };
 
-(Promise.prototype as any).finally = function(onFinally: any) {
+(Promise.prototype as any).finally = function(onFinally) {
   return this.then(
     /* onFulfilled */
-    (res: any) => Promise.resolve(onFinally()).then(() => res),
+    res => Promise.resolve(onFinally()).then(() => res),
     /* onRejected */
-    (err: any) =>
+    err =>
       Promise.resolve(onFinally()).then(() => {
         throw err;
       })

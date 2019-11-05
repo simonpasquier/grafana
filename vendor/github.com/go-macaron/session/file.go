@@ -25,7 +25,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/unknwon/com"
+	"github.com/Unknwon/com"
 )
 
 // FileStore represents a file session store implementation.

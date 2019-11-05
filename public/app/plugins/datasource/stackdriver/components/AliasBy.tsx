@@ -3,7 +3,7 @@ import { debounce } from 'lodash';
 import { Input } from '@grafana/ui';
 
 export interface Props {
-  onChange: (alignmentPeriod: any) => void;
+  onChange: (alignmentPeriod) => void;
   value: string;
 }
 
@@ -12,9 +12,9 @@ export interface State {
 }
 
 export class AliasBy extends Component<Props, State> {
-  propagateOnChange: (value: any) => void;
+  propagateOnChange: (value) => void;
 
-  constructor(props: Props) {
+  constructor(props) {
     super(props);
     this.propagateOnChange = debounce(this.props.onChange, 500);
     this.state = { value: '' };
@@ -24,13 +24,13 @@ export class AliasBy extends Component<Props, State> {
     this.setState({ value: this.props.value });
   }
 
-  UNSAFE_componentWillReceiveProps(nextProps: Props) {
+  componentWillReceiveProps(nextProps: Props) {
     if (nextProps.value !== this.props.value) {
       this.setState({ value: nextProps.value });
     }
   }
 
-  onChange = (e: any) => {
+  onChange = e => {
     this.setState({ value: e.target.value });
     this.propagateOnChange(e.target.value);
   };

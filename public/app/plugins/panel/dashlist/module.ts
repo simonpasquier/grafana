@@ -1,9 +1,6 @@
 import _ from 'lodash';
 import { PanelCtrl } from 'app/plugins/sdk';
 import impressionSrv from 'app/core/services/impression_srv';
-import { auto } from 'angular';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { DashboardSrv } from 'app/features/dashboard/services/DashboardSrv';
 
 class DashListCtrl extends PanelCtrl {
   static templateUrl = 'module.html';
@@ -12,7 +9,7 @@ class DashListCtrl extends PanelCtrl {
   groups: any[];
   modes: any[];
 
-  panelDefaults: any = {
+  panelDefaults = {
     query: '',
     limit: 10,
     tags: [],
@@ -24,12 +21,7 @@ class DashListCtrl extends PanelCtrl {
   };
 
   /** @ngInject */
-  constructor(
-    $scope: any,
-    $injector: auto.IInjectorService,
-    private backendSrv: BackendSrv,
-    private dashboardSrv: DashboardSrv
-  ) {
+  constructor($scope, $injector, private backendSrv, private dashboardSrv) {
     super($scope, $injector);
     _.defaults(this.panel, this.panelDefaults);
 
@@ -113,8 +105,8 @@ class DashListCtrl extends PanelCtrl {
     });
   }
 
-  starDashboard(dash: any, evt: any) {
-    this.dashboardSrv.starDashboard(dash.id, dash.isStarred).then((newState: any) => {
+  starDashboard(dash, evt) {
+    this.dashboardSrv.starDashboard(dash.id, dash.isStarred).then(newState => {
       dash.isStarred = newState;
     });
 

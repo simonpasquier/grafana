@@ -5,8 +5,10 @@ module.exports = ({config, mode}) => {
     test: /\.(ts|tsx)$/,
     use: [
       {
-        loader: require.resolve('ts-loader'),
-        options: {}
+        loader: require.resolve('awesome-typescript-loader'),
+        options: {
+          configFileName: path.resolve(__dirname+'/../tsconfig.json')
+        }
       },
     ],
   });
@@ -54,6 +56,5 @@ module.exports = ({config, mode}) => {
   });
 
   config.resolve.extensions.push('.ts', '.tsx');
-
   return config;
 };

@@ -97,19 +97,13 @@ func CreateDashboardSnapshot(c *m.ReqContext, cmd m.CreateDashboardSnapshotComma
 		cmd.ExternalDeleteUrl = response.DeleteUrl
 		cmd.Dashboard = simplejson.New()
 
-		metrics.MApiDashboardSnapshotExternal.Inc()
+		metrics.M_Api_Dashboard_Snapshot_External.Inc()
 	} else {
-		if cmd.Key == "" {
-			cmd.Key = util.GetRandomString(32)
-		}
-
-		if cmd.DeleteKey == "" {
-			cmd.DeleteKey = util.GetRandomString(32)
-		}
-
+		cmd.Key = util.GetRandomString(32)
+		cmd.DeleteKey = util.GetRandomString(32)
 		url = setting.ToAbsUrl("dashboard/snapshot/" + cmd.Key)
 
-		metrics.MApiDashboardSnapshotCreate.Inc()
+		metrics.M_Api_Dashboard_Snapshot_Create.Inc()
 	}
 
 	if err := bus.Dispatch(&cmd); err != nil {
@@ -154,7 +148,7 @@ func GetDashboardSnapshot(c *m.ReqContext) {
 		},
 	}
 
-	metrics.MApiDashboardSnapshotGet.Inc()
+	metrics.M_Api_Dashboard_Snapshot_Get.Inc()
 
 	c.Resp.Header().Set("Cache-Control", "public, max-age=3600")
 	c.JSON(200, dto)

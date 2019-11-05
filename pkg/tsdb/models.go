@@ -9,7 +9,6 @@ import (
 type TsdbQuery struct {
 	TimeRange *TimeRange
 	Queries   []*Query
-	Debug     bool
 }
 
 type Query struct {

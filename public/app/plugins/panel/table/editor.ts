@@ -1,7 +1,5 @@
 import _ from 'lodash';
 import { transformers } from './transformers';
-import { IQService } from 'angular';
-import { Column } from 'react-virtualized';
 
 export class TablePanelEditorCtrl {
   panel: any;
@@ -14,7 +12,7 @@ export class TablePanelEditorCtrl {
   columnsHelpMessage: string;
 
   /** @ngInject */
-  constructor($scope: any, private $q: IQService, private uiSegmentSrv: any) {
+  constructor($scope, private $q, private uiSegmentSrv) {
     $scope.editor = this;
     this.panelCtrl = $scope.ctrl;
     this.panel = this.panelCtrl.panel;
@@ -80,14 +78,14 @@ export class TablePanelEditorCtrl {
     this.panelCtrl.render();
   }
 
-  removeColumn(column: Column) {
+  removeColumn(column) {
     this.panel.columns = _.without(this.panel.columns, column);
     this.panelCtrl.render();
   }
 }
 
 /** @ngInject */
-export function tablePanelEditor($q: IQService, uiSegmentSrv: any) {
+export function tablePanelEditor($q, uiSegmentSrv) {
   'use strict';
   return {
     restrict: 'E',

@@ -1,14 +1,13 @@
 import _ from 'lodash';
-import { IQService } from 'angular';
 
 export default class ResponseParser {
-  constructor(private $q: IQService) {}
+  constructor(private $q) {}
 
-  processQueryResult(res: any) {
-    const data: any[] = [];
+  processQueryResult(res) {
+    const data = [];
 
     if (!res.data.results) {
-      return { data };
+      return { data: data };
     }
 
     for (const key in res.data.results) {
@@ -38,7 +37,7 @@ export default class ResponseParser {
     return { data: data };
   }
 
-  parseMetricFindQueryResult(refId: string, results: any) {
+  parseMetricFindQueryResult(refId, results) {
     if (!results || results.data.length === 0 || results.data.results[refId].meta.rowCount === 0) {
       return [];
     }
@@ -55,7 +54,7 @@ export default class ResponseParser {
     return this.transformToSimpleList(rows);
   }
 
-  transformToKeyValueList(rows: any, textColIndex: number, valueColIndex: number) {
+  transformToKeyValueList(rows, textColIndex, valueColIndex) {
     const res = [];
 
     for (let i = 0; i < rows.length; i++) {
@@ -67,7 +66,7 @@ export default class ResponseParser {
     return res;
   }
 
-  transformToSimpleList(rows: any) {
+  transformToSimpleList(rows) {
     const res = [];
 
     for (let i = 0; i < rows.length; i++) {
@@ -84,7 +83,7 @@ export default class ResponseParser {
     });
   }
 
-  findColIndex(columns: any[], colName: string) {
+  findColIndex(columns, colName) {
     for (let i = 0; i < columns.length; i++) {
       if (columns[i].text === colName) {
         return i;
@@ -94,7 +93,7 @@ export default class ResponseParser {
     return -1;
   }
 
-  containsKey(res: any[], key: any) {
+  containsKey(res, key) {
     for (let i = 0; i < res.length; i++) {
       if (res[i].text === key) {
         return true;
@@ -103,7 +102,7 @@ export default class ResponseParser {
     return false;
   }
 
-  transformAnnotationResponse(options: any, data: any) {
+  transformAnnotationResponse(options, data) {
     const table = data.data.results[options.annotation.name].tables[0];
 
     let timeColumnIndex = -1;

@@ -1,8 +1,6 @@
 import angular from 'angular';
 import $ from 'jquery';
-// @ts-ignore
 import Drop from 'tether-drop';
-// @ts-ignore
 import baron from 'baron';
 
 const module = angular.module('grafana.directives');
@@ -19,7 +17,7 @@ const panelTemplate = `
           <i class="fa fa-spinner fa-spin"></i>
         </span>
 
-        <panel-header class="panel-title-container" panel-ctrl="ctrl" aria-label="Panel Title"></panel-header>
+        <panel-header class="panel-title-container" panel-ctrl="ctrl"></panel-header>
       </div>
 
       <div class="panel-content">
@@ -40,14 +38,14 @@ module.directive('grafanaPanel', ($rootScope, $document, $timeout) => {
       const panelContent = elem.find('.panel-content');
       const cornerInfoElem = elem.find('.panel-info-corner');
       const ctrl = scope.ctrl;
-      let infoDrop: any;
-      let panelScrollbar: any;
+      let infoDrop;
+      let panelScrollbar;
 
       // the reason for handling these classes this way is for performance
       // limit the watchers on panels etc
       let transparentLastState = false;
       let lastHasAlertRule = false;
-      let lastAlertState: boolean;
+      let lastAlertState;
       let hasAlertRule;
 
       function mouseEnter() {

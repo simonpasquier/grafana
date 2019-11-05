@@ -1,19 +1,21 @@
-import { colors, getFlotPairs, getColorFromHexRgbOrName, getDisplayProcessor } from '@grafana/ui';
 import {
+  GraphSeriesXY,
   NullValueMode,
   reduceField,
-  FieldType,
+  colors,
+  getFlotPairs,
+  getColorFromHexRgbOrName,
+  getDisplayProcessor,
   DisplayValue,
-  GraphSeriesXY,
-  getTimeField,
-  DataFrame,
-} from '@grafana/data';
-
+  PanelData,
+  FieldCache,
+  FieldType,
+} from '@grafana/ui';
 import { SeriesOptions, GraphOptions } from './types';
 import { GraphLegendEditorLegendOptions } from './GraphLegendEditor';
 
 export const getGraphSeriesModel = (
-  dataFrames: DataFrame[],
+  data: PanelData,
   seriesOptions: SeriesOptions,
   graphOptions: GraphOptions,
   legendOptions: GraphLegendEditorLegendOptions
@@ -21,31 +23,35 @@ export const getGraphSeriesModel = (
   const graphs: GraphSeriesXY[] = [];
 
   const displayProcessor = getDisplayProcessor({
-    config: {
+    field: {
       decimals: legendOptions.decimals,
     },
   });
 
-  for (const series of dataFrames) {
-    const { timeField } = getTimeField(series);
-    if (!timeField) {
+  for (const series of data.series) {
+    const fieldCache = new FieldCache(series.fields);
+    const timeColumn = fieldCache.getFirstFieldOfType(FieldType.time);
+    if (!timeColumn) {
       continue;
     }
 
-    for (const field of series.fields) {
-      if (field.type !== FieldType.number) {
-        continue;
-      }
-
+    const numberFields = fieldCache.getFields(FieldType.number);
+    for (let i = 0; i < numberFields.length; i++) {
+      const field = numberFields[i];
       // Use external calculator just to make sure it works :)
       const points = getFlotPairs({
-        xField: timeField,
-        yField: field,
+        series,
+        xIndex: timeColumn.index,
+        yIndex: field.index,
         nullValueMode: NullValueMode.Null,
       });
 
       if (points.length > 0) {
-        const seriesStats = reduceField({ field, reducers: legendOptions.stats });
+        const seriesStats = reduceField({
+          series,
+          reducers: legendOptions.stats,
+          fieldIndex: field.index,
+        });
         let statsDisplayValues: DisplayValue[];
 
         if (legendOptions.stats) {
@@ -71,9 +77,7 @@ export const getGraphSeriesModel = (
           color: seriesColor,
           info: statsDisplayValues,
           isVisible: true,
-          yAxis: {
-            index: (seriesOptions[field.name] && seriesOptions[field.name].yAxis) || 1,
-          },
+          yAxis: (seriesOptions[field.name] && seriesOptions[field.name].yAxis) || 1,
         });
       }
     }

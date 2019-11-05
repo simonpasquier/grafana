@@ -1,11 +1,7 @@
-import { DataSourceSettings, PluginType, PluginInclude } from '@grafana/ui';
-import { NavModel, NavModelItem } from '@grafana/data';
+import { PluginMeta, DataSourceSettings, PluginType, NavModel, NavModelItem, PluginInclude } from '@grafana/ui';
 import config from 'app/core/config';
-import { GenericDataSourcePlugin } from '../settings/PluginSettings';
 
-export function buildNavModel(dataSource: DataSourceSettings, plugin: GenericDataSourcePlugin): NavModelItem {
-  const pluginMeta = plugin.meta;
-
+export function buildNavModel(dataSource: DataSourceSettings, pluginMeta: PluginMeta): NavModelItem {
   const navModel = {
     img: pluginMeta.info.logos.large,
     id: 'datasource-' + dataSource.id,
@@ -23,18 +19,6 @@ export function buildNavModel(dataSource: DataSourceSettings, plugin: GenericDat
       },
     ],
   };
-
-  if (plugin.configPages) {
-    for (const page of plugin.configPages) {
-      navModel.children.push({
-        active: false,
-        text: page.title,
-        icon: page.icon,
-        url: `datasources/edit/${dataSource.id}/?page=${page.id}`,
-        id: `datasource-page-${page.id}`,
-      });
-    }
-  }
 
   if (pluginMeta.includes && hasDashboards(pluginMeta.includes)) {
     navModel.children.push({
@@ -81,30 +65,28 @@ export function getDataSourceLoadingNav(pageName: string): NavModel {
       user: '',
     },
     {
-      meta: {
-        id: '1',
-        type: PluginType.datasource,
-        name: '',
-        info: {
-          author: {
-            name: '',
-            url: '',
-          },
-          description: '',
-          links: [{ name: '', url: '' }],
-          logos: {
-            large: '',
-            small: '',
-          },
-          screenshots: [],
-          updated: '',
-          version: '',
+      id: '1',
+      type: PluginType.datasource,
+      name: '',
+      info: {
+        author: {
+          name: '',
+          url: '',
         },
-        includes: [],
-        module: '',
-        baseUrl: '',
+        description: '',
+        links: [{ name: '', url: '' }],
+        logos: {
+          large: '',
+          small: '',
+        },
+        screenshots: [],
+        updated: '',
+        version: '',
       },
-    } as GenericDataSourcePlugin
+      includes: [],
+      module: '',
+      baseUrl: '',
+    }
   );
 
   let node: NavModelItem;

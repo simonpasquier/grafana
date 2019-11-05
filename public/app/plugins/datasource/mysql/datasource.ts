@@ -1,10 +1,6 @@
 import _ from 'lodash';
 import ResponseParser from './response_parser';
 import MysqlQuery from 'app/plugins/datasource/mysql/mysql_query';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { IQService } from 'angular';
-import { TemplateSrv } from 'app/features/templating/template_srv';
-import { TimeSrv } from 'app/features/dashboard/services/TimeSrv';
 
 export class MysqlDatasource {
   id: any;
@@ -14,13 +10,7 @@ export class MysqlDatasource {
   interval: string;
 
   /** @ngInject */
-  constructor(
-    instanceSettings: any,
-    private backendSrv: BackendSrv,
-    private $q: IQService,
-    private templateSrv: TemplateSrv,
-    private timeSrv: TimeSrv
-  ) {
+  constructor(instanceSettings, private backendSrv, private $q, private templateSrv, private timeSrv) {
     this.name = instanceSettings.name;
     this.id = instanceSettings.id;
     this.responseParser = new ResponseParser(this.$q);
@@ -28,7 +18,7 @@ export class MysqlDatasource {
     this.interval = (instanceSettings.jsonData || {}).timeInterval || '1m';
   }
 
-  interpolateVariable = (value: string, variable: any) => {
+  interpolateVariable = (value, variable) => {
     if (typeof value === 'string') {
       if (variable.multi || variable.includeAll) {
         return this.queryModel.quoteLiteral(value);
@@ -41,13 +31,13 @@ export class MysqlDatasource {
       return value;
     }
 
-    const quotedValues = _.map(value, (v: any) => {
+    const quotedValues = _.map(value, v => {
       return this.queryModel.quoteLiteral(v);
     });
     return quotedValues.join(',');
   };
 
-  query(options: any) {
+  query(options) {
     const queries = _.filter(options.targets, target => {
       return target.hide !== true;
     }).map(target => {
@@ -58,7 +48,7 @@ export class MysqlDatasource {
         intervalMs: options.intervalMs,
         maxDataPoints: options.maxDataPoints,
         datasourceId: this.id,
-        rawSql: queryModel.render(this.interpolateVariable as any),
+        rawSql: queryModel.render(this.interpolateVariable),
         format: target.format,
       };
     });
@@ -80,7 +70,7 @@ export class MysqlDatasource {
       .then(this.responseParser.processQueryResult);
   }
 
-  annotationQuery(options: any) {
+  annotationQuery(options) {
     if (!options.annotation.rawQuery) {
       return this.$q.reject({
         message: 'Query missing in annotation definition',
@@ -104,10 +94,10 @@ export class MysqlDatasource {
           queries: [query],
         },
       })
-      .then((data: any) => this.responseParser.transformAnnotationResponse(options, data));
+      .then(data => this.responseParser.transformAnnotationResponse(options, data));
   }
 
-  metricFindQuery(query: string, optionalOptions: any) {
+  metricFindQuery(query, optionalOptions) {
     let refId = 'tempvar';
     if (optionalOptions && optionalOptions.variable && optionalOptions.variable.name) {
       refId = optionalOptions.variable.name;
@@ -140,7 +130,7 @@ export class MysqlDatasource {
         method: 'POST',
         data: data,
       })
-      .then((data: any) => this.responseParser.parseMetricFindQueryResult(refId, data));
+      .then(data => this.responseParser.parseMetricFindQueryResult(refId, data));
   }
 
   testDatasource() {
@@ -163,10 +153,10 @@ export class MysqlDatasource {
           ],
         },
       })
-      .then((res: any) => {
+      .then(res => {
         return { status: 'success', message: 'Database Connection OK' };
       })
-      .catch((err: any) => {
+      .catch(err => {
         console.log(err);
         if (err.data && err.data.message) {
           return { status: 'error', message: err.data.message };
@@ -174,20 +164,5 @@ export class MysqlDatasource {
           return { status: 'error', message: err.status };
         }
       });
-  }
-
-  targetContainsTemplate(target: any) {
-    let rawSql = '';
-
-    if (target.rawQuery) {
-      rawSql = target.rawSql;
-    } else {
-      const query = new MysqlQuery(target);
-      rawSql = query.buildQuery();
-    }
-
-    rawSql = rawSql.replace('$__', '');
-
-    return this.templateSrv.variableExists(rawSql);
   }
 }

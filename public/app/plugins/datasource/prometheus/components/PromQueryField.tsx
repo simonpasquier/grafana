@@ -2,22 +2,21 @@ import _ from 'lodash';
 import React from 'react';
 // @ts-ignore
 import Cascader from 'rc-cascader';
-
-import { SlatePrism } from '@grafana/ui';
-
+// @ts-ignore
+import PluginPrism from 'slate-prism';
+// @ts-ignore
 import Prism from 'prismjs';
 
 import { TypeaheadOutput, HistoryItem } from 'app/types/explore';
+
 // dom also includes Element polyfills
+import { getNextCharacter, getPreviousCousin } from 'app/features/explore/utils/dom';
 import BracesPlugin from 'app/features/explore/slate-plugins/braces';
-import QueryField, { TypeaheadInput } from 'app/features/explore/QueryField';
-import { PromQuery, PromContext, PromOptions } from '../types';
+import RunnerPlugin from 'app/features/explore/slate-plugins/runner';
+import QueryField, { TypeaheadInput, QueryFieldState } from 'app/features/explore/QueryField';
+import { PromQuery } from '../types';
 import { CancelablePromise, makePromiseCancelable } from 'app/core/utils/CancelablePromise';
-import { ExploreQueryFieldProps, DataSourceStatus, QueryHint, DOMUtil } from '@grafana/ui';
-import { isDataFrame, toLegacyResponseData } from '@grafana/data';
-import { PrometheusDatasource } from '../datasource';
-import PromQlLanguageProvider from '../language_provider';
-import { SuggestionsState } from 'app/features/explore/slate-plugins/suggestions';
+import { ExploreDataSourceApi, ExploreQueryFieldProps, DataSourceStatus } from '@grafana/ui';
 
 const HISTOGRAM_GROUP = '__histograms__';
 const METRIC_MARK = 'metric';
@@ -69,11 +68,11 @@ export function groupMetricsByPrefix(metrics: string[], delimiter = '_'): Cascad
   return [...options, ...metricsOptions];
 }
 
-export function willApplySuggestion(suggestion: string, { typeaheadContext, typeaheadText }: SuggestionsState): string {
+export function willApplySuggestion(suggestion: string, { typeaheadContext, typeaheadText }: QueryFieldState): string {
   // Modify suggestion based on context
   switch (typeaheadContext) {
     case 'context-labels': {
-      const nextChar = DOMUtil.getNextCharacter();
+      const nextChar = getNextCharacter();
       if (!nextChar || nextChar === '}' || nextChar === ',') {
         suggestion += '=';
       }
@@ -85,7 +84,7 @@ export function willApplySuggestion(suggestion: string, { typeaheadContext, type
       if (!typeaheadText.match(/^(!?=~?"|")/)) {
         suggestion = `"${suggestion}`;
       }
-      if (DOMUtil.getNextCharacter() !== '"') {
+      if (getNextCharacter() !== '"') {
         suggestion = `${suggestion}"`;
       }
       break;
@@ -103,19 +102,18 @@ interface CascaderOption {
   disabled?: boolean;
 }
 
-interface PromQueryFieldProps extends ExploreQueryFieldProps<PrometheusDatasource, PromQuery, PromOptions> {
-  history: Array<HistoryItem<PromQuery>>;
+interface PromQueryFieldProps extends ExploreQueryFieldProps<ExploreDataSourceApi, PromQuery> {
+  history: HistoryItem[];
 }
 
 interface PromQueryFieldState {
   metricsOptions: any[];
   syntaxLoaded: boolean;
-  hint: QueryHint | null;
 }
 
 class PromQueryField extends React.PureComponent<PromQueryFieldProps, PromQueryFieldState> {
   plugins: any[];
-  languageProvider: PromQlLanguageProvider;
+  languageProvider: any;
   languageProviderInitializationPromise: CancelablePromise<any>;
 
   constructor(props: PromQueryFieldProps, context: React.Context<any>) {
@@ -127,7 +125,8 @@ class PromQueryField extends React.PureComponent<PromQueryFieldProps, PromQueryF
 
     this.plugins = [
       BracesPlugin(),
-      SlatePrism({
+      RunnerPlugin({ handler: props.onExecuteQuery }),
+      PluginPrism({
         onlyIn: (node: any) => node.type === 'code_block',
         getSyntax: (node: any) => 'promql',
       }),
@@ -136,7 +135,6 @@ class PromQueryField extends React.PureComponent<PromQueryFieldProps, PromQueryF
     this.state = {
       metricsOptions: [],
       syntaxLoaded: false,
-      hint: null,
     };
   }
 
@@ -144,7 +142,6 @@ class PromQueryField extends React.PureComponent<PromQueryFieldProps, PromQueryF
     if (this.languageProvider) {
       this.refreshMetrics(makePromiseCancelable(this.languageProvider.start()));
     }
-    this.refreshHint();
   }
 
   componentWillUnmount() {
@@ -154,12 +151,6 @@ class PromQueryField extends React.PureComponent<PromQueryFieldProps, PromQueryF
   }
 
   componentDidUpdate(prevProps: PromQueryFieldProps) {
-    const { queryResponse } = this.props;
-
-    if (queryResponse && prevProps.queryResponse && prevProps.queryResponse.series !== queryResponse.series) {
-      this.refreshHint();
-    }
-
     const reconnected =
       prevProps.datasourceStatus === DataSourceStatus.Disconnected &&
       this.props.datasourceStatus === DataSourceStatus.Connected;
@@ -175,22 +166,6 @@ class PromQueryField extends React.PureComponent<PromQueryFieldProps, PromQueryF
       this.refreshMetrics(makePromiseCancelable(this.languageProvider.fetchMetrics()));
     }
   }
-
-  refreshHint = () => {
-    const { datasource, query, queryResponse } = this.props;
-
-    if (!queryResponse || queryResponse.series.length === 0) {
-      this.setState({ hint: null });
-      return;
-    }
-
-    const result = isDataFrame(queryResponse.series[0])
-      ? queryResponse.series.map(toLegacyResponseData)
-      : queryResponse.series;
-    const hints = datasource.getQueryHints(query, result);
-    const hint = hints && hints.length > 0 ? hints[0] : null;
-    this.setState({ hint });
-  };
 
   refreshMetrics = (cancelablePromise: CancelablePromise<any>) => {
     this.languageProviderInitializationPromise = cancelablePromise;
@@ -229,22 +204,21 @@ class PromQueryField extends React.PureComponent<PromQueryFieldProps, PromQueryF
 
   onChangeQuery = (value: string, override?: boolean) => {
     // Send text change to parent
-    const { query, onChange, onRunQuery } = this.props;
-    if (onChange) {
-      const nextQuery: PromQuery = { ...query, expr: value, context: PromContext.Explore };
-      onChange(nextQuery);
+    const { query, onQueryChange, onExecuteQuery } = this.props;
+    if (onQueryChange) {
+      const nextQuery: PromQuery = { ...query, expr: value };
+      onQueryChange(nextQuery);
 
-      if (override && onRunQuery) {
-        onRunQuery();
+      if (override && onExecuteQuery) {
+        onExecuteQuery();
       }
     }
   };
 
   onClickHintFix = () => {
-    const { hint } = this.state;
-    const { onHint } = this.props;
-    if (onHint && hint && hint.fix) {
-      onHint(hint.fix.action);
+    const { hint, onExecuteHint } = this.props;
+    if (onExecuteHint && hint && hint.fix) {
+      onExecuteHint(hint.fix.action);
     }
   };
 
@@ -254,7 +228,7 @@ class PromQueryField extends React.PureComponent<PromQueryFieldProps, PromQueryF
       return;
     }
 
-    Prism.languages[PRISM_SYNTAX] = this.languageProvider.syntax;
+    Prism.languages[PRISM_SYNTAX] = this.languageProvider.getSyntax();
     Prism.languages[PRISM_SYNTAX][METRIC_MARK] = {
       alias: 'variable',
       pattern: new RegExp(`(?:^|\\s)(${metrics.join('|')})(?:$|\\s)`),
@@ -274,37 +248,42 @@ class PromQueryField extends React.PureComponent<PromQueryFieldProps, PromQueryF
     this.setState({ metricsOptions, syntaxLoaded: true });
   };
 
-  onTypeahead = async (typeahead: TypeaheadInput): Promise<TypeaheadOutput> => {
+  onTypeahead = (typeahead: TypeaheadInput): TypeaheadOutput => {
     if (!this.languageProvider) {
       return { suggestions: [] };
     }
 
     const { history } = this.props;
-    const { prefix, text, value, wrapperClasses, labelKey } = typeahead;
+    const { prefix, text, value, wrapperNode } = typeahead;
 
-    const result = await this.languageProvider.provideCompletionItems(
+    // Get DOM-dependent context
+    const wrapperClasses = Array.from(wrapperNode.classList);
+    const labelKeyNode = getPreviousCousin(wrapperNode, '.attr-name');
+    const labelKey = labelKeyNode && labelKeyNode.textContent;
+    const nextChar = getNextCharacter();
+
+    const result = this.languageProvider.provideCompletionItems(
       { text, value, prefix, wrapperClasses, labelKey },
       { history }
     );
 
-    // console.log('handleTypeahead', wrapperClasses, text, prefix, labelKey, result.context);
+    console.log('handleTypeahead', wrapperClasses, text, prefix, nextChar, labelKey, result.context);
 
     return result;
   };
 
   render() {
-    const { queryResponse, query, datasourceStatus } = this.props;
-    const { metricsOptions, syntaxLoaded, hint } = this.state;
+    const { error, hint, query, datasourceStatus } = this.props;
+    const { metricsOptions, syntaxLoaded } = this.state;
     const cleanText = this.languageProvider ? this.languageProvider.cleanText : undefined;
     const chooserText = getChooserText(syntaxLoaded, datasourceStatus);
     const buttonDisabled = !syntaxLoaded || datasourceStatus === DataSourceStatus.Disconnected;
-    const showError = queryResponse && queryResponse.error && queryResponse.error.refId === query.refId;
 
     return (
       <>
         <div className="gf-form-inline gf-form-inline--nowrap">
           <div className="gf-form flex-shrink-0">
-            <Cascader options={metricsOptions} onChange={this.onChangeMetrics} expandIcon={null}>
+            <Cascader options={metricsOptions} onChange={this.onChangeMetrics}>
               <button className="gf-form-label gf-form-label--btn" disabled={buttonDisabled}>
                 {chooserText} <i className="fa fa-caret-down" />
               </button>
@@ -314,18 +293,18 @@ class PromQueryField extends React.PureComponent<PromQueryFieldProps, PromQueryF
             <QueryField
               additionalPlugins={this.plugins}
               cleanText={cleanText}
-              query={query.expr}
+              initialQuery={query.expr}
               onTypeahead={this.onTypeahead}
               onWillApplySuggestion={willApplySuggestion}
-              onChange={this.onChangeQuery}
-              onRunQuery={this.props.onRunQuery}
+              onQueryChange={this.onChangeQuery}
+              onExecuteQuery={this.props.onExecuteQuery}
               placeholder="Enter a PromQL query"
               portalOrigin="prometheus"
               syntaxLoaded={syntaxLoaded}
             />
           </div>
         </div>
-        {showError ? <div className="prom-query-field-info text-error">{queryResponse.error.message}</div> : null}
+        {error ? <div className="prom-query-field-info text-error">{error}</div> : null}
         {hint ? (
           <div className="prom-query-field-info text-warning">
             {hint.label}{' '}

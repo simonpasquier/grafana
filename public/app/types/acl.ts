@@ -39,8 +39,6 @@ export interface DashboardAcl {
   name?: string;
   inherited?: boolean;
   sortRank?: number;
-  userAvatarUrl?: string;
-  teamAvatarUrl?: string;
 }
 
 export interface DashboardPermissionInfo {

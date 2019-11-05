@@ -44,7 +44,6 @@ type MetricRequest struct {
 	From    string             `json:"from"`
 	To      string             `json:"to"`
 	Queries []*simplejson.Json `json:"queries"`
-	Debug   bool               `json:"debug"`
 }
 
 type UserStars struct {

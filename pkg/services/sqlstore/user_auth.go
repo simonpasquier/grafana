@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana/pkg/bus"
-	"github.com/grafana/grafana/pkg/models"
+	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/setting"
 	"github.com/grafana/grafana/pkg/util"
 )
@@ -14,18 +14,17 @@ var getTime = time.Now
 
 func init() {
 	bus.AddHandler("sql", GetUserByAuthInfo)
-	bus.AddHandler("sql", GetExternalUserInfoByLogin)
 	bus.AddHandler("sql", GetAuthInfo)
 	bus.AddHandler("sql", SetAuthInfo)
 	bus.AddHandler("sql", UpdateAuthInfo)
 	bus.AddHandler("sql", DeleteAuthInfo)
 }
 
-func GetUserByAuthInfo(query *models.GetUserByAuthInfoQuery) error {
-	user := &models.User{}
+func GetUserByAuthInfo(query *m.GetUserByAuthInfoQuery) error {
+	user := &m.User{}
 	has := false
 	var err error
-	authQuery := &models.GetAuthInfoQuery{}
+	authQuery := &m.GetAuthInfoQuery{}
 
 	// Try to find the user by auth module and id first
 	if query.AuthModule != "" && query.AuthId != "" {
@@ -33,14 +32,14 @@ func GetUserByAuthInfo(query *models.GetUserByAuthInfoQuery) error {
 		authQuery.AuthId = query.AuthId
 
 		err = GetAuthInfo(authQuery)
-		if err != models.ErrUserNotFound {
+		if err != m.ErrUserNotFound {
 			if err != nil {
 				return err
 			}
 
 			// if user id was specified and doesn't match the user_auth entry, remove it
 			if query.UserId != 0 && query.UserId != authQuery.Result.UserId {
-				err = DeleteAuthInfo(&models.DeleteAuthInfoCommand{
+				err = DeleteAuthInfo(&m.DeleteAuthInfoCommand{
 					UserAuth: authQuery.Result,
 				})
 				if err != nil {
@@ -56,7 +55,7 @@ func GetUserByAuthInfo(query *models.GetUserByAuthInfoQuery) error {
 
 				if !has {
 					// if the user has been deleted then remove the entry
-					err = DeleteAuthInfo(&models.DeleteAuthInfoCommand{
+					err = DeleteAuthInfo(&m.DeleteAuthInfoCommand{
 						UserAuth: authQuery.Result,
 					})
 					if err != nil {
@@ -79,7 +78,7 @@ func GetUserByAuthInfo(query *models.GetUserByAuthInfoQuery) error {
 
 	// If not found, try to find the user by email address
 	if !has && query.Email != "" {
-		user = &models.User{Email: query.Email}
+		user = &m.User{Email: query.Email}
 		has, err = x.Get(user)
 		if err != nil {
 			return err
@@ -88,7 +87,7 @@ func GetUserByAuthInfo(query *models.GetUserByAuthInfoQuery) error {
 
 	// If not found, try to find the user by login
 	if !has && query.Login != "" {
-		user = &models.User{Login: query.Login}
+		user = &m.User{Login: query.Login}
 		has, err = x.Get(user)
 		if err != nil {
 			return err
@@ -97,12 +96,12 @@ func GetUserByAuthInfo(query *models.GetUserByAuthInfoQuery) error {
 
 	// No user found
 	if !has {
-		return models.ErrUserNotFound
+		return m.ErrUserNotFound
 	}
 
 	// create authInfo record to link accounts
 	if authQuery.Result == nil && query.AuthModule != "" {
-		cmd2 := &models.SetAuthInfoCommand{
+		cmd2 := &m.SetAuthInfoCommand{
 			UserId:     user.Id,
 			AuthModule: query.AuthModule,
 			AuthId:     query.AuthId,
@@ -116,32 +115,8 @@ func GetUserByAuthInfo(query *models.GetUserByAuthInfoQuery) error {
 	return nil
 }
 
-func GetExternalUserInfoByLogin(query *models.GetExternalUserInfoByLoginQuery) error {
-	userQuery := models.GetUserByLoginQuery{LoginOrEmail: query.LoginOrEmail}
-	err := bus.Dispatch(&userQuery)
-	if err != nil {
-		return err
-	}
-
-	authInfoQuery := &models.GetAuthInfoQuery{UserId: userQuery.Result.Id}
-	if err := bus.Dispatch(authInfoQuery); err != nil {
-		return err
-	}
-
-	query.Result = &models.ExternalUserInfo{
-		UserId:     userQuery.Result.Id,
-		Login:      userQuery.Result.Login,
-		Email:      userQuery.Result.Email,
-		Name:       userQuery.Result.Name,
-		IsDisabled: userQuery.Result.IsDisabled,
-		AuthModule: authInfoQuery.Result.AuthModule,
-		AuthId:     authInfoQuery.Result.AuthId,
-	}
-	return nil
-}
-
-func GetAuthInfo(query *models.GetAuthInfoQuery) error {
-	userAuth := &models.UserAuth{
+func GetAuthInfo(query *m.GetAuthInfoQuery) error {
+	userAuth := &m.UserAuth{
 		UserId:     query.UserId,
 		AuthModule: query.AuthModule,
 		AuthId:     query.AuthId,
@@ -151,7 +126,7 @@ func GetAuthInfo(query *models.GetAuthInfoQuery) error {
 		return err
 	}
 	if !has {
-		return models.ErrUserNotFound
+		return m.ErrUserNotFound
 	}
 
 	secretAccessToken, err := decodeAndDecrypt(userAuth.OAuthAccessToken)
@@ -174,9 +149,9 @@ func GetAuthInfo(query *models.GetAuthInfoQuery) error {
 	return nil
 }
 
-func SetAuthInfo(cmd *models.SetAuthInfoCommand) error {
+func SetAuthInfo(cmd *m.SetAuthInfoCommand) error {
 	return inTransaction(func(sess *DBSession) error {
-		authUser := &models.UserAuth{
+		authUser := &m.UserAuth{
 			UserId:     cmd.UserId,
 			AuthModule: cmd.AuthModule,
 			AuthId:     cmd.AuthId,
@@ -208,9 +183,9 @@ func SetAuthInfo(cmd *models.SetAuthInfoCommand) error {
 	})
 }
 
-func UpdateAuthInfo(cmd *models.UpdateAuthInfoCommand) error {
+func UpdateAuthInfo(cmd *m.UpdateAuthInfoCommand) error {
 	return inTransaction(func(sess *DBSession) error {
-		authUser := &models.UserAuth{
+		authUser := &m.UserAuth{
 			UserId:     cmd.UserId,
 			AuthModule: cmd.AuthModule,
 			AuthId:     cmd.AuthId,
@@ -237,7 +212,7 @@ func UpdateAuthInfo(cmd *models.UpdateAuthInfoCommand) error {
 			authUser.OAuthExpiry = cmd.OAuthToken.Expiry
 		}
 
-		cond := &models.UserAuth{
+		cond := &m.UserAuth{
 			UserId:     cmd.UserId,
 			AuthModule: cmd.AuthModule,
 		}
@@ -247,7 +222,7 @@ func UpdateAuthInfo(cmd *models.UpdateAuthInfoCommand) error {
 	})
 }
 
-func DeleteAuthInfo(cmd *models.DeleteAuthInfoCommand) error {
+func DeleteAuthInfo(cmd *m.DeleteAuthInfoCommand) error {
 	return inTransaction(func(sess *DBSession) error {
 		_, err := sess.Delete(cmd.UserAuth)
 		return err

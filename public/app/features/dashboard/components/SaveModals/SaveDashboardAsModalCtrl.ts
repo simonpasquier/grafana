@@ -1,6 +1,4 @@
 import coreModule from 'app/core/core_module';
-import { DashboardSrv } from '../../services/DashboardSrv';
-import { PanelModel } from '../../state/PanelModel';
 
 const template = `
 <div class="modal-body">
@@ -19,7 +17,7 @@ const template = `
 		<div class="p-t-2">
 			<div class="gf-form">
 				<label class="gf-form-label width-8">New name</label>
-				<input type="text" class="gf-form-input" ng-model="ctrl.clone.title" give-focus="true" required aria-label="Save dashboard title field">
+				<input type="text" class="gf-form-input" ng-model="ctrl.clone.title" give-focus="true" required>
 			</div>
       <folder-picker initial-folder-id="ctrl.folderId"
                        on-change="ctrl.onFolderChange($folder)"
@@ -36,14 +34,7 @@ const template = `
 		</div>
 
 		<div class="gf-form-button-row text-center">
-      <button
-        type="submit"
-        class="btn btn-primary"
-        ng-click="ctrl.save()"
-        ng-disabled="!ctrl.isValidFolderSelection"
-        aria-label="Save dashboard button">
-        Save
-      </button>
+			<button type="submit" class="btn btn-primary" ng-click="ctrl.save()" ng-disabled="!ctrl.isValidFolderSelection">Save</button>
 			<a class="btn-text" ng-click="ctrl.dismiss();">Cancel</a>
 		</div>
 	</form>
@@ -58,7 +49,7 @@ export class SaveDashboardAsModalCtrl {
   copyTags: boolean;
 
   /** @ngInject */
-  constructor(private dashboardSrv: DashboardSrv) {
+  constructor(private dashboardSrv) {
     const dashboard = this.dashboardSrv.getCurrent();
     this.clone = dashboard.getSaveModelClone();
     this.clone.id = null;
@@ -72,7 +63,7 @@ export class SaveDashboardAsModalCtrl {
     // remove alerts if source dashboard is already persisted
     // do not want to create alert dupes
     if (dashboard.id > 0) {
-      this.clone.panels.forEach((panel: PanelModel) => {
+      this.clone.panels.forEach(panel => {
         if (panel.type === 'graph' && panel.alert) {
           delete panel.thresholds;
         }
@@ -91,13 +82,13 @@ export class SaveDashboardAsModalCtrl {
     return this.dashboardSrv.save(this.clone, { folderId: this.folderId }).then(this.dismiss);
   }
 
-  keyDown(evt: KeyboardEvent) {
+  keyDown(evt) {
     if (evt.keyCode === 13) {
       this.save();
     }
   }
 
-  onFolderChange(folder: { id: any }) {
+  onFolderChange(folder) {
     this.folderId = folder.id;
   }
 

@@ -1,34 +1,31 @@
 // Libraries
 import _ from 'lodash';
+import moment from 'moment';
 
 // Services & Utils
 import { parseSelector, labelRegexp, selectorRegexp } from 'app/plugins/datasource/prometheus/language_utils';
 import syntax from './syntax';
 
 // Types
-import { CompletionItem, LanguageProvider, TypeaheadInput, TypeaheadOutput, HistoryItem } from 'app/types/explore';
+import {
+  CompletionItem,
+  CompletionItemGroup,
+  LanguageProvider,
+  TypeaheadInput,
+  TypeaheadOutput,
+  HistoryItem,
+} from 'app/types/explore';
 import { LokiQuery } from './types';
-import { dateTime, AbsoluteTimeRange } from '@grafana/data';
-import { PromQuery } from '../prometheus/types';
-
-import LokiDatasource from './datasource';
 
 const DEFAULT_KEYS = ['job', 'namespace'];
 const EMPTY_SELECTOR = '{}';
 const HISTORY_ITEM_COUNT = 10;
 const HISTORY_COUNT_CUTOFF = 1000 * 60 * 60 * 24; // 24h
-const NS_IN_MS = 1000000;
 export const LABEL_REFRESH_INTERVAL = 1000 * 30; // 30sec
 
 const wrapLabel = (label: string) => ({ label });
-export const rangeToParams = (range: AbsoluteTimeRange) => ({ start: range.from * NS_IN_MS, end: range.to * NS_IN_MS });
 
-export type LokiHistoryItem = HistoryItem<LokiQuery>;
-
-type TypeaheadContext = {
-  history?: LokiHistoryItem[];
-  absoluteRange?: AbsoluteTimeRange;
-};
+type LokiHistoryItem = HistoryItem<LokiQuery>;
 
 export function addHistoryMetadata(item: CompletionItem, history: LokiHistoryItem[]): CompletionItem {
   const cutoffTs = Date.now() - HISTORY_COUNT_CUTOFF;
@@ -37,7 +34,7 @@ export function addHistoryMetadata(item: CompletionItem, history: LokiHistoryIte
   const recent = historyForItem[0];
   let hint = `Queried ${count} times in the last 24h.`;
   if (recent) {
-    const lastQueried = dateTime(recent.ts).fromNow();
+    const lastQueried = moment(recent.ts).fromNow();
     hint = `${hint} Last queried ${lastQueried}.`;
   }
   return {
@@ -52,10 +49,8 @@ export default class LokiLanguageProvider extends LanguageProvider {
   logLabelOptions: any[];
   logLabelFetchTs?: number;
   started: boolean;
-  initialRange: AbsoluteTimeRange;
-  datasource: LokiDatasource;
 
-  constructor(datasource: LokiDatasource, initialValues?: any) {
+  constructor(datasource: any, initialValues?: any) {
     super();
 
     this.datasource = datasource;
@@ -64,7 +59,6 @@ export default class LokiLanguageProvider extends LanguageProvider {
 
     Object.assign(this, initialValues);
   }
-
   // Strip syntax chars
   cleanText = (s: string) => s.replace(/[{}[\]="(),!~+\-*/^%]/g, '').trim();
 
@@ -72,49 +66,25 @@ export default class LokiLanguageProvider extends LanguageProvider {
     return syntax;
   }
 
-  request = (url: string, params?: any) => {
-    return this.datasource.metadataRequest(url, params);
+  request = (url: string) => {
+    return this.datasource.metadataRequest(url);
   };
 
-  /**
-   * Initialise the language provider by fetching set of labels. Without this initialisation the provider would return
-   * just a set of hardcoded default labels on provideCompletionItems or a recent queries from history.
-   */
   start = () => {
     if (!this.startTask) {
-      this.startTask = this.fetchLogLabels(this.initialRange).then(() => {
-        this.started = true;
-        return [];
-      });
+      this.startTask = this.fetchLogLabels();
     }
     return this.startTask;
   };
 
-  getLabelKeys(): string[] {
-    return this.labelKeys[EMPTY_SELECTOR];
-  }
-
-  async getLabelValues(key: string): Promise<string[]> {
-    await this.fetchLabelValues(key, this.initialRange);
-    return this.labelValues[EMPTY_SELECTOR][key];
-  }
-
-  /**
-   * Return suggestions based on input that can be then plugged into a typeahead dropdown.
-   * Keep this DOM-free for testing
-   * @param input
-   * @param context Is optional in types but is required in case we are doing getLabelCompletionItems
-   * @param context.absoluteRange Required in case we are doing getLabelCompletionItems
-   * @param context.history Optional used only in getEmptyCompletionItems
-   */
-  async provideCompletionItems(input: TypeaheadInput, context?: TypeaheadContext): Promise<TypeaheadOutput> {
-    const { wrapperClasses, value } = input;
+  // Keep this DOM-free for testing
+  provideCompletionItems({ prefix, wrapperClasses, text, value }: TypeaheadInput, context?: any): TypeaheadOutput {
     // Local text properties
     const empty = value.document.text.length === 0;
     // Determine candidates by CSS context
     if (_.includes(wrapperClasses, 'context-labels')) {
       // Suggestions for {|} and {foo=|}
-      return await this.getLabelCompletionItems(input, context);
+      return this.getLabelCompletionItems.apply(this, arguments);
     } else if (empty) {
       return this.getEmptyCompletionItems(context || {});
     }
@@ -126,7 +96,7 @@ export default class LokiLanguageProvider extends LanguageProvider {
 
   getEmptyCompletionItems(context: any): TypeaheadOutput {
     const { history } = context;
-    const suggestions = [];
+    const suggestions: CompletionItemGroup[] = [];
 
     if (history && history.length > 0) {
       const historyItems = _.chain(history)
@@ -149,14 +119,12 @@ export default class LokiLanguageProvider extends LanguageProvider {
     return { suggestions };
   }
 
-  async getLabelCompletionItems(
-    { text, wrapperClasses, labelKey, value }: TypeaheadInput,
-    { absoluteRange }: any
-  ): Promise<TypeaheadOutput> {
+  getLabelCompletionItems({ text, wrapperClasses, labelKey, value }: TypeaheadInput): TypeaheadOutput {
     let context: string;
-    const suggestions = [];
+    let refresher: Promise<any> = null;
+    const suggestions: CompletionItemGroup[] = [];
     const line = value.anchorBlock.getText();
-    const cursorOffset: number = value.selection.anchor.offset;
+    const cursorOffset: number = value.anchorOffset;
 
     // Use EMPTY_SELECTOR until series API is implemented for facetting
     const selector = EMPTY_SELECTOR;
@@ -166,20 +134,19 @@ export default class LokiLanguageProvider extends LanguageProvider {
     } catch {}
     const existingKeys = parsedSelector ? parsedSelector.labelKeys : [];
 
-    if ((text && text.match(/^!?=~?/)) || wrapperClasses.includes('attr-value')) {
+    if ((text && text.match(/^!?=~?/)) || _.includes(wrapperClasses, 'attr-value')) {
       // Label values
       if (labelKey && this.labelValues[selector]) {
-        let labelValues = this.labelValues[selector][labelKey];
-        if (!labelValues) {
-          await this.fetchLabelValues(labelKey, absoluteRange);
-          labelValues = this.labelValues[selector][labelKey];
+        const labelValues = this.labelValues[selector][labelKey];
+        if (labelValues) {
+          context = 'context-label-values';
+          suggestions.push({
+            label: `Label values for "${labelKey}"`,
+            items: labelValues.map(wrapLabel),
+          });
+        } else {
+          refresher = this.fetchLabelValues(labelKey);
         }
-
-        context = 'context-label-values';
-        suggestions.push({
-          label: `Label values for "${labelKey}"`,
-          items: labelValues.map(wrapLabel),
-        });
       }
     } else {
       // Label keys
@@ -193,7 +160,7 @@ export default class LokiLanguageProvider extends LanguageProvider {
       }
     }
 
-    return { context, suggestions };
+    return { context, refresher, suggestions };
   }
 
   async importQueries(queries: LokiQuery[], datasourceType: string): Promise<LokiQuery[]> {
@@ -201,9 +168,8 @@ export default class LokiLanguageProvider extends LanguageProvider {
       return Promise.all(
         queries.map(async query => {
           const expr = await this.importPrometheusQuery(query.expr);
-          const { context, ...rest } = query as PromQuery;
           return {
-            ...rest,
+            ...query,
             expr,
           };
         })
@@ -238,7 +204,7 @@ export default class LokiLanguageProvider extends LanguageProvider {
       if (existingKeys && existingKeys.length > 0) {
         // Check for common labels
         for (const key in labels) {
-          if (existingKeys && existingKeys.includes(key)) {
+          if (existingKeys && existingKeys.indexOf(key) > -1) {
             // Should we check for label value equality here?
             labelsToKeep[key] = labels[key];
           }
@@ -259,38 +225,41 @@ export default class LokiLanguageProvider extends LanguageProvider {
     return '';
   }
 
-  async fetchLogLabels(absoluteRange: AbsoluteTimeRange): Promise<any> {
+  async fetchLogLabels(): Promise<any> {
     const url = '/api/prom/label';
     try {
       this.logLabelFetchTs = Date.now();
-
-      const res = await this.request(url, rangeToParams(absoluteRange));
+      const res = await this.request(url);
       const body = await (res.data || res.json());
       const labelKeys = body.data.slice().sort();
       this.labelKeys = {
         ...this.labelKeys,
         [EMPTY_SELECTOR]: labelKeys,
       };
-      this.labelValues = {
-        [EMPTY_SELECTOR]: {},
-      };
       this.logLabelOptions = labelKeys.map((key: string) => ({ label: key, value: key, isLeaf: false }));
+
+      // Pre-load values for default labels
+      return Promise.all(
+        labelKeys
+          .filter((key: string) => DEFAULT_KEYS.indexOf(key) > -1)
+          .map((key: string) => this.fetchLabelValues(key))
+      );
     } catch (e) {
       console.error(e);
     }
     return [];
   }
 
-  async refreshLogLabels(absoluteRange: AbsoluteTimeRange, forceRefresh?: boolean) {
+  async refreshLogLabels(forceRefresh?: boolean) {
     if ((this.labelKeys && Date.now() - this.logLabelFetchTs > LABEL_REFRESH_INTERVAL) || forceRefresh) {
-      await this.fetchLogLabels(absoluteRange);
+      await this.fetchLogLabels();
     }
   }
 
-  async fetchLabelValues(key: string, absoluteRange: AbsoluteTimeRange) {
+  async fetchLabelValues(key: string) {
     const url = `/api/prom/label/${key}/values`;
     try {
-      const res = await this.request(url, rangeToParams(absoluteRange));
+      const res = await this.request(url);
       const body = await (res.data || res.json());
       const values = body.data.slice().sort();
 

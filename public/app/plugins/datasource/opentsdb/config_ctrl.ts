@@ -3,7 +3,7 @@ export class OpenTsConfigCtrl {
   current: any;
 
   /** @ngInject */
-  constructor($scope: any) {
+  constructor($scope) {
     this.current.jsonData = this.current.jsonData || {};
     this.current.jsonData.tsdbVersion = this.current.jsonData.tsdbVersion || 1;
     this.current.jsonData.tsdbResolution = this.current.jsonData.tsdbResolution || 1;

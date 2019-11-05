@@ -5,7 +5,6 @@ const TerserPlugin = require('terser-webpack-plugin');
 const common = require('./webpack.common.js');
 const path = require('path');
 const ngAnnotatePlugin = require('ng-annotate-webpack-plugin');
-const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
@@ -20,7 +19,8 @@ module.exports = merge(common, {
   },
 
   module: {
-    rules: [{
+    rules: [
+      {
         test: /\.tsx?$/,
         enforce: 'pre',
         exclude: /node_modules/,
@@ -43,13 +43,11 @@ module.exports = merge(common, {
         },
       },
       require('./sass.rule.js')({
-        sourceMap: false,
-        preserveUrl: false
+        sourceMap: false, preserveUrl: false
       })
     ]
   },
   optimization: {
-    nodeEnv: 'production',
     minimizer: [
       new TerserPlugin({
         cache: false,
@@ -60,9 +58,6 @@ module.exports = merge(common, {
     ]
   },
   plugins: [
-    new ForkTsCheckerWebpackPlugin({
-      checkSyntacticErrors: true,
-    }),
     new MiniCssExtractPlugin({
       filename: "grafana.[name].[hash].css"
     }),
@@ -71,15 +66,12 @@ module.exports = merge(common, {
       filename: path.resolve(__dirname, '../../public/views/error.html'),
       template: path.resolve(__dirname, '../../public/views/error-template.html'),
       inject: false,
-      excludeChunks: ['dark', 'light'],
-      chunksSortMode: 'none'
     }),
     new HtmlWebpackPlugin({
       filename: path.resolve(__dirname, '../../public/views/index.html'),
       template: path.resolve(__dirname, '../../public/views/index-template.html'),
       inject: 'body',
-      excludeChunks: ['manifest', 'dark', 'light'],
-      chunksSortMode: 'none'
+      chunks: ['vendor', 'app'],
     }),
     function () {
       this.hooks.done.tap('Done', function (stats) {

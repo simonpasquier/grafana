@@ -1,12 +1,11 @@
 import _ from 'lodash';
 import $ from 'jquery';
-// @ts-ignore
+import rst2html from 'rst2html';
 import Drop from 'tether-drop';
 import coreModule from 'app/core/core_module';
-import { FuncDef } from './gfunc';
 
 /** @ngInject */
-export function graphiteAddFunc($compile: any) {
+export function graphiteAddFunc($compile) {
   const inputTemplate =
     '<input type="text"' + ' class="gf-form-input"' + ' spellcheck="false" style="display:none"></input>';
 
@@ -16,7 +15,7 @@ export function graphiteAddFunc($compile: any) {
     '<i class="fa fa-plus"></i></a>';
 
   return {
-    link: function($scope: any, elem: JQuery) {
+    link: function($scope, elem) {
       const ctrl = $scope.ctrl;
 
       const $input = $(inputTemplate);
@@ -25,7 +24,7 @@ export function graphiteAddFunc($compile: any) {
       $input.appendTo(elem);
       $button.appendTo(elem);
 
-      ctrl.datasource.getFuncDefs().then((funcDefs: FuncDef[]) => {
+      ctrl.datasource.getFuncDefs().then(funcDefs => {
         const allFunctions = _.map(funcDefs, 'name').sort();
 
         $scope.functionMenu = createFunctionDropDownMenu(funcDefs);
@@ -35,7 +34,7 @@ export function graphiteAddFunc($compile: any) {
           source: allFunctions,
           minLength: 1,
           items: 10,
-          updater: (value: any) => {
+          updater: value => {
             let funcDef: any = ctrl.datasource.getFuncDef(value);
             if (!funcDef) {
               // try find close match
@@ -82,7 +81,7 @@ export function graphiteAddFunc($compile: any) {
         $compile(elem.contents())($scope);
       });
 
-      let drop: any;
+      let drop;
       const cleanUpDrop = () => {
         if (drop) {
           drop.destroy();
@@ -91,7 +90,7 @@ export function graphiteAddFunc($compile: any) {
       };
 
       $(elem)
-        .on('mouseenter', 'ul.dropdown-menu li', async () => {
+        .on('mouseenter', 'ul.dropdown-menu li', () => {
           cleanUpDrop();
 
           let funcDef;
@@ -108,8 +107,6 @@ export function graphiteAddFunc($compile: any) {
             }
 
             const contentElement = document.createElement('div');
-            // @ts-ignore
-            const { default: rst2html } = await import(/* webpackChunkName: "rst2html" */ 'rst2html');
             contentElement.innerHTML = '<h4>' + funcDef.name + '</h4>' + rst2html(shortDesc);
 
             drop = new Drop({
@@ -135,8 +132,8 @@ export function graphiteAddFunc($compile: any) {
 
 coreModule.directive('graphiteAddFunc', graphiteAddFunc);
 
-function createFunctionDropDownMenu(funcDefs: FuncDef[]) {
-  const categories: any = {};
+function createFunctionDropDownMenu(funcDefs) {
+  const categories = {};
 
   _.forEach(funcDefs, funcDef => {
     if (!funcDef.category) {

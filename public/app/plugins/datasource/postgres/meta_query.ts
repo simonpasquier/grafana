@@ -1,7 +1,5 @@
-import QueryModel from './postgres_query';
-
 export class PostgresMetaQuery {
-  constructor(private target: { table: string; timeColumn: string }, private queryModel: QueryModel) {}
+  constructor(private target, private queryModel) {}
 
   getOperators(datatype: string) {
     switch (datatype) {
@@ -21,7 +19,7 @@ export class PostgresMetaQuery {
   }
 
   // quote identifier as literal to use in metadata queries
-  quoteIdentAsLiteral(value: string) {
+  quoteIdentAsLiteral(value) {
     return this.queryModel.quoteLiteral(this.queryModel.unquoteIdentifier(value));
   }
 

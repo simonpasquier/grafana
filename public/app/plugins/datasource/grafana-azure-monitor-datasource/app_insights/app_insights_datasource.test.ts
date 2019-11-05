@@ -1,8 +1,7 @@
 import AzureMonitorDatasource from '../datasource';
-// @ts-ignore
 import Q from 'q';
+import moment from 'moment';
 import { TemplateSrv } from 'app/features/templating/template_srv';
-import { toUtc } from '@grafana/data';
 
 describe('AppInsightsDatasource', () => {
   const ctx: any = {
@@ -47,7 +46,7 @@ describe('AppInsightsDatasource', () => {
       });
 
       it('should return success status', () => {
-        return ctx.ds.testDatasource().then((results: any) => {
+        return ctx.ds.testDatasource().then(results => {
           expect(results.status).toEqual('success');
         });
       });
@@ -72,7 +71,7 @@ describe('AppInsightsDatasource', () => {
       });
 
       it('should return error status and a detailed error message', () => {
-        return ctx.ds.testDatasource().then((results: any) => {
+        return ctx.ds.testDatasource().then(results => {
           expect(results.status).toEqual('error');
           expect(results.message).toEqual(
             '1. Application Insights: Not Found: Invalid Application Id for Application Insights service. '
@@ -100,7 +99,7 @@ describe('AppInsightsDatasource', () => {
       });
 
       it('should return error status and a detailed error message', () => {
-        return ctx.ds.testDatasource().then((results: any) => {
+        return ctx.ds.testDatasource().then(results => {
           expect(results.status).toEqual('error');
           expect(results.message).toEqual('1. Application Insights: Error: SomeOtherError. An error message. ');
         });
@@ -111,8 +110,8 @@ describe('AppInsightsDatasource', () => {
   describe('When performing query', () => {
     const options = {
       range: {
-        from: toUtc('2017-08-22T20:00:00Z'),
-        to: toUtc('2017-08-22T23:59:00Z'),
+        from: moment.utc('2017-08-22T20:00:00Z'),
+        to: moment.utc('2017-08-22T23:59:00Z'),
       },
       targets: [
         {
@@ -150,7 +149,7 @@ describe('AppInsightsDatasource', () => {
       });
 
       it('should return a single datapoint', () => {
-        return ctx.ds.query(options).then((results: any) => {
+        return ctx.ds.query(options).then(results => {
           expect(results.data.length).toBe(1);
           expect(results.data[0].datapoints.length).toBe(1);
           expect(results.data[0].target).toEqual('exceptions/server');
@@ -197,7 +196,7 @@ describe('AppInsightsDatasource', () => {
       });
 
       it('should return a list of datapoints', () => {
-        return ctx.ds.query(options).then((results: any) => {
+        return ctx.ds.query(options).then(results => {
           expect(results.data.length).toBe(1);
           expect(results.data[0].datapoints.length).toBe(2);
           expect(results.data[0].target).toEqual('exceptions/server');
@@ -268,7 +267,7 @@ describe('AppInsightsDatasource', () => {
         });
 
         it('should return a list of datapoints', () => {
-          return ctx.ds.query(options).then((results: any) => {
+          return ctx.ds.query(options).then(results => {
             expect(results.data.length).toBe(3);
             expect(results.data[0].datapoints.length).toBe(2);
             expect(results.data[0].target).toEqual('exceptions/server{client/city="Miami"}');
@@ -293,7 +292,7 @@ describe('AppInsightsDatasource', () => {
         });
 
         it('should return a list of datapoints', () => {
-          return ctx.ds.query(options).then((results: any) => {
+          return ctx.ds.query(options).then(results => {
             expect(results.data.length).toBe(3);
             expect(results.data[0].datapoints.length).toBe(2);
             expect(results.data[0].target).toEqual('exceptions/server + client/city + Miami');
@@ -324,7 +323,7 @@ describe('AppInsightsDatasource', () => {
       });
 
       it('should return a list of metric names', () => {
-        return ctx.ds.metricFindQuery('appInsightsMetricNames()').then((results: any) => {
+        return ctx.ds.metricFindQuery('appInsightsMetricNames()').then(results => {
           expect(results.length).toBe(2);
           expect(results[0].text).toBe('exceptions/server');
           expect(results[0].value).toBe('exceptions/server');
@@ -362,7 +361,7 @@ describe('AppInsightsDatasource', () => {
       });
 
       it('should return a list of group bys', () => {
-        return ctx.ds.metricFindQuery('appInsightsGroupBys(requests/count)').then((results: any) => {
+        return ctx.ds.metricFindQuery('appInsightsGroupBys(requests/count)').then(results => {
           expect(results[0].text).toContain('client/os');
           expect(results[0].value).toContain('client/os');
           expect(results[1].text).toContain('client/city');
@@ -390,7 +389,7 @@ describe('AppInsightsDatasource', () => {
     });
 
     it('should return a list of metric names', () => {
-      return ctx.ds.getAppInsightsMetricNames().then((results: any) => {
+      return ctx.ds.getAppInsightsMetricNames().then(results => {
         expect(results.length).toBe(2);
         expect(results[0].text).toBe('exceptions/server');
         expect(results[0].value).toBe('exceptions/server');
@@ -428,7 +427,7 @@ describe('AppInsightsDatasource', () => {
     });
 
     it('should return a list of group bys', () => {
-      return ctx.ds.getAppInsightsMetricMetadata('requests/count').then((results: any) => {
+      return ctx.ds.getAppInsightsMetricMetadata('requests/count').then(results => {
         expect(results.primaryAggType).toEqual('avg');
         expect(results.supportedAggTypes).toContain('avg');
         expect(results.supportedAggTypes).toContain('sum');

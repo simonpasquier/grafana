@@ -67,7 +67,6 @@ type SearchOrgsQuery struct {
 	Name  string
 	Limit int
 	Page  int
-	Ids   []int64
 
 	Result []*OrgDTO
 }

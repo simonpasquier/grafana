@@ -1,6 +1,6 @@
-import { toUtc, toDuration as duration, dateTime, DecimalCount } from '@grafana/data';
-
 import { toFixed, toFixedScaled } from './valueFormats';
+import { DecimalCount } from '../../types';
+import moment from 'moment';
 
 interface IntervalsInSeconds {
   [interval: string]: number;
@@ -237,7 +237,7 @@ export function toClock(size: number, decimals?: DecimalCount) {
 
   // < 1 second
   if (size < 1000) {
-    return toUtc(size).format('SSS\\m\\s');
+    return moment.utc(size).format('SSS\\m\\s');
   }
 
   // < 1 minute
@@ -246,7 +246,7 @@ export function toClock(size: number, decimals?: DecimalCount) {
     if (decimals === 0) {
       format = 'ss\\s';
     }
-    return toUtc(size).format(format);
+    return moment.utc(size).format(format);
   }
 
   // < 1 hour
@@ -257,12 +257,12 @@ export function toClock(size: number, decimals?: DecimalCount) {
     } else if (decimals === 1) {
       format = 'mm\\m:ss\\s';
     }
-    return toUtc(size).format(format);
+    return moment.utc(size).format(format);
   }
 
   let format = 'mm\\m:ss\\s:SSS\\m\\s';
 
-  const hours = `${('0' + Math.floor(duration(size, 'milliseconds').asHours())).slice(-2)}h`;
+  const hours = `${('0' + Math.floor(moment.duration(size, 'milliseconds').asHours())).slice(-2)}h`;
 
   if (decimals === 0) {
     format = '';
@@ -272,7 +272,7 @@ export function toClock(size: number, decimals?: DecimalCount) {
     format = 'mm\\m:ss\\s';
   }
 
-  return format ? `${hours}:${toUtc(size).format(format)}` : hours;
+  return format ? `${hours}:${moment.utc(size).format(format)}` : hours;
 }
 
 export function toDurationInMilliseconds(size: number, decimals: DecimalCount) {
@@ -283,10 +283,7 @@ export function toDurationInSeconds(size: number, decimals: DecimalCount) {
   return toDuration(size, decimals, Interval.Second);
 }
 
-export function toDurationInHoursMinutesSeconds(size: number): string {
-  if (size < 0) {
-    return toDurationInHoursMinutesSeconds(-size) + ' ago';
-  }
+export function toDurationInHoursMinutesSeconds(size: number) {
   const strings = [];
   const numHours = Math.floor(size / 3600);
   const numMinutes = Math.floor((size % 3600) / 60);
@@ -298,7 +295,7 @@ export function toDurationInHoursMinutesSeconds(size: number): string {
 }
 
 export function toTimeTicks(size: number, decimals: DecimalCount, scaledDecimals: DecimalCount) {
-  return toSeconds(size / 100, decimals, scaledDecimals);
+  return toSeconds(size, decimals, scaledDecimals);
 }
 
 export function toClockMilliseconds(size: number, decimals: DecimalCount) {
@@ -310,24 +307,24 @@ export function toClockSeconds(size: number, decimals: DecimalCount) {
 }
 
 export function dateTimeAsIso(value: number, decimals: DecimalCount, scaledDecimals: DecimalCount, isUtc?: boolean) {
-  const time = isUtc ? toUtc(value) : dateTime(value);
+  const time = isUtc ? moment.utc(value) : moment(value);
 
-  if (dateTime().isSame(value, 'day')) {
+  if (moment().isSame(value, 'day')) {
     return time.format('HH:mm:ss');
   }
   return time.format('YYYY-MM-DD HH:mm:ss');
 }
 
 export function dateTimeAsUS(value: number, decimals: DecimalCount, scaledDecimals: DecimalCount, isUtc?: boolean) {
-  const time = isUtc ? toUtc(value) : dateTime(value);
+  const time = isUtc ? moment.utc(value) : moment(value);
 
-  if (dateTime().isSame(value, 'day')) {
+  if (moment().isSame(value, 'day')) {
     return time.format('h:mm:ss a');
   }
   return time.format('MM/DD/YYYY h:mm:ss a');
 }
 
 export function dateTimeFromNow(value: number, decimals: DecimalCount, scaledDecimals: DecimalCount, isUtc?: boolean) {
-  const time = isUtc ? toUtc(value) : dateTime(value);
+  const time = isUtc ? moment.utc(value) : moment(value);
   return time.fromNow();
 }

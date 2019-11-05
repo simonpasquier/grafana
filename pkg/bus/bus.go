@@ -6,24 +6,16 @@ import (
 	"reflect"
 )
 
-// HandlerFunc defines a handler function interface.
 type HandlerFunc interface{}
-
-// CtxHandlerFunc defines a context handler function.
 type CtxHandlerFunc func()
-
-// Msg defines a message interface.
 type Msg interface{}
 
-// ErrHandlerNotFound defines an error if a handler is not found
 var ErrHandlerNotFound = errors.New("handler not found")
 
-// TransactionManager defines a transaction interface
 type TransactionManager interface {
 	InTransaction(ctx context.Context, fn func(ctx context.Context) error) error
 }
 
-// Bus type defines the bus interface structure
 type Bus interface {
 	Dispatch(msg Msg) error
 	DispatchCtx(ctx context.Context, msg Msg) error
@@ -46,12 +38,10 @@ type Bus interface {
 	SetTransactionManager(tm TransactionManager)
 }
 
-// InTransaction defines an in transaction function
 func (b *InProcBus) InTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
 	return b.txMng.InTransaction(ctx, fn)
 }
 
-// InProcBus defines the bus structure
 type InProcBus struct {
 	handlers          map[string]HandlerFunc
 	handlersWithCtx   map[string]HandlerFunc
@@ -63,7 +53,6 @@ type InProcBus struct {
 // temp stuff, not sure how to handle bus instance, and init yet
 var globalBus = New()
 
-// New initialize the bus
 func New() Bus {
 	bus := &InProcBus{}
 	bus.handlers = make(map[string]HandlerFunc)
@@ -80,12 +69,10 @@ func GetBus() Bus {
 	return globalBus
 }
 
-// SetTransactionManager function assign a transaction manager to the bus.
 func (b *InProcBus) SetTransactionManager(tm TransactionManager) {
 	b.txMng = tm
 }
 
-// DispatchCtx function dispatch a message to the bus context.
 func (b *InProcBus) DispatchCtx(ctx context.Context, msg Msg) error {
 	var msgName = reflect.TypeOf(msg).Elem().Name()
 
@@ -106,7 +93,6 @@ func (b *InProcBus) DispatchCtx(ctx context.Context, msg Msg) error {
 	return err.(error)
 }
 
-// Dispatch function dispatch a message to the bus.
 func (b *InProcBus) Dispatch(msg Msg) error {
 	var msgName = reflect.TypeOf(msg).Elem().Name()
 
@@ -136,7 +122,6 @@ func (b *InProcBus) Dispatch(msg Msg) error {
 	return err.(error)
 }
 
-// Publish function publish a message to the bus listener.
 func (b *InProcBus) Publish(msg Msg) error {
 	var msgName = reflect.TypeOf(msg).Elem().Name()
 	var listeners = b.listeners[msgName]
@@ -189,25 +174,21 @@ func (b *InProcBus) AddEventListener(handler HandlerFunc) {
 	b.listeners[eventName] = append(b.listeners[eventName], handler)
 }
 
-// AddHandler attach a handler function to the global bus
-// Package level function
+// Package level functions
 func AddHandler(implName string, handler HandlerFunc) {
 	globalBus.AddHandler(handler)
 }
 
-// AddHandlerCtx attach a handler function to the global bus context
 // Package level functions
 func AddHandlerCtx(implName string, handler HandlerFunc) {
 	globalBus.AddHandlerCtx(handler)
 }
 
-// AddEventListener attach a handler function to the event listener
 // Package level functions
 func AddEventListener(handler HandlerFunc) {
 	globalBus.AddEventListener(handler)
 }
 
-// AddWildcardListener attach a handler function to the wildcard listener
 func AddWildcardListener(handler HandlerFunc) {
 	globalBus.AddWildcardListener(handler)
 }

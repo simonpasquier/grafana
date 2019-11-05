@@ -2,10 +2,8 @@ import _ from 'lodash';
 import flatten from 'app/core/utils/flatten';
 import TimeSeries from 'app/core/time_series2';
 import TableModel, { mergeTablesIntoModel } from 'app/core/table_model';
-import { TableTransform } from './types';
-import { Column, TableData } from '@grafana/data';
 
-const transformers: { [key: string]: TableTransform } = {};
+const transformers = {};
 
 transformers['timeseries_to_rows'] = {
   description: 'Time series to rows',
@@ -34,7 +32,7 @@ transformers['timeseries_to_columns'] = {
     model.columns.push({ text: 'Time', type: 'date' });
 
     // group by time
-    const points: any = {};
+    const points = {};
 
     for (let i = 0; i < data.length; i++) {
       const series = data[i];
@@ -140,10 +138,10 @@ transformers['table'] = {
     }
 
     // Track column indexes: name -> index
-    const columnNames: any = {};
+    const columnNames = {};
 
     // Union of all columns
-    const columns = data.reduce((acc: Column[], series: TableData) => {
+    const columns = data.reduce((acc, series) => {
       series.columns.forEach(col => {
         const { text } = col;
         if (columnNames[text] === undefined) {
@@ -160,8 +158,9 @@ transformers['table'] = {
     if (!data || data.length === 0) {
       return;
     }
-    const noTableIndex = _.findIndex(data, d => 'columns' in d && 'rows' in d);
-    if (noTableIndex < 0) {
+
+    const noTableIndex = _.findIndex(data, d => d.type !== 'table');
+    if (noTableIndex > -1) {
       throw {
         message: `Result of query #${String.fromCharCode(
           65 + noTableIndex
@@ -191,7 +190,7 @@ transformers['json'] = {
       const maxDocs = Math.min(series.datapoints.length, 100);
       for (let y = 0; y < maxDocs; y++) {
         const doc = series.datapoints[y];
-        const flattened = flatten(doc, {});
+        const flattened = flatten(doc, null);
         for (const propName in flattened) {
           names[propName] = true;
         }
@@ -228,7 +227,7 @@ transformers['json'] = {
         const values = [];
 
         if (_.isObject(dp) && panel.columns.length > 0) {
-          const flattened = flatten(dp);
+          const flattened = flatten(dp, null);
           for (z = 0; z < panel.columns.length; z++) {
             values.push(flattened[panel.columns[z].value]);
           }
@@ -242,7 +241,7 @@ transformers['json'] = {
   },
 };
 
-function transformDataToTable(data: any, panel: any) {
+function transformDataToTable(data, panel) {
   const model = new TableModel();
 
   if (!data || data.length === 0) {

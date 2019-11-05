@@ -1,7 +1,7 @@
 import coreModule from 'app/core/core_module';
 import config from 'app/core/config';
 import _ from 'lodash';
-import { NavModel } from '@grafana/data';
+import { NavModel } from '@grafana/ui';
 
 export class NavModelSrv {
   navItems: any;
@@ -15,7 +15,7 @@ export class NavModelSrv {
     return _.find(this.navItems, { id: 'cfg' });
   }
 
-  getNav(...args: Array<string | number>) {
+  getNav(...args) {
     let children = this.navItems;
     const nav = {
       breadcrumbs: [],

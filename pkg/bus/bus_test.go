@@ -8,7 +8,7 @@ import (
 )
 
 type testQuery struct {
-	ID   int64
+	Id   int64
 	Resp string
 }
 
@@ -64,9 +64,9 @@ func TestQueryHandlerReturnsError(t *testing.T) {
 	err := bus.Dispatch(&testQuery{})
 
 	if err == nil {
-		t.Fatal("Send query failed")
+		t.Fatal("Send query failed " + err.Error())
 	} else {
-		t.Log("Handler error received ok " + err.Error())
+		t.Log("Handler error received ok")
 	}
 }
 
@@ -93,7 +93,7 @@ func TestEventListeners(t *testing.T) {
 	count := 0
 
 	bus.AddEventListener(func(query *testQuery) error {
-		count++
+		count += 1
 		return nil
 	})
 

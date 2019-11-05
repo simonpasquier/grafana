@@ -1,5 +1,3 @@
-import { auto } from 'angular';
-
 export class QueryCtrl {
   target: any;
   datasource: any;
@@ -8,7 +6,7 @@ export class QueryCtrl {
   hasRawMode: boolean;
   error: string;
 
-  constructor(public $scope: any, _$injector: auto.IInjectorService) {
+  constructor(public $scope, _$injector) {
     this.panelCtrl = this.panelCtrl || { panel: {} };
     this.target = this.target || { target: '' };
     this.panel = this.panelCtrl.panel;

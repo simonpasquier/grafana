@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/models"
+	m "github.com/grafana/grafana/pkg/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -16,7 +16,7 @@ func TestTeamsNotifier(t *testing.T) {
 				json := `{ }`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "ops",
 					Type:     "teams",
 					Settings: settingsJSON,
@@ -33,7 +33,7 @@ func TestTeamsNotifier(t *testing.T) {
 				}`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "ops",
 					Type:     "teams",
 					Settings: settingsJSON,
@@ -45,7 +45,7 @@ func TestTeamsNotifier(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(teamsNotifier.Name, ShouldEqual, "ops")
 				So(teamsNotifier.Type, ShouldEqual, "teams")
-				So(teamsNotifier.URL, ShouldEqual, "http://google.com")
+				So(teamsNotifier.Url, ShouldEqual, "http://google.com")
 			})
 
 			Convey("from settings with Recipient and Mention", func() {
@@ -55,7 +55,7 @@ func TestTeamsNotifier(t *testing.T) {
 				}`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "ops",
 					Type:     "teams",
 					Settings: settingsJSON,
@@ -67,8 +67,9 @@ func TestTeamsNotifier(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(teamsNotifier.Name, ShouldEqual, "ops")
 				So(teamsNotifier.Type, ShouldEqual, "teams")
-				So(teamsNotifier.URL, ShouldEqual, "http://google.com")
+				So(teamsNotifier.Url, ShouldEqual, "http://google.com")
 			})
+
 		})
 	})
 }

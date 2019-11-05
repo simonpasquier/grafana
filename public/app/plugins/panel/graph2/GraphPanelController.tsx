@@ -1,7 +1,6 @@
 import React from 'react';
-import { PanelData, GraphSeriesToggler } from '@grafana/ui';
-import { GraphSeriesXY, AbsoluteTimeRange } from '@grafana/data';
-
+import { GraphSeriesXY, PanelData } from '@grafana/ui';
+import difference from 'lodash/difference';
 import { getGraphSeriesModel } from './getGraphSeriesModel';
 import { Options, SeriesOptions } from './types';
 import { SeriesColorChangeHandler, SeriesAxisToggleHandler } from '@grafana/ui/src/components/Graph/GraphWithLegend';
@@ -12,7 +11,6 @@ interface GraphPanelControllerAPI {
   onSeriesColorChange: SeriesColorChangeHandler;
   onSeriesToggle: (label: string, event: React.MouseEvent<HTMLElement>) => void;
   onToggleSort: (sortBy: string) => void;
-  onHorizontalRegionSelected: (from: number, to: number) => void;
 }
 
 interface GraphPanelControllerProps {
@@ -20,29 +18,30 @@ interface GraphPanelControllerProps {
   options: Options;
   data: PanelData;
   onOptionsChange: (options: Options) => void;
-  onChangeTimeRange: (timeRange: AbsoluteTimeRange) => void;
 }
 
 interface GraphPanelControllerState {
   graphSeriesModel: GraphSeriesXY[];
+  hiddenSeries: string[];
 }
 
 export class GraphPanelController extends React.Component<GraphPanelControllerProps, GraphPanelControllerState> {
   constructor(props: GraphPanelControllerProps) {
     super(props);
 
+    this.onSeriesToggle = this.onSeriesToggle.bind(this);
     this.onSeriesColorChange = this.onSeriesColorChange.bind(this);
     this.onSeriesAxisToggle = this.onSeriesAxisToggle.bind(this);
     this.onToggleSort = this.onToggleSort.bind(this);
-    this.onHorizontalRegionSelected = this.onHorizontalRegionSelected.bind(this);
 
     this.state = {
       graphSeriesModel: getGraphSeriesModel(
-        props.data.series,
+        props.data,
         props.options.series,
         props.options.graph,
         props.options.legend
       ),
+      hiddenSeries: [],
     };
   }
 
@@ -50,7 +49,7 @@ export class GraphPanelController extends React.Component<GraphPanelControllerPr
     return {
       ...state,
       graphSeriesModel: getGraphSeriesModel(
-        props.data.series,
+        props.data,
         props.options.series,
         props.options.graph,
         props.options.legend
@@ -75,15 +74,10 @@ export class GraphPanelController extends React.Component<GraphPanelControllerPr
     const seriesOptionsUpdate: SeriesOptions = series[label]
       ? {
           ...series[label],
-          yAxis: {
-            ...series[label].yAxis,
-            index: yAxis,
-          },
+          yAxis,
         }
       : {
-          yAxis: {
-            index: yAxis,
-          },
+          yAxis,
         };
     this.onSeriesOptionsUpdate(label, seriesOptionsUpdate);
   }
@@ -116,28 +110,47 @@ export class GraphPanelController extends React.Component<GraphPanelControllerPr
     });
   }
 
-  onHorizontalRegionSelected(from: number, to: number) {
-    const { onChangeTimeRange } = this.props;
-    onChangeTimeRange({ from, to });
+  onSeriesToggle(label: string, event: React.MouseEvent<HTMLElement>) {
+    const { hiddenSeries, graphSeriesModel } = this.state;
+
+    if (event.ctrlKey || event.metaKey || event.shiftKey) {
+      // Toggling series with key makes the series itself to toggle
+      if (hiddenSeries.indexOf(label) > -1) {
+        this.setState({
+          hiddenSeries: hiddenSeries.filter(series => series !== label),
+        });
+      } else {
+        this.setState({
+          hiddenSeries: hiddenSeries.concat([label]),
+        });
+      }
+    } else {
+      // Toggling series with out key toggles all the series but the clicked one
+      const allSeriesLabels = graphSeriesModel.map(series => series.label);
+
+      if (hiddenSeries.length + 1 === allSeriesLabels.length) {
+        this.setState({ hiddenSeries: [] });
+      } else {
+        this.setState({
+          hiddenSeries: difference(allSeriesLabels, [label]),
+        });
+      }
+    }
   }
 
   render() {
     const { children } = this.props;
-    const { graphSeriesModel } = this.state;
+    const { graphSeriesModel, hiddenSeries } = this.state;
 
-    return (
-      <GraphSeriesToggler series={graphSeriesModel}>
-        {({ onSeriesToggle, toggledSeries }) => {
-          return children({
-            series: toggledSeries,
-            onSeriesColorChange: this.onSeriesColorChange,
-            onSeriesAxisToggle: this.onSeriesAxisToggle,
-            onToggleSort: this.onToggleSort,
-            onSeriesToggle: onSeriesToggle,
-            onHorizontalRegionSelected: this.onHorizontalRegionSelected,
-          });
-        }}
-      </GraphSeriesToggler>
-    );
+    return children({
+      series: graphSeriesModel.map(series => ({
+        ...series,
+        isVisible: hiddenSeries.indexOf(series.label) === -1,
+      })),
+      onSeriesToggle: this.onSeriesToggle,
+      onSeriesColorChange: this.onSeriesColorChange,
+      onSeriesAxisToggle: this.onSeriesAxisToggle,
+      onToggleSort: this.onToggleSort,
+    });
   }
 }

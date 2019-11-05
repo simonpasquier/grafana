@@ -12,7 +12,7 @@ import {
 } from 'react-virtualized';
 import { Themeable } from '../../types/theme';
 
-import { stringToJsRegex, DataFrame, sortDataFrame, getDataFrameRow, ArrayVector, FieldType } from '@grafana/data';
+import { sortSeriesData } from '../../utils/processSeriesData';
 
 import {
   TableCellBuilder,
@@ -21,10 +21,12 @@ import {
   TableCellBuilderOptions,
   simpleCellBuilder,
 } from './TableCellBuilder';
+import { stringToJsRegex } from '../../utils/index';
+import { SeriesData } from '../../types/data';
 import { InterpolateFunction } from '../../types/panel';
 
 export interface Props extends Themeable {
-  data: DataFrame;
+  data: SeriesData;
 
   minColumnWidth: number;
   showHeader: boolean;
@@ -42,7 +44,7 @@ export interface Props extends Themeable {
 interface State {
   sortBy?: number;
   sortDirection?: SortDirectionType;
-  data: DataFrame;
+  data: SeriesData;
 }
 
 interface ColumnRenderInfo {
@@ -107,13 +109,13 @@ export class Table extends Component<Props, State> {
 
     if (dataChanged || rotate !== prevProps.rotate) {
       const { width, minColumnWidth } = this.props;
-      this.rotateWidth = Math.max(width / data.length, minColumnWidth);
+      this.rotateWidth = Math.max(width / data.rows.length, minColumnWidth);
     }
 
     // Update the data when data or sort changes
     if (dataChanged || sortBy !== prevState.sortBy || sortDirection !== prevState.sortDirection) {
       this.scrollToTop = true;
-      this.setState({ data: sortDataFrame(data, sortBy, sortDirection === 'DESC') });
+      this.setState({ data: sortSeriesData(data, sortBy, sortDirection === 'DESC') });
     }
   }
 
@@ -146,7 +148,7 @@ export class Table extends Component<Props, State> {
       return {
         header: title,
         width: columnWidth,
-        builder: getCellBuilder(col.config || {}, style, this.props),
+        builder: getCellBuilder(col, style, this.props),
       };
     });
   }
@@ -168,7 +170,7 @@ export class Table extends Component<Props, State> {
     this.setState({ sortBy: sort, sortDirection: dir });
   };
 
-  /** Converts the grid coordinates to DataFrame coordinates */
+  /** Converts the grid coordinates to SeriesData coordinates */
   getCellRef = (rowIndex: number, columnIndex: number): DataIndex => {
     const { showHeader, rotate } = this.props;
     const rowOffset = showHeader ? -1 : 0;
@@ -185,9 +187,9 @@ export class Table extends Component<Props, State> {
     if (row < 0) {
       this.doSort(column);
     } else {
-      const field = this.state.data.fields[columnIndex];
-      const value = field.values.get(rowIndex);
-      console.log('CLICK', value, field.name);
+      const values = this.state.data.rows[row];
+      const value = values[column];
+      console.log('CLICK', value, row);
     }
   };
 
@@ -201,9 +203,6 @@ export class Table extends Component<Props, State> {
     if (!col) {
       col = {
         name: '??' + columnIndex + '???',
-        config: {},
-        values: new ArrayVector(),
-        type: FieldType.other,
       };
     }
 
@@ -229,7 +228,7 @@ export class Table extends Component<Props, State> {
     const { data } = this.state;
 
     const isHeader = row < 0;
-    const rowData = isHeader ? data.fields : getDataFrameRow(data, row); // TODO! improve
+    const rowData = isHeader ? data.fields : data.rows[row];
     const value = rowData ? rowData[column] : '';
     const builder = isHeader ? this.headerBuilder : this.getTableCellBuilder(column);
 
@@ -261,7 +260,7 @@ export class Table extends Component<Props, State> {
     }
 
     let columnCount = data.fields.length;
-    let rowCount = data.length + (showHeader ? 1 : 0);
+    let rowCount = data.rows.length + (showHeader ? 1 : 0);
 
     let fixedColumnCount = Math.min(fixedColumns, columnCount);
     let fixedRowCount = showHeader && fixedHeader ? 1 : 0;
@@ -283,16 +282,14 @@ export class Table extends Component<Props, State> {
       this.scrollToTop = false;
     }
 
-    // Force MultiGrid to rerender if these options change
-    // See: https://github.com/bvaughn/react-virtualized#pass-thru-props
-    const refreshKeys = {
-      ...this.state, // Includes data and sort parameters
-      d1: this.props.data,
-      s0: this.props.styles,
-    };
     return (
       <MultiGrid
-        {...refreshKeys}
+        {
+          ...this.state /** Force MultiGrid to update when data changes */
+        }
+        {
+          ...this.props /** Force MultiGrid to update when data changes */
+        }
         scrollToRow={scrollToRow}
         columnCount={columnCount}
         scrollToColumn={scrollToColumn}

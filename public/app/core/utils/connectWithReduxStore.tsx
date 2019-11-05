@@ -2,10 +2,10 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { store } from '../../store/store';
 
-export function connectWithStore(WrappedComponent: any, ...args: any[]) {
-  const ConnectedWrappedComponent = (connect as any)(...args)(WrappedComponent);
+export function connectWithStore(WrappedComponent, ...args) {
+  const ConnectedWrappedComponent = connect(...args)(WrappedComponent);
 
-  return (props: any) => {
+  return props => {
     return <ConnectedWrappedComponent {...props} store={store} />;
   };
 }

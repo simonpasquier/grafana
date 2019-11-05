@@ -1,4 +1,4 @@
-import { DataQuery, DataSourceJsonData } from '@grafana/ui';
+import { DataQuery } from '@grafana/ui/src/types';
 
 export enum MetricFindQueryTypes {
   Services = 'services',
@@ -40,11 +40,6 @@ export interface StackdriverQuery extends DataQuery {
   view?: string;
 }
 
-export interface StackdriverOptions extends DataSourceJsonData {
-  defaultProject?: string;
-  authenticationType?: string;
-}
-
 export interface AnnotationTarget {
   defaultProject: string;
   metricType: string;
@@ -74,9 +69,4 @@ export interface MetricDescriptor {
   serviceShortName: string;
   displayName: string;
   description: string;
-}
-
-export interface Segment {
-  type: string;
-  value: string;
 }

@@ -41,7 +41,7 @@ describe('QueryVariable', () => {
 
   describe('can convert and sort metric names', () => {
     const variable = new QueryVariable({}, null, null, null, null);
-    let input: any;
+    let input;
 
     beforeEach(() => {
       input = [
@@ -61,7 +61,7 @@ describe('QueryVariable', () => {
     });
 
     describe('can sort a mixed array of metric variables in numeric order', () => {
-      let result: any;
+      let result;
 
       beforeEach(() => {
         variable.sort = 3; // Numerical (asc)
@@ -82,7 +82,7 @@ describe('QueryVariable', () => {
     });
 
     describe('can sort a mixed array of metric variables in alphabetical order', () => {
-      let result: any;
+      let result;
 
       beforeEach(() => {
         variable.sort = 5; // Alphabetical CI (asc)

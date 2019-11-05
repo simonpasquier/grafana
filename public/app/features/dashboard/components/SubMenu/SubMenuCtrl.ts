@@ -1,6 +1,5 @@
-import angular, { ILocationService } from 'angular';
+import angular from 'angular';
 import _ from 'lodash';
-import { VariableSrv } from 'app/features/templating/all';
 
 export class SubMenuCtrl {
   annotations: any;
@@ -8,7 +7,7 @@ export class SubMenuCtrl {
   dashboard: any;
 
   /** @ngInject */
-  constructor(private variableSrv: VariableSrv, private $location: ILocationService) {
+  constructor(private variableSrv, private $location) {
     this.annotations = this.dashboard.templating.list;
     this.variables = this.variableSrv.variables;
   }
@@ -17,11 +16,11 @@ export class SubMenuCtrl {
     this.dashboard.startRefresh();
   }
 
-  variableUpdated(variable: any) {
+  variableUpdated(variable) {
     this.variableSrv.variableUpdated(variable, true);
   }
 
-  openEditView(editview: any) {
+  openEditView(editview) {
     const search = _.extend(this.$location.search(), { editview: editview });
     this.$location.search(search);
   }

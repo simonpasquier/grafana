@@ -171,6 +171,7 @@ $zindex-tooltip: ${theme.zIndex.tooltip};
 $zindex-modal-backdrop: ${theme.zIndex.modalBackdrop};
 $zindex-modal: ${theme.zIndex.modal};
 $zindex-typeahead: ${theme.zIndex.typeahead};
+$zindex-timepicker-popover: 1070;
 
 // Buttons
 //
@@ -193,7 +194,6 @@ $btn-semi-transparent: rgba(0, 0, 0, 0.2) !default;
 
 // sidemenu
 $side-menu-width: 60px;
-$navbar-padding: 20px;
 
 // dashboard
 $dashboard-padding: $space-md;

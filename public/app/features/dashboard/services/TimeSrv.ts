@@ -1,23 +1,17 @@
 // Libraries
+import moment from 'moment';
 import _ from 'lodash';
+
 // Utils
 import kbn from 'app/core/utils/kbn';
 import coreModule from 'app/core/core_module';
+import * as dateMath from '@grafana/ui/src/utils/datemath';
+
 // Types
-import {
-  dateMath,
-  DefaultTimeRange,
-  TimeRange,
-  RawTimeRange,
-  TimeZone,
-  toUtc,
-  dateTime,
-  isDateTime,
-} from '@grafana/data';
+import { TimeRange, RawTimeRange } from '@grafana/ui';
 import { ITimeoutService, ILocationService } from 'angular';
 import { ContextSrv } from 'app/core/services/context_srv';
 import { DashboardModel } from '../state/DashboardModel';
-import { getZoomedTimeRange, getShiftedTimeRange } from 'app/core/utils/timePicker';
 
 export class TimeSrv {
   time: any;
@@ -37,10 +31,9 @@ export class TimeSrv {
     private contextSrv: ContextSrv
   ) {
     // default time
-    this.time = DefaultTimeRange.raw;
+    this.time = { from: '6h', to: 'now' };
 
     $rootScope.$on('zoom-out', this.zoomOut.bind(this));
-    $rootScope.$on('shift-time', this.shiftTime.bind(this));
     $rootScope.$on('$routeUpdate', this.routeUpdated.bind(this));
 
     document.addEventListener('visibilitychange', () => {
@@ -72,10 +65,10 @@ export class TimeSrv {
   private parseTime() {
     // when absolute time is saved in json it is turned to a string
     if (_.isString(this.time.from) && this.time.from.indexOf('Z') >= 0) {
-      this.time.from = dateTime(this.time.from).utc();
+      this.time.from = moment(this.time.from).utc();
     }
     if (_.isString(this.time.to) && this.time.to.indexOf('Z') >= 0) {
-      this.time.to = dateTime(this.time.to).utc();
+      this.time.to = moment(this.time.to).utc();
     }
   }
 
@@ -84,44 +77,22 @@ export class TimeSrv {
       return value;
     }
     if (value.length === 8) {
-      return toUtc(value, 'YYYYMMDD');
+      return moment.utc(value, 'YYYYMMDD');
     }
     if (value.length === 15) {
-      return toUtc(value, 'YYYYMMDDTHHmmss');
+      return moment.utc(value, 'YYYYMMDDTHHmmss');
     }
 
     if (!isNaN(value)) {
       const epoch = parseInt(value, 10);
-      return toUtc(epoch);
+      return moment.utc(epoch);
     }
 
     return null;
   }
 
-  private getTimeWindow(time: string, timeWindow: string) {
-    const valueTime = parseInt(time, 10);
-    let timeWindowMs;
-
-    if (timeWindow.match(/^\d+$/) && parseInt(timeWindow, 10)) {
-      // when time window specified in ms
-      timeWindowMs = parseInt(timeWindow, 10);
-    } else {
-      timeWindowMs = kbn.interval_to_ms(timeWindow);
-    }
-
-    return {
-      from: toUtc(valueTime - timeWindowMs / 2),
-      to: toUtc(valueTime + timeWindowMs / 2),
-    };
-  }
-
   private initTimeFromUrl() {
     const params = this.$location.search();
-
-    if (params.time && params['time.window']) {
-      this.time = this.getTimeWindow(params.time, params['time.window']);
-    }
-
     if (params.from) {
       this.time.from = this.parseUrlParam(params.from) || this.time.from;
     }
@@ -141,9 +112,6 @@ export class TimeSrv {
 
   private routeUpdated() {
     const params = this.$location.search();
-    if (params.left) {
-      return; // explore handles this;
-    }
     const urlRange = this.timeRangeForUrl();
     // check if url has time range
     if (params.from && params.to) {
@@ -216,7 +184,7 @@ export class TimeSrv {
     _.extend(this.time, time);
 
     // disable refresh if zoom in or zoom out
-    if (isDateTime(time.to)) {
+    if (moment.isMoment(time.to)) {
       this.oldRefresh = this.dashboard.refresh || this.oldRefresh;
       this.setAutoRefresh(false);
     } else if (this.oldRefresh && this.oldRefresh !== this.dashboard.refresh) {
@@ -239,10 +207,10 @@ export class TimeSrv {
   timeRangeForUrl() {
     const range = this.timeRange().raw;
 
-    if (isDateTime(range.from)) {
+    if (moment.isMoment(range.from)) {
       range.from = range.from.valueOf().toString();
     }
-    if (isDateTime(range.to)) {
+    if (moment.isMoment(range.to)) {
       range.to = range.to.valueOf().toString();
     }
 
@@ -252,11 +220,11 @@ export class TimeSrv {
   timeRange(): TimeRange {
     // make copies if they are moment  (do not want to return out internal moment, because they are mutable!)
     const raw = {
-      from: isDateTime(this.time.from) ? dateTime(this.time.from) : this.time.from,
-      to: isDateTime(this.time.to) ? dateTime(this.time.to) : this.time.to,
+      from: moment.isMoment(this.time.from) ? moment(this.time.from) : this.time.from,
+      to: moment.isMoment(this.time.to) ? moment(this.time.to) : this.time.to,
     };
 
-    const timezone: TimeZone = this.dashboard ? this.dashboard.getTimezone() : undefined;
+    const timezone = this.dashboard && this.dashboard.getTimezone();
 
     return {
       from: dateMath.parse(raw.from, false, timezone),
@@ -267,19 +235,14 @@ export class TimeSrv {
 
   zoomOut(e: any, factor: number) {
     const range = this.timeRange();
-    const { from, to } = getZoomedTimeRange(range, factor);
 
-    this.setTime({ from: toUtc(from), to: toUtc(to) });
-  }
+    const timespan = range.to.valueOf() - range.from.valueOf();
+    const center = range.to.valueOf() - timespan / 2;
 
-  shiftTime(e: any, direction: number) {
-    const range = this.timeRange();
-    const { from, to } = getShiftedTimeRange(direction, range);
+    const to = center + (timespan * factor) / 2;
+    const from = center - (timespan * factor) / 2;
 
-    this.setTime({
-      from: toUtc(from),
-      to: toUtc(to),
-    });
+    this.setTime({ from: moment.utc(from), to: moment.utc(to) });
   }
 }
 

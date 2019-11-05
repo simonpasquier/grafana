@@ -1,13 +1,13 @@
 import React, { PureComponent } from 'react';
 import { hot } from 'react-hot-loader';
 import { connect } from 'react-redux';
-import { Collapse } from '@grafana/ui';
 
 import { ExploreId, ExploreItemState } from 'app/types/explore';
 import { StoreState } from 'app/types';
 
 import { toggleTable } from './state/actions';
 import Table from './Table';
+import Panel from './Panel';
 import TableModel from 'app/core/table_model';
 
 interface TableContainerProps {
@@ -27,20 +27,23 @@ export class TableContainer extends PureComponent<TableContainerProps> {
   render() {
     const { loading, onClickCell, showingTable, tableResult } = this.props;
 
+    if (!tableResult) {
+      return null;
+    }
+
     return (
-      <Collapse label="Table" loading={loading} collapsible isOpen={showingTable} onToggle={this.onClickTableButton}>
-        {tableResult && <Table data={tableResult} loading={loading} onClickCell={onClickCell} />}
-      </Collapse>
+      <Panel label="Table" loading={loading} isOpen={showingTable} onToggle={this.onClickTableButton}>
+        <Table data={tableResult} loading={loading} onClickCell={onClickCell} />
+      </Panel>
     );
   }
 }
 
-function mapStateToProps(state: StoreState, { exploreId }: { exploreId: string }) {
+function mapStateToProps(state: StoreState, { exploreId }) {
   const explore = state.explore;
-  // @ts-ignore
   const item: ExploreItemState = explore[exploreId];
-  const { loading: loadingInState, showingTable, tableResult } = item;
-  const loading = tableResult && tableResult.rows.length > 0 ? false : loadingInState;
+  const { queryTransactions, showingTable, tableResult } = item;
+  const loading = queryTransactions.some(qt => qt.resultType === 'Table' && !qt.done);
   return { loading, showingTable, tableResult };
 }
 

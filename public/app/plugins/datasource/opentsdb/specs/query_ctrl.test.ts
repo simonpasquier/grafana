@@ -20,7 +20,7 @@ describe('OpenTsQueryCtrl', () => {
   OpenTsQueryCtrl.prototype = Object.assign(OpenTsQueryCtrl.prototype, ctx);
 
   beforeEach(() => {
-    ctx.ctrl = new OpenTsQueryCtrl({}, {} as any);
+    ctx.ctrl = new OpenTsQueryCtrl({}, {});
   });
 
   describe('init query_ctrl variables', () => {

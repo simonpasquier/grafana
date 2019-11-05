@@ -1,24 +1,17 @@
 import React, { createRef } from 'react';
 import * as PopperJS from 'popper.js';
-import { Popover } from './Popover';
-import { PopoverController, UsingPopperProps } from './PopoverController';
+import { Popper } from './Popper';
+import { PopperController, UsingPopperProps } from './PopperController';
 
-export interface TooltipProps extends UsingPopperProps {
+interface TooltipProps extends UsingPopperProps {
   theme?: 'info' | 'error';
 }
-
-export interface PopoverContentProps {
-  updatePopperPosition?: () => void;
-}
-
-export type PopoverContent = string | React.ReactElement<any> | ((props: PopoverContentProps) => JSX.Element);
-
 export const Tooltip = ({ children, theme, ...controllerProps }: TooltipProps) => {
   const tooltipTriggerRef = createRef<PopperJS.ReferenceObject>();
   const popperBackgroundClassName = 'popper__background' + (theme ? ' popper__background--' + theme : '');
 
   return (
-    <PopoverController {...controllerProps}>
+    <PopperController {...controllerProps}>
       {(showPopper, hidePopper, popperProps) => {
         {
           /* Override internal 'show' state if passed in as prop */
@@ -30,7 +23,7 @@ export const Tooltip = ({ children, theme, ...controllerProps }: TooltipProps) =
         return (
           <>
             {tooltipTriggerRef.current && (
-              <Popover
+              <Popper
                 {...payloadProps}
                 onMouseEnter={showPopper}
                 onMouseLeave={hidePopper}
@@ -50,6 +43,6 @@ export const Tooltip = ({ children, theme, ...controllerProps }: TooltipProps) =
           </>
         );
       }}
-    </PopoverController>
+    </PopperController>
   );
 };

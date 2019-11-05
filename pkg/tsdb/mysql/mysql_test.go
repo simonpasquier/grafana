@@ -15,8 +15,6 @@ import (
 	"github.com/grafana/grafana/pkg/services/sqlstore"
 	"github.com/grafana/grafana/pkg/services/sqlstore/sqlutil"
 	"github.com/grafana/grafana/pkg/tsdb"
-	"github.com/grafana/grafana/pkg/tsdb/sqleng"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -40,13 +38,13 @@ func TestMySQL(t *testing.T) {
 	Convey("MySQL", t, func() {
 		x := InitMySQLTestDB(t)
 
-		origXormEngine := sqleng.NewXormEngine
-		sqleng.NewXormEngine = func(d, c string) (*xorm.Engine, error) {
+		origXormEngine := tsdb.NewXormEngine
+		tsdb.NewXormEngine = func(d, c string) (*xorm.Engine, error) {
 			return x, nil
 		}
 
-		origInterpolate := sqleng.Interpolate
-		sqleng.Interpolate = func(query *tsdb.Query, timeRange *tsdb.TimeRange, sql string) (string, error) {
+		origInterpolate := tsdb.Interpolate
+		tsdb.Interpolate = func(query *tsdb.Query, timeRange *tsdb.TimeRange, sql string) (string, error) {
 			return sql, nil
 		}
 
@@ -61,8 +59,8 @@ func TestMySQL(t *testing.T) {
 
 		Reset(func() {
 			sess.Close()
-			sqleng.NewXormEngine = origXormEngine
-			sqleng.Interpolate = origInterpolate
+			tsdb.NewXormEngine = origXormEngine
+			tsdb.Interpolate = origInterpolate
 		})
 
 		Convey("Given a table with different native data types", func() {
@@ -305,11 +303,11 @@ func TestMySQL(t *testing.T) {
 			})
 
 			Convey("When doing a metric query using timeGroup and $__interval", func() {
-				mockInterpolate := sqleng.Interpolate
-				sqleng.Interpolate = origInterpolate
+				mockInterpolate := tsdb.Interpolate
+				tsdb.Interpolate = origInterpolate
 
 				Reset(func() {
-					sqleng.Interpolate = mockInterpolate
+					tsdb.Interpolate = mockInterpolate
 				})
 
 				Convey("Should replace $__interval", func() {
@@ -756,7 +754,7 @@ func TestMySQL(t *testing.T) {
 		})
 
 		Convey("When doing a query with timeFrom,timeTo,unixEpochFrom,unixEpochTo macros", func() {
-			sqleng.Interpolate = origInterpolate
+			tsdb.Interpolate = origInterpolate
 			query := &tsdb.TsdbQuery{
 				TimeRange: tsdb.NewFakeTimeRange("5m", "now", fromStart),
 				Queries: []*tsdb.Query{

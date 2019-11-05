@@ -1,6 +1,4 @@
 import _ from 'lodash';
-import { TemplateSrv } from 'app/features/templating/template_srv';
-import { ScopedVars } from '@grafana/data';
 
 export default class MysqlQuery {
   target: any;
@@ -8,7 +6,7 @@ export default class MysqlQuery {
   scopedVars: any;
 
   /** @ngInject */
-  constructor(target: any, templateSrv?: TemplateSrv, scopedVars?: ScopedVars) {
+  constructor(target, templateSrv?, scopedVars?) {
     this.target = target;
     this.templateSrv = templateSrv;
     this.scopedVars = scopedVars;
@@ -37,7 +35,7 @@ export default class MysqlQuery {
   }
 
   // remove identifier quoting from identifier to use in metadata queries
-  unquoteIdentifier(value: string) {
+  unquoteIdentifier(value) {
     if (value[0] === '"' && value[value.length - 1] === '"') {
       return value.substring(1, value.length - 1).replace(/""/g, '"');
     } else {
@@ -45,15 +43,15 @@ export default class MysqlQuery {
     }
   }
 
-  quoteIdentifier(value: string) {
+  quoteIdentifier(value) {
     return '"' + value.replace(/"/g, '""') + '"';
   }
 
-  quoteLiteral(value: string) {
+  quoteLiteral(value) {
     return "'" + value.replace(/'/g, "''") + "'";
   }
 
-  escapeLiteral(value: any) {
+  escapeLiteral(value) {
     return String(value).replace(/'/g, "''");
   }
 
@@ -65,7 +63,7 @@ export default class MysqlQuery {
     return this.target.metricColumn !== 'none';
   }
 
-  interpolateQueryStr(value: string, variable: { multi: any; includeAll: any }, defaultFormatFn: any) {
+  interpolateQueryStr(value, variable, defaultFormatFn) {
     // if no multi or include all do not regexEscape
     if (!variable.multi && !variable.includeAll) {
       return this.escapeLiteral(value);
@@ -79,7 +77,7 @@ export default class MysqlQuery {
     return escapedValues.join(',');
   }
 
-  render(interpolate?: boolean) {
+  render(interpolate?) {
     const target = this.target;
 
     // new query with no table set yet
@@ -148,7 +146,7 @@ export default class MysqlQuery {
     return query;
   }
 
-  buildValueColumn(column: any) {
+  buildValueColumn(column) {
     let query = '';
 
     const columnName: any = _.find(column, (g: any) => g.type === 'column');

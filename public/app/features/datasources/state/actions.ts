@@ -1,17 +1,15 @@
 import { ThunkAction } from 'redux-thunk';
 import config from '../../../core/config';
-import { getBackendSrv } from '@grafana/runtime';
+import { getBackendSrv } from 'app/core/services/backend_srv';
 import { getDatasourceSrv } from 'app/features/plugins/datasource_srv';
 import { LayoutMode } from 'app/core/components/LayoutSelector/LayoutSelector';
 import { updateLocation, updateNavIndex, UpdateNavIndexAction } from 'app/core/actions';
 import { buildNavModel } from './navModel';
 import { DataSourceSettings, DataSourcePluginMeta } from '@grafana/ui';
-import { StoreState } from 'app/types';
-import { LocationUpdate } from '@grafana/runtime';
+import { StoreState, LocationUpdate } from 'app/types';
 import { actionCreatorFactory } from 'app/core/redux';
 import { ActionOf, noPayloadActionCreatorFactory } from 'app/core/redux/actionCreatorFactory';
 import { getPluginSettings } from 'app/features/plugins/PluginSettingsCache';
-import { importDataSourcePlugin } from 'app/features/plugins/plugin_loader';
 
 export const dataSourceLoaded = actionCreatorFactory<DataSourceSettings>('LOAD_DATA_SOURCE').create();
 
@@ -54,11 +52,9 @@ export function loadDataSource(id: number): ThunkResult<void> {
   return async dispatch => {
     const dataSource = await getBackendSrv().get(`/api/datasources/${id}`);
     const pluginInfo = (await getPluginSettings(dataSource.type)) as DataSourcePluginMeta;
-    const plugin = await importDataSourcePlugin(pluginInfo);
-
     dispatch(dataSourceLoaded(dataSource));
     dispatch(dataSourceMetaLoaded(pluginInfo));
-    dispatch(updateNavIndex(buildNavModel(dataSource, plugin)));
+    dispatch(updateNavIndex(buildNavModel(dataSource, pluginInfo)));
   };
 }
 

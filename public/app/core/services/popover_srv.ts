@@ -1,11 +1,10 @@
 import _ from 'lodash';
 import coreModule from 'app/core/core_module';
-// @ts-ignore
 import Drop from 'tether-drop';
 
 /** @ngInject */
-function popoverSrv(this: any, $compile: any, $rootScope: any, $timeout: any) {
-  let openDrop: any = null;
+function popoverSrv(this: any, $compile, $rootScope, $timeout) {
+  let openDrop = null;
 
   this.close = () => {
     if (openDrop) {
@@ -13,14 +12,14 @@ function popoverSrv(this: any, $compile: any, $rootScope: any, $timeout: any) {
     }
   };
 
-  this.show = (options: any) => {
+  this.show = options => {
     if (openDrop) {
       openDrop.close();
       openDrop = null;
     }
 
     const scope = _.extend($rootScope.$new(true), options.model);
-    let drop: any;
+    let drop;
 
     const cleanUp = () => {
       setTimeout(() => {

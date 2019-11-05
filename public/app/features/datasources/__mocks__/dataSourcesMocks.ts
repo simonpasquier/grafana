@@ -1,6 +1,6 @@
-import { DataSourceSettings } from '@grafana/ui';
+import { DataSourceSettings } from '@grafana/ui/src/types';
 
-export const getMockDataSources = (amount: number) => {
+export const getMockDataSources = (amount: number): DataSourceSettings[] => {
   const dataSources = [];
 
   for (let i = 0; i <= amount; i++) {
@@ -22,7 +22,7 @@ export const getMockDataSources = (amount: number) => {
     });
   }
 
-  return dataSources as DataSourceSettings[];
+  return dataSources;
 };
 
 export const getMockDataSource = (): DataSourceSettings => {

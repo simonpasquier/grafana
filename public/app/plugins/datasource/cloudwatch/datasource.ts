@@ -1,30 +1,22 @@
-import angular, { IQService } from 'angular';
+import angular from 'angular';
 import _ from 'lodash';
-import { dateMath, ScopedVars } from '@grafana/data';
+import * as dateMath from '@grafana/ui/src/utils/datemath';
 import kbn from 'app/core/utils/kbn';
 import { CloudWatchQuery } from './types';
-import { DataSourceApi, DataQueryRequest, DataSourceInstanceSettings } from '@grafana/ui';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { TemplateSrv } from 'app/features/templating/template_srv';
-import { TimeSrv } from 'app/features/dashboard/services/TimeSrv';
+import { DataSourceApi, DataQueryRequest } from '@grafana/ui/src/types';
 // import * as moment from 'moment';
 
-export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery> {
+export default class CloudWatchDatasource implements DataSourceApi<CloudWatchQuery> {
   type: any;
+  name: any;
   proxyUrl: any;
   defaultRegion: any;
+  instanceSettings: any;
   standardStatistics: any;
-
   /** @ngInject */
-  constructor(
-    private instanceSettings: DataSourceInstanceSettings,
-    private $q: IQService,
-    private backendSrv: BackendSrv,
-    private templateSrv: TemplateSrv,
-    private timeSrv: TimeSrv
-  ) {
-    super(instanceSettings);
+  constructor(instanceSettings, private $q, private backendSrv, private templateSrv, private timeSrv) {
     this.type = 'cloudwatch';
+    this.name = instanceSettings.name;
     this.proxyUrl = instanceSettings.url;
     this.defaultRegion = instanceSettings.jsonData.defaultRegion;
     this.instanceSettings = instanceSettings;
@@ -52,6 +44,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
       item.period = String(this.getPeriod(item, options)); // use string format for period in graph query, and alerting
       item.id = this.templateSrv.replace(item.id, options.scopedVars);
       item.expression = this.templateSrv.replace(item.expression, options.scopedVars);
+      item.returnData = typeof item.hide === 'undefined' ? true : !item.hide;
 
       // valid ExtendedStatistics is like p90.00, check the pattern
       const hasInvalidStatistics = item.statistics.some(s => {
@@ -95,7 +88,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     return this.performTimeSeriesQuery(request);
   }
 
-  getPeriod(target: any, options: any, now?: number) {
+  getPeriod(target, options, now?) {
     const start = this.convertToCloudWatchTime(options.range.from, false);
     const end = this.convertToCloudWatchTime(options.range.to, true);
     now = Math.round((now || Date.now()) / 1000);
@@ -141,8 +134,8 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     return period;
   }
 
-  performTimeSeriesQuery(request: any) {
-    return this.awsRequest('/api/tsdb/query', request).then((res: any) => {
+  performTimeSeriesQuery(request) {
+    return this.awsRequest('/api/tsdb/query', request).then(res => {
       const data = [];
 
       if (res.results) {
@@ -164,7 +157,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     });
   }
 
-  transformSuggestDataFromTable(suggestData: any) {
+  transformSuggestDataFromTable(suggestData) {
     return _.map(suggestData.results['metricFindQuery'].tables[0].rows, v => {
       return {
         text: v[0],
@@ -173,7 +166,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     });
   }
 
-  doMetricQueryRequest(subtype: any, parameters: any) {
+  doMetricQueryRequest(subtype, parameters) {
     const range = this.timeSrv.timeRange();
     return this.awsRequest('/api/tsdb/query', {
       from: range.from.valueOf().toString(),
@@ -191,7 +184,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
           parameters
         ),
       ],
-    }).then((r: any) => {
+    }).then(r => {
       return this.transformSuggestDataFromTable(r);
     });
   }
@@ -204,27 +197,21 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     return this.doMetricQueryRequest('namespaces', null);
   }
 
-  getMetrics(namespace: string, region: string) {
+  getMetrics(namespace, region) {
     return this.doMetricQueryRequest('metrics', {
       region: this.templateSrv.replace(this.getActualRegion(region)),
       namespace: this.templateSrv.replace(namespace),
     });
   }
 
-  getDimensionKeys(namespace: string, region: string) {
+  getDimensionKeys(namespace, region) {
     return this.doMetricQueryRequest('dimension_keys', {
       region: this.templateSrv.replace(this.getActualRegion(region)),
       namespace: this.templateSrv.replace(namespace),
     });
   }
 
-  getDimensionValues(
-    region: string,
-    namespace: string,
-    metricName: string,
-    dimensionKey: string,
-    filterDimensions: {}
-  ) {
+  getDimensionValues(region, namespace, metricName, dimensionKey, filterDimensions) {
     return this.doMetricQueryRequest('dimension_values', {
       region: this.templateSrv.replace(this.getActualRegion(region)),
       namespace: this.templateSrv.replace(namespace),
@@ -234,14 +221,14 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     });
   }
 
-  getEbsVolumeIds(region: string, instanceId: string) {
+  getEbsVolumeIds(region, instanceId) {
     return this.doMetricQueryRequest('ebs_volume_ids', {
       region: this.templateSrv.replace(this.getActualRegion(region)),
       instanceId: this.templateSrv.replace(instanceId),
     });
   }
 
-  getEc2InstanceAttribute(region: string, attributeName: string, filters: any) {
+  getEc2InstanceAttribute(region, attributeName, filters) {
     return this.doMetricQueryRequest('ec2_instance_attribute', {
       region: this.templateSrv.replace(this.getActualRegion(region)),
       attributeName: this.templateSrv.replace(attributeName),
@@ -249,7 +236,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     });
   }
 
-  getResourceARNs(region: string, resourceType: string, tags: any) {
+  getResourceARNs(region, resourceType, tags) {
     return this.doMetricQueryRequest('resource_arns', {
       region: this.templateSrv.replace(this.getActualRegion(region)),
       resourceType: this.templateSrv.replace(resourceType),
@@ -257,7 +244,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     });
   }
 
-  metricFindQuery(query: string) {
+  metricFindQuery(query) {
     let region;
     let namespace;
     let metricName;
@@ -329,7 +316,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     return this.$q.when([]);
   }
 
-  annotationQuery(options: any) {
+  annotationQuery(options) {
     const annotation = options.annotation;
     const statistics = _.map(annotation.statistics, s => {
       return this.templateSrv.replace(s);
@@ -364,7 +351,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
           parameters
         ),
       ],
-    }).then((r: any) => {
+    }).then(r => {
       return _.map(r.results['annotationQuery'].tables[0].rows, v => {
         return {
           annotation: annotation,
@@ -377,7 +364,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     });
   }
 
-  targetContainsTemplate(target: any) {
+  targetContainsTemplate(target) {
     return (
       this.templateSrv.variableExists(target.region) ||
       this.templateSrv.variableExists(target.namespace) ||
@@ -400,14 +387,14 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     });
   }
 
-  awsRequest(url: string, data: any) {
+  awsRequest(url, data) {
     const options = {
       method: 'POST',
-      url,
-      data,
+      url: url,
+      data: data,
     };
 
-    return this.backendSrv.datasourceRequest(options).then((result: any) => {
+    return this.backendSrv.datasourceRequest(options).then(result => {
       return result.data;
     });
   }
@@ -416,14 +403,14 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     return this.defaultRegion;
   }
 
-  getActualRegion(region: string) {
+  getActualRegion(region) {
     if (region === 'default' || _.isEmpty(region)) {
       return this.getDefaultRegion();
     }
     return region;
   }
 
-  getExpandedVariables(target: any, dimensionKey: any, variable: any, templateSrv: TemplateSrv) {
+  getExpandedVariables(target, dimensionKey, variable, templateSrv) {
     /* if the all checkbox is marked we should add all values to the targets */
     const allSelected: any = _.find(variable.options, { selected: true, text: 'All' });
     const selectedVariables = _.filter(variable.options, v => {
@@ -435,7 +422,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     });
     const currentVariables = !_.isArray(variable.current.value)
       ? [variable.current]
-      : variable.current.value.map((v: any) => {
+      : variable.current.value.map(v => {
           return {
             text: v,
             value: v,
@@ -445,9 +432,9 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
       selectedVariables.some((s: any) => {
         return s.value === currentVariables[0].value;
       }) || currentVariables[0].value === '$__all';
-    return (useSelectedVariables ? selectedVariables : currentVariables).map((v: any) => {
+    return (useSelectedVariables ? selectedVariables : currentVariables).map(v => {
       const t = angular.copy(target);
-      const scopedVar: any = {};
+      const scopedVar = {};
       scopedVar[variable.name] = v;
       t.refId = target.refId + '_' + v.value;
       t.dimensions[dimensionKey] = templateSrv.replace(t.dimensions[dimensionKey], scopedVar);
@@ -460,7 +447,7 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
     });
   }
 
-  expandTemplateVariable(targets: any, scopedVars: ScopedVars, templateSrv: TemplateSrv) {
+  expandTemplateVariable(targets, scopedVars, templateSrv) {
     // Datasource and template srv logic uber-complected. This should be cleaned up.
     return _.chain(targets)
       .map(target => {
@@ -485,15 +472,15 @@ export default class CloudWatchDatasource extends DataSourceApi<CloudWatchQuery>
       .value();
   }
 
-  convertToCloudWatchTime(date: any, roundUp: any) {
+  convertToCloudWatchTime(date, roundUp) {
     if (_.isString(date)) {
       date = dateMath.parse(date, roundUp);
     }
     return Math.round(date.valueOf() / 1000);
   }
 
-  convertDimensionFormat(dimensions: any, scopedVars: ScopedVars) {
-    const convertedDimensions: any = {};
+  convertDimensionFormat(dimensions, scopedVars) {
+    const convertedDimensions = {};
     _.each(dimensions, (value, key) => {
       convertedDimensions[this.templateSrv.replace(key, scopedVars)] = this.templateSrv.replace(value, scopedVars);
     });

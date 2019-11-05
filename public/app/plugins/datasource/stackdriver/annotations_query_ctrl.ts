@@ -6,13 +6,13 @@ export class StackdriverAnnotationsQueryCtrl {
   templateSrv: TemplateSrv;
 
   /** @ngInject */
-  constructor(templateSrv: TemplateSrv) {
+  constructor(templateSrv) {
     this.templateSrv = templateSrv;
     this.annotation.target = this.annotation.target || {};
     this.onQueryChange = this.onQueryChange.bind(this);
   }
 
-  onQueryChange(target: any) {
+  onQueryChange(target) {
     Object.assign(this.annotation.target, target);
   }
 }

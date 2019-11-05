@@ -67,7 +67,7 @@ export class ColumnOptionsCtrl {
   }
 
   addColumnStyle() {
-    const newStyleRule: object = {
+    const newStyleRule = {
       unit: 'short',
       type: 'number',
       alias: '',

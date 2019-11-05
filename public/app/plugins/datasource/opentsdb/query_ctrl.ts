@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import kbn from 'app/core/utils/kbn';
 import { QueryCtrl } from 'app/plugins/sdk';
-import { auto } from 'angular';
 
 export class OpenTsQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
@@ -21,7 +20,7 @@ export class OpenTsQueryCtrl extends QueryCtrl {
   addFilterMode: boolean;
 
   /** @ngInject */
-  constructor($scope: any, $injector: auto.IInjectorService) {
+  constructor($scope, $injector) {
     super($scope, $injector);
 
     this.errors = this.validateTarget();
@@ -51,31 +50,31 @@ export class OpenTsQueryCtrl extends QueryCtrl {
       this.target.downsampleFillPolicy = 'none';
     }
 
-    this.datasource.getAggregators().then((aggs: { length: number }) => {
+    this.datasource.getAggregators().then(aggs => {
       if (aggs.length !== 0) {
         this.aggregators = aggs;
       }
     });
 
-    this.datasource.getFilterTypes().then((filterTypes: { length: number }) => {
+    this.datasource.getFilterTypes().then(filterTypes => {
       if (filterTypes.length !== 0) {
         this.filterTypes = filterTypes;
       }
     });
 
     // needs to be defined here as it is called from typeahead
-    this.suggestMetrics = (query: string, callback: any) => {
+    this.suggestMetrics = (query, callback) => {
       this.datasource
         .metricFindQuery('metrics(' + query + ')')
         .then(this.getTextValues)
         .then(callback);
     };
 
-    this.suggestTagKeys = (query: any, callback: any) => {
+    this.suggestTagKeys = (query, callback) => {
       this.datasource.suggestTagKeys(this.target.metric).then(callback);
     };
 
-    this.suggestTagValues = (query: string, callback: any) => {
+    this.suggestTagValues = (query, callback) => {
       this.datasource
         .metricFindQuery('suggest_tagv(' + query + ')')
         .then(this.getTextValues)
@@ -88,7 +87,7 @@ export class OpenTsQueryCtrl extends QueryCtrl {
     this.refresh();
   }
 
-  getTextValues(metricFindResult: any) {
+  getTextValues(metricFindResult) {
     return _.map(metricFindResult, value => {
       return value.text;
     });
@@ -120,12 +119,12 @@ export class OpenTsQueryCtrl extends QueryCtrl {
     this.addTagMode = false;
   }
 
-  removeTag(key: string | number) {
+  removeTag(key) {
     delete this.target.tags[key];
     this.targetBlur();
   }
 
-  editTag(key: string | number, value: any) {
+  editTag(key, value) {
     this.removeTag(key);
     this.target.currentTagKey = key;
     this.target.currentTagValue = value;
@@ -179,12 +178,12 @@ export class OpenTsQueryCtrl extends QueryCtrl {
     this.addFilterMode = false;
   }
 
-  removeFilter(index: number) {
+  removeFilter(index) {
     this.target.filters.splice(index, 1);
     this.targetBlur();
   }
 
-  editFilter(fil: { tagk: any; filter: any; type: any; groupBy: any }, index: number) {
+  editFilter(fil, index) {
     this.removeFilter(index);
     this.target.currentFilterKey = fil.tagk;
     this.target.currentFilterValue = fil.filter;

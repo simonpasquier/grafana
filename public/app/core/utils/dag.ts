@@ -2,7 +2,7 @@ export class Edge {
   inputNode: Node;
   outputNode: Node;
 
-  _linkTo(node: Node, direction: number) {
+  _linkTo(node, direction) {
     if (direction <= 0) {
       node.inputEdges.push(this);
     }
@@ -104,7 +104,7 @@ export class Node {
   }
 
   getOptimizedInputEdges(): Edge[] {
-    const toBeRemoved: any[] = [];
+    const toBeRemoved = [];
     this.inputEdges.forEach(e => {
       const inputEdgesNodes = e.inputNode.inputEdges.map(e => e.inputNode);
 
@@ -121,7 +121,7 @@ export class Node {
 }
 
 export class Graph {
-  nodes: any = {};
+  nodes = {};
 
   constructor() {}
 
@@ -132,7 +132,7 @@ export class Graph {
   }
 
   createNodes(names: string[]): Node[] {
-    const nodes: Node[] = [];
+    const nodes = [];
     names.forEach(name => {
       nodes.push(this.createNode(name));
     });
@@ -142,8 +142,8 @@ export class Graph {
   link(input: string | string[] | Node | Node[], output: string | string[] | Node | Node[]): Edge[] {
     let inputArr = [];
     let outputArr = [];
-    const inputNodes: Node[] = [];
-    const outputNodes: Node[] = [];
+    const inputNodes = [];
+    const outputNodes = [];
 
     if (input instanceof Array) {
       inputArr = input;
@@ -183,7 +183,7 @@ export class Graph {
       }
     }
 
-    const edges: Edge[] = [];
+    const edges = [];
     inputNodes.forEach(input => {
       outputNodes.forEach(output => {
         edges.push(this.createEdge().link(input, output));
@@ -204,11 +204,11 @@ export class Graph {
 export const printGraph = (g: Graph) => {
   Object.keys(g.nodes).forEach(name => {
     const n = g.nodes[name];
-    let outputEdges = n.outputEdges.map((e: Edge) => e.outputNode.name).join(', ');
+    let outputEdges = n.outputEdges.map(e => e.outputNode.name).join(', ');
     if (!outputEdges) {
       outputEdges = '<none>';
     }
-    let inputEdges = n.inputEdges.map((e: Edge) => e.inputNode.name).join(', ');
+    let inputEdges = n.inputEdges.map(e => e.inputNode.name).join(', ');
     if (!inputEdges) {
       inputEdges = '<none>';
     }

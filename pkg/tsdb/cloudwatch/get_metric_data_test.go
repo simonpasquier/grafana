@@ -31,6 +31,7 @@ func TestCloudWatchGetMetricData(t *testing.T) {
 					Period:     300,
 					Id:         "id1",
 					Expression: "",
+					ReturnData: true,
 				},
 				"id2": {
 					RefId:      "B",
@@ -38,6 +39,7 @@ func TestCloudWatchGetMetricData(t *testing.T) {
 					Statistics: []*string{aws.String("Average")},
 					Id:         "id2",
 					Expression: "id1 * 2",
+					ReturnData: true,
 				},
 			}
 
@@ -56,9 +58,11 @@ func TestCloudWatchGetMetricData(t *testing.T) {
 					So(*v.MetricStat.Period, ShouldEqual, 300)
 					So(*v.MetricStat.Stat, ShouldEqual, "Average")
 					So(*v.Id, ShouldEqual, "id1")
+					So(*v.ReturnData, ShouldEqual, true)
 				} else {
 					So(*v.Id, ShouldEqual, "id2")
 					So(*v.Expression, ShouldEqual, "id1 * 2")
+					So(*v.ReturnData, ShouldEqual, true)
 				}
 			}
 		})

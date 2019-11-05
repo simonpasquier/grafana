@@ -1,17 +1,15 @@
 import React, { FunctionComponent } from 'react';
 import { LokiQueryFieldForm, LokiQueryFieldFormProps } from './LokiQueryFieldForm';
 import { useLokiSyntax } from './useLokiSyntax';
-import LokiLanguageProvider from '../language_provider';
 
-export const LokiQueryField: FunctionComponent<LokiQueryFieldFormProps> = ({
+const LokiQueryField: FunctionComponent<LokiQueryFieldFormProps> = ({
   datasource,
   datasourceStatus,
   ...otherProps
 }) => {
   const { isSyntaxReady, setActiveOption, refreshLabels, ...syntaxProps } = useLokiSyntax(
-    datasource.languageProvider as LokiLanguageProvider,
-    datasourceStatus,
-    otherProps.absoluteRange
+    datasource.languageProvider,
+    datasourceStatus
   );
 
   return (

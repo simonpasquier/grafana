@@ -7,7 +7,7 @@ import { assignModelProperties } from 'app/core/utils/model_utils';
  * \[\[([\s\S]+?)(?::(\w+))?\]\]    [[var2]] or [[var2:fmt2]]
  * \${(\w+)(?::(\w+))?}             ${var3} or ${var3:fmt3}
  */
-export const variableRegex = /\$(\w+)|\[\[([\s\S]+?)(?::(\w+))?\]\]|\${(\w+)(?:\.([^:^\}]+))?(?::(\w+))?}/g;
+export const variableRegex = /\$(\w+)|\[\[([\s\S]+?)(?::(\w+))?\]\]|\${(\w+)(?::(\w+))?}/g;
 
 // Helper function since lastIndex is not reset
 export const variableRegexExec = (variableString: string) => {
@@ -16,26 +16,15 @@ export const variableRegexExec = (variableString: string) => {
 };
 
 export interface Variable {
-  setValue(option: any): any;
-  updateOptions(): any;
-  dependsOn(variable: any): any;
-  setValueFromUrl(urlValue: any): any;
-  getValueForUrl(): any;
-  getSaveModel(): any;
+  setValue(option);
+  updateOptions();
+  dependsOn(variable);
+  setValueFromUrl(urlValue);
+  getValueForUrl();
+  getSaveModel();
 }
 
-export type CtorType = new (...args: any[]) => {};
-
-export interface VariableTypes {
-  [key: string]: {
-    name: string;
-    ctor: CtorType;
-    description: string;
-    supportsMulti?: boolean;
-  };
-}
-
-export let variableTypes: VariableTypes = {};
+export let variableTypes = {};
 export { assignModelProperties };
 
 export function containsVariable(...args: any[]) {

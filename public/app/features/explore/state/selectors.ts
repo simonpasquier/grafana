@@ -3,9 +3,10 @@ import { ExploreItemState } from 'app/types';
 import { filterLogLevels, dedupLogRows } from 'app/core/logs_model';
 
 export const exploreItemUIStateSelector = (itemState: ExploreItemState) => {
-  const { showingGraph, showingTable, showingStartPage, dedupStrategy } = itemState;
+  const { showingGraph, showingLogs, showingTable, showingStartPage, dedupStrategy } = itemState;
   return {
     showingGraph,
+    showingLogs,
     showingTable,
     showingStartPage,
     dedupStrategy,

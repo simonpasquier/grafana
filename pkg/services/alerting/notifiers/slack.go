@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/grafana/grafana/pkg/bus"
-	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/log"
+	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 	"github.com/grafana/grafana/pkg/setting"
 )
@@ -99,8 +99,7 @@ func init() {
 
 }
 
-// NewSlackNotifier is the constructor for the Slack notifier
-func NewSlackNotifier(model *models.AlertNotification) (alerting.Notifier, error) {
+func NewSlackNotifier(model *m.AlertNotification) (alerting.Notifier, error) {
 	url := model.Settings.Get("url").MustString()
 	if url == "" {
 		return nil, alerting.ValidationError{Reason: "Could not find url property in settings"}
@@ -109,18 +108,18 @@ func NewSlackNotifier(model *models.AlertNotification) (alerting.Notifier, error
 	recipient := model.Settings.Get("recipient").MustString()
 	username := model.Settings.Get("username").MustString()
 	iconEmoji := model.Settings.Get("icon_emoji").MustString()
-	iconURL := model.Settings.Get("icon_url").MustString()
+	iconUrl := model.Settings.Get("icon_url").MustString()
 	mention := model.Settings.Get("mention").MustString()
 	token := model.Settings.Get("token").MustString()
 	uploadImage := model.Settings.Get("uploadImage").MustBool(true)
 
 	return &SlackNotifier{
 		NotifierBase: NewNotifierBase(model),
-		URL:          url,
+		Url:          url,
 		Recipient:    recipient,
 		Username:     username,
 		IconEmoji:    iconEmoji,
-		IconURL:      iconURL,
+		IconUrl:      iconUrl,
 		Mention:      mention,
 		Token:        token,
 		Upload:       uploadImage,
@@ -128,28 +127,25 @@ func NewSlackNotifier(model *models.AlertNotification) (alerting.Notifier, error
 	}, nil
 }
 
-// SlackNotifier is responsible for sending
-// alert notification to Slack.
 type SlackNotifier struct {
 	NotifierBase
-	URL       string
+	Url       string
 	Recipient string
 	Username  string
 	IconEmoji string
-	IconURL   string
+	IconUrl   string
 	Mention   string
 	Token     string
 	Upload    bool
 	log       log.Logger
 }
 
-// Notify send alert notification to Slack.
-func (sn *SlackNotifier) Notify(evalContext *alerting.EvalContext) error {
-	sn.log.Info("Executing slack notification", "ruleId", evalContext.Rule.ID, "notification", sn.Name)
+func (this *SlackNotifier) Notify(evalContext *alerting.EvalContext) error {
+	this.log.Info("Executing slack notification", "ruleId", evalContext.Rule.Id, "notification", this.Name)
 
-	ruleURL, err := evalContext.GetRuleURL()
+	ruleUrl, err := evalContext.GetRuleUrl()
 	if err != nil {
-		sn.log.Error("Failed get rule link", "error", err)
+		this.log.Error("Failed get rule link", "error", err)
 		return err
 	}
 
@@ -174,14 +170,14 @@ func (sn *SlackNotifier) Notify(evalContext *alerting.EvalContext) error {
 		})
 	}
 
-	message := sn.Mention
-	if evalContext.Rule.State != models.AlertStateOK { //don't add message when going back to alert state ok.
+	message := this.Mention
+	if evalContext.Rule.State != m.AlertStateOK { //don't add message when going back to alert state ok.
 		message += " " + evalContext.Rule.Message
 	}
-	imageURL := ""
+	image_url := ""
 	// default to file.upload API method if a token is provided
-	if sn.Token == "" {
-		imageURL = evalContext.ImagePublicURL
+	if this.Token == "" {
+		image_url = evalContext.ImagePublicUrl
 	}
 
 	body := map[string]interface{}{
@@ -190,10 +186,10 @@ func (sn *SlackNotifier) Notify(evalContext *alerting.EvalContext) error {
 				"fallback":    evalContext.GetNotificationTitle(),
 				"color":       evalContext.GetStateModel().Color,
 				"title":       evalContext.GetNotificationTitle(),
-				"title_link":  ruleURL,
+				"title_link":  ruleUrl,
 				"text":        message,
 				"fields":      fields,
-				"image_url":   imageURL,
+				"image_url":   image_url,
 				"footer":      "Grafana v" + setting.BuildVersion,
 				"footer_icon": "https://grafana.com/assets/img/fav32.png",
 				"ts":          time.Now().Unix(),
@@ -203,26 +199,26 @@ func (sn *SlackNotifier) Notify(evalContext *alerting.EvalContext) error {
 	}
 
 	//recipient override
-	if sn.Recipient != "" {
-		body["channel"] = sn.Recipient
+	if this.Recipient != "" {
+		body["channel"] = this.Recipient
 	}
-	if sn.Username != "" {
-		body["username"] = sn.Username
+	if this.Username != "" {
+		body["username"] = this.Username
 	}
-	if sn.IconEmoji != "" {
-		body["icon_emoji"] = sn.IconEmoji
+	if this.IconEmoji != "" {
+		body["icon_emoji"] = this.IconEmoji
 	}
-	if sn.IconURL != "" {
-		body["icon_url"] = sn.IconURL
+	if this.IconUrl != "" {
+		body["icon_url"] = this.IconUrl
 	}
 	data, _ := json.Marshal(&body)
-	cmd := &models.SendWebhookSync{Url: sn.URL, Body: string(data)}
+	cmd := &m.SendWebhookSync{Url: this.Url, Body: string(data)}
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
-		sn.log.Error("Failed to send slack notification", "error", err, "webhook", sn.Name)
+		this.log.Error("Failed to send slack notification", "error", err, "webhook", this.Name)
 		return err
 	}
-	if sn.Token != "" && sn.UploadImage {
-		err = slackFileUpload(evalContext, sn.log, "https://slack.com/api/files.upload", sn.Recipient, sn.Token)
+	if this.Token != "" && this.UploadImage {
+		err = SlackFileUpload(evalContext, this.log, "https://slack.com/api/files.upload", this.Recipient, this.Token)
 		if err != nil {
 			return err
 		}
@@ -230,24 +226,27 @@ func (sn *SlackNotifier) Notify(evalContext *alerting.EvalContext) error {
 	return nil
 }
 
-func slackFileUpload(evalContext *alerting.EvalContext, log log.Logger, url string, recipient string, token string) error {
+func SlackFileUpload(evalContext *alerting.EvalContext, log log.Logger, url string, recipient string, token string) error {
 	if evalContext.ImageOnDiskPath == "" {
 		evalContext.ImageOnDiskPath = filepath.Join(setting.HomePath, "public/img/mixed_styles.png")
 	}
 	log.Info("Uploading to slack via file.upload API")
-	headers, uploadBody, err := generateSlackBody(evalContext.ImageOnDiskPath, token, recipient)
+	headers, uploadBody, err := GenerateSlackBody(evalContext.ImageOnDiskPath, token, recipient)
 	if err != nil {
 		return err
 	}
-	cmd := &models.SendWebhookSync{Url: url, Body: uploadBody.String(), HttpHeader: headers, HttpMethod: "POST"}
+	cmd := &m.SendWebhookSync{Url: url, Body: uploadBody.String(), HttpHeader: headers, HttpMethod: "POST"}
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
 		log.Error("Failed to upload slack image", "error", err, "webhook", "file.upload")
+		return err
+	}
+	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func generateSlackBody(file string, token string, recipient string) (map[string]string, bytes.Buffer, error) {
+func GenerateSlackBody(file string, token string, recipient string) (map[string]string, bytes.Buffer, error) {
 	// Slack requires all POSTs to files.upload to present
 	// an "application/x-www-form-urlencoded" encoded querystring
 	// See https://api.slack.com/methods/files.upload

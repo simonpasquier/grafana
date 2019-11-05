@@ -1,7 +1,15 @@
 #!/bin/bash
 
-# shellcheck source=./scripts/helpers/exit-if-fail.sh
-source "$(dirname "$0")/helpers/exit-if-fail.sh"
+function exit_if_fail {
+    command=$@
+    echo "Executing '$command'"
+    eval $command
+    rc=$?
+    if [ $rc -ne 0 ]; then
+        echo "'$command' returned $rc."
+        exit $rc
+    fi
+}
 
 start=$(date +%s)
 

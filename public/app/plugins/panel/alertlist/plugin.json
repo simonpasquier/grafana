@@ -3,7 +3,7 @@
   "name": "Alert List",
   "id": "alertlist",
 
-  "skipDataQuery": true,
+  "dataFormats": [],
 
   "info": {
     "description": "Shows list of alerts and their current status",

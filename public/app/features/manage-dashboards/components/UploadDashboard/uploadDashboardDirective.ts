@@ -1,16 +1,17 @@
 import coreModule from 'app/core/core_module';
 import appEvents from 'app/core/app_events';
-import angular, { ILocationService } from 'angular';
+import angular from 'angular';
 
 const template = `
 <input type="file" id="dashupload" name="dashupload" class="hide" onchange="angular.element(this).scope().file_selected"/>
 <label class="btn btn-primary" for="dashupload">
+  <i class="fa fa-upload"></i>
   {{btnText}}
 </label>
 `;
 
 /** @ngInject */
-export function uploadDashboardDirective(timer: any, $location: ILocationService) {
+export function uploadDashboardDirective(timer, $location) {
   return {
     restrict: 'E',
     template: template,
@@ -18,14 +19,14 @@ export function uploadDashboardDirective(timer: any, $location: ILocationService
       onUpload: '&',
       btnText: '@?',
     },
-    link: (scope: any, elem: JQuery) => {
-      scope.btnText = angular.isDefined(scope.btnText) ? scope.btnText : 'Upload .json file';
+    link: (scope, elem) => {
+      scope.btnText = angular.isDefined(scope.btnText) ? scope.btnText : 'Upload .json File';
 
-      function file_selected(evt: any) {
+      function file_selected(evt) {
         const files = evt.target.files; // FileList object
         const readerOnload = () => {
-          return (e: any) => {
-            let dash: any;
+          return e => {
+            let dash;
             try {
               dash = JSON.parse(e.target.result);
             } catch (err) {
@@ -35,7 +36,7 @@ export function uploadDashboardDirective(timer: any, $location: ILocationService
             }
 
             scope.$apply(() => {
-              scope.onUpload({ dash });
+              scope.onUpload({ dash: dash });
             });
           };
         };

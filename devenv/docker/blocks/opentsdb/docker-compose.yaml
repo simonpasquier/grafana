@@ -1,5 +1,5 @@
   opentsdb:
-    image: petergrace/opentsdb-docker:latest
+    image: opower/opentsdb:latest
     ports:
       - "4242:4242"
 

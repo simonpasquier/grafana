@@ -1,5 +1,5 @@
+import moment from 'moment';
 import { GraphCtrl } from '../module';
-import { dateTime } from '@grafana/data';
 
 jest.mock('../graph', () => ({}));
 
@@ -33,12 +33,9 @@ describe('GraphCtrl', () => {
   const ctx = {} as any;
 
   beforeEach(() => {
-    ctx.ctrl = new GraphCtrl(scope, injector as any, {} as any);
+    ctx.ctrl = new GraphCtrl(scope, injector, {});
     ctx.ctrl.events = {
       emit: () => {},
-    };
-    ctx.ctrl.annotationsSrv = {
-      getAnnotations: () => Promise.resolve({}),
     };
     ctx.ctrl.annotationsPromise = Promise.resolve({});
     ctx.ctrl.updateTimeRange();
@@ -53,22 +50,22 @@ describe('GraphCtrl', () => {
         },
       ];
 
-      ctx.ctrl.range = { from: dateTime().valueOf(), to: dateTime().valueOf() };
-      ctx.ctrl.onDataSnapshotLoad(data);
+      ctx.ctrl.range = { from: moment().valueOf(), to: moment().valueOf() };
+      ctx.ctrl.onDataReceived(data);
     });
 
     it('should set datapointsOutside', () => {
-      expect(ctx.ctrl.dataWarning.title).toBe('Data outside time range');
+      expect(ctx.ctrl.dataWarning.title).toBe('Data points outside time range');
     });
   });
 
   describe('when time series are inside range', () => {
     beforeEach(() => {
       const range = {
-        from: dateTime()
+        from: moment()
           .subtract(1, 'days')
           .valueOf(),
-        to: dateTime().valueOf(),
+        to: moment().valueOf(),
       };
 
       const data = [
@@ -79,7 +76,7 @@ describe('GraphCtrl', () => {
       ];
 
       ctx.ctrl.range = range;
-      ctx.ctrl.onDataSnapshotLoad(data);
+      ctx.ctrl.onDataReceived(data);
     });
 
     it('should set datapointsOutside', () => {
@@ -89,12 +86,12 @@ describe('GraphCtrl', () => {
 
   describe('datapointsCount given 2 series', () => {
     beforeEach(() => {
-      const data: any = [{ target: 'test.cpu1', datapoints: [] }, { target: 'test.cpu2', datapoints: [] }];
-      ctx.ctrl.onDataSnapshotLoad(data);
+      const data = [{ target: 'test.cpu1', datapoints: [] }, { target: 'test.cpu2', datapoints: [] }];
+      ctx.ctrl.onDataReceived(data);
     });
 
     it('should set datapointsCount warning', () => {
-      expect(ctx.ctrl.dataWarning.title).toBe('No data');
+      expect(ctx.ctrl.dataWarning.title).toBe('No data points');
     });
   });
 });

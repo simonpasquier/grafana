@@ -5,8 +5,6 @@ import { QueryCtrl } from 'app/plugins/sdk';
 import { SqlPart } from 'app/core/components/sql_part/sql_part';
 import PostgresQuery from './postgres_query';
 import sqlPart from './sql_part';
-import { auto, IQService } from 'angular';
-import { TemplateSrv } from 'app/features/templating/template_srv';
 
 export interface QueryMeta {
   sql: string;
@@ -42,13 +40,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
   groupAdd: any;
 
   /** @ngInject */
-  constructor(
-    $scope: any,
-    $injector: auto.IInjectorService,
-    private templateSrv: TemplateSrv,
-    private $q: IQService,
-    private uiSegmentSrv: any
-  ) {
+  constructor($scope, $injector, private templateSrv, private $q, private uiSegmentSrv) {
     super($scope, $injector);
     this.target = this.target;
     this.queryModel = new PostgresQuery(this.target, templateSrv, this.panel.scopedVars);
@@ -65,7 +57,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
         this.target.rawQuery = true;
       } else {
         this.target.rawSql = defaultQuery;
-        this.datasource.metricFindQuery(this.metaBuilder.findMetricTable()).then((result: any) => {
+        this.datasource.metricFindQuery(this.metaBuilder.findMetricTable()).then(result => {
           if (result.length > 0) {
             this.target.table = result[0].text;
             let segment = this.uiSegmentSrv.newSegment(this.target.table);
@@ -80,7 +72,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
             this.target.timeColumnType = 'timestamp';
             this.target.select = [[{ type: 'column', params: [result[2].text] }]];
             this.updateProjection();
-            this.updateRawSqlAndRefresh();
+            this.panelCtrl.refresh();
           }
         });
       }
@@ -101,14 +93,6 @@ export class PostgresQueryCtrl extends QueryCtrl {
 
     this.panelCtrl.events.on('data-received', this.onDataReceived.bind(this), $scope);
     this.panelCtrl.events.on('data-error', this.onDataError.bind(this), $scope);
-  }
-
-  updateRawSqlAndRefresh() {
-    if (!this.target.rawQuery) {
-      this.target.rawSql = this.queryModel.buildQuery();
-    }
-
-    this.panelCtrl.refresh();
   }
 
   updateProjection() {
@@ -203,7 +187,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
     }
   }
 
-  resetPlusButton(button: { html: any; value: any }) {
+  resetPlusButton(button) {
     const plusButton = this.uiSegmentSrv.newPlusButton();
     button.html = plusButton.html;
     button.value = plusButton.value;
@@ -227,7 +211,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
     this.metricColumnSegment.value = segment.value;
     this.target.metricColumn = 'none';
 
-    const task1 = this.datasource.metricFindQuery(this.metaBuilder.buildColumnQuery('time')).then((result: any) => {
+    const task1 = this.datasource.metricFindQuery(this.metaBuilder.buildColumnQuery('time')).then(result => {
       // check if time column is still valid
       if (result.length > 0 && !_.find(result, (r: any) => r.text === this.target.timeColumn)) {
         const segment = this.uiSegmentSrv.newSegment(result[0].text);
@@ -236,7 +220,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
       }
       return this.timeColumnChanged(false);
     });
-    const task2 = this.datasource.metricFindQuery(this.metaBuilder.buildColumnQuery('value')).then((result: any) => {
+    const task2 = this.datasource.metricFindQuery(this.metaBuilder.buildColumnQuery('value')).then(result => {
       if (result.length > 0) {
         this.target.select = [[{ type: 'column', params: [result[0].text] }]];
         this.updateProjection();
@@ -244,7 +228,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
     });
 
     this.$q.all([task1, task2]).then(() => {
-      this.updateRawSqlAndRefresh();
+      this.panelCtrl.refresh();
     });
   }
 
@@ -257,33 +241,31 @@ export class PostgresQueryCtrl extends QueryCtrl {
 
   timeColumnChanged(refresh?: boolean) {
     this.target.timeColumn = this.timeColumnSegment.value;
-    return this.datasource
-      .metricFindQuery(this.metaBuilder.buildDatatypeQuery(this.target.timeColumn))
-      .then((result: any) => {
-        if (result.length === 1) {
-          if (this.target.timeColumnType !== result[0].text) {
-            this.target.timeColumnType = result[0].text;
-          }
-          let partModel;
-          if (this.queryModel.hasUnixEpochTimecolumn()) {
-            partModel = sqlPart.create({ type: 'macro', name: '$__unixEpochFilter', params: [] });
-          } else {
-            partModel = sqlPart.create({ type: 'macro', name: '$__timeFilter', params: [] });
-          }
-
-          if (this.whereParts.length >= 1 && this.whereParts[0].def.type === 'macro') {
-            // replace current macro
-            this.whereParts[0] = partModel;
-          } else {
-            this.whereParts.splice(0, 0, partModel);
-          }
+    return this.datasource.metricFindQuery(this.metaBuilder.buildDatatypeQuery(this.target.timeColumn)).then(result => {
+      if (result.length === 1) {
+        if (this.target.timeColumnType !== result[0].text) {
+          this.target.timeColumnType = result[0].text;
+        }
+        let partModel;
+        if (this.queryModel.hasUnixEpochTimecolumn()) {
+          partModel = sqlPart.create({ type: 'macro', name: '$__unixEpochFilter', params: [] });
+        } else {
+          partModel = sqlPart.create({ type: 'macro', name: '$__timeFilter', params: [] });
         }
 
-        this.updatePersistedParts();
-        if (refresh !== false) {
-          this.updateRawSqlAndRefresh();
+        if (this.whereParts.length >= 1 && this.whereParts[0].def.type === 'macro') {
+          // replace current macro
+          this.whereParts[0] = partModel;
+        } else {
+          this.whereParts.splice(0, 0, partModel);
         }
-      });
+      }
+
+      this.updatePersistedParts();
+      if (refresh !== false) {
+        this.panelCtrl.refresh();
+      }
+    });
   }
 
   getMetricColumnSegments() {
@@ -295,13 +277,12 @@ export class PostgresQueryCtrl extends QueryCtrl {
 
   metricColumnChanged() {
     this.target.metricColumn = this.metricColumnSegment.value;
-    this.updateRawSqlAndRefresh();
+    this.panelCtrl.refresh();
   }
 
-  onDataReceived(dataList: any) {
+  onDataReceived(dataList) {
     this.lastQueryMeta = null;
     this.lastQueryError = null;
-    console.log('postgres query data received', dataList);
 
     const anySeriesFromQuery: any = _.find(dataList, { refId: this.target.refId });
     if (anySeriesFromQuery) {
@@ -309,7 +290,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
     }
   }
 
-  onDataError(err: any) {
+  onDataError(err) {
     if (err.data && err.data.results) {
       const queryRes = err.data.results[this.target.refId];
       if (queryRes) {
@@ -319,8 +300,8 @@ export class PostgresQueryCtrl extends QueryCtrl {
     }
   }
 
-  transformToSegments(config: { addNone?: any; addTemplateVars?: any; templateQuoter?: any }) {
-    return (results: any) => {
+  transformToSegments(config) {
+    return results => {
       const segments = _.map(results, segment => {
         return this.uiSegmentSrv.newSegment({
           value: segment.text,
@@ -354,15 +335,15 @@ export class PostgresQueryCtrl extends QueryCtrl {
     };
   }
 
-  findAggregateIndex(selectParts: any) {
+  findAggregateIndex(selectParts) {
     return _.findIndex(selectParts, (p: any) => p.def.type === 'aggregate' || p.def.type === 'percentile');
   }
 
-  findWindowIndex(selectParts: any) {
+  findWindowIndex(selectParts) {
     return _.findIndex(selectParts, (p: any) => p.def.type === 'window' || p.def.type === 'moving_window');
   }
 
-  addSelectPart(selectParts: any[], item: { value: any }, subItem: { type: any; value: any }) {
+  addSelectPart(selectParts, item, subItem) {
     let partType = item.value;
     if (subItem && subItem.type) {
       partType = subItem.type;
@@ -431,10 +412,10 @@ export class PostgresQueryCtrl extends QueryCtrl {
     }
 
     this.updatePersistedParts();
-    this.updateRawSqlAndRefresh();
+    this.panelCtrl.refresh();
   }
 
-  removeSelectPart(selectParts: any, part: { def: { type: string } }) {
+  removeSelectPart(selectParts, part) {
     if (part.def.type === 'column') {
       // remove all parts of column unless its last column
       if (this.selectParts.length > 1) {
@@ -449,7 +430,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
     this.updatePersistedParts();
   }
 
-  handleSelectPartEvent(selectParts: any, part: { def: any }, evt: { name: any }) {
+  handleSelectPartEvent(selectParts, part, evt) {
     switch (evt.name) {
       case 'get-param-options': {
         switch (part.def.type) {
@@ -467,12 +448,12 @@ export class PostgresQueryCtrl extends QueryCtrl {
       }
       case 'part-param-changed': {
         this.updatePersistedParts();
-        this.updateRawSqlAndRefresh();
+        this.panelCtrl.refresh();
         break;
       }
       case 'action': {
         this.removeSelectPart(selectParts, part);
-        this.updateRawSqlAndRefresh();
+        this.panelCtrl.refresh();
         break;
       }
       case 'get-part-actions': {
@@ -481,7 +462,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
     }
   }
 
-  handleGroupPartEvent(part: any, index: any, evt: { name: any }) {
+  handleGroupPartEvent(part, index, evt) {
     switch (evt.name) {
       case 'get-param-options': {
         return this.datasource
@@ -491,12 +472,12 @@ export class PostgresQueryCtrl extends QueryCtrl {
       }
       case 'part-param-changed': {
         this.updatePersistedParts();
-        this.updateRawSqlAndRefresh();
+        this.panelCtrl.refresh();
         break;
       }
       case 'action': {
         this.removeGroup(part, index);
-        this.updateRawSqlAndRefresh();
+        this.panelCtrl.refresh();
         break;
       }
       case 'get-part-actions': {
@@ -505,7 +486,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
     }
   }
 
-  addGroup(partType: string, value: string) {
+  addGroup(partType, value) {
     let params = [value];
     if (partType === 'time') {
       params = ['$__interval', 'none'];
@@ -534,7 +515,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
     this.updatePersistedParts();
   }
 
-  removeGroup(part: { def: { type: string } }, index: number) {
+  removeGroup(part, index) {
     if (part.def.type === 'time') {
       // remove aggregations
       this.selectParts = _.map(this.selectParts, (s: any) => {
@@ -551,7 +532,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
     this.updatePersistedParts();
   }
 
-  handleWherePartEvent(whereParts: any, part: any, evt: any, index: any) {
+  handleWherePartEvent(whereParts, part, evt, index) {
     switch (evt.name) {
       case 'get-param-options': {
         switch (evt.param.name) {
@@ -590,14 +571,14 @@ export class PostgresQueryCtrl extends QueryCtrl {
             part.datatype = d[0].text;
           }
         });
-        this.updateRawSqlAndRefresh();
+        this.panelCtrl.refresh();
         break;
       }
       case 'action': {
         // remove element
         whereParts.splice(index, 1);
         this.updatePersistedParts();
-        this.updateRawSqlAndRefresh();
+        this.panelCtrl.refresh();
         break;
       }
       case 'get-part-actions': {
@@ -617,7 +598,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
     return this.$q.when(options);
   }
 
-  addWhereAction(part: any, index: any) {
+  addWhereAction(part, index) {
     switch (this.whereAdd.type) {
       case 'macro': {
         const partModel = sqlPart.create({ type: 'macro', name: this.whereAdd.value, params: [] });
@@ -636,13 +617,13 @@ export class PostgresQueryCtrl extends QueryCtrl {
 
     this.updatePersistedParts();
     this.resetPlusButton(this.whereAdd);
-    this.updateRawSqlAndRefresh();
+    this.panelCtrl.refresh();
   }
 
   getGroupOptions() {
     return this.datasource
       .metricFindQuery(this.metaBuilder.buildColumnQuery('group'))
-      .then((tags: any) => {
+      .then(tags => {
         const options = [];
         if (!this.queryModel.hasTimeGroup()) {
           options.push(this.uiSegmentSrv.newSegment({ type: 'time', value: 'time($__interval,none)' }));
@@ -663,10 +644,10 @@ export class PostgresQueryCtrl extends QueryCtrl {
     }
 
     this.resetPlusButton(this.groupAdd);
-    this.updateRawSqlAndRefresh();
+    this.panelCtrl.refresh();
   }
 
-  handleQueryError(err: any): any[] {
+  handleQueryError(err) {
     this.error = err.message || 'Failed to issue metric query';
     return [];
   }

@@ -1,6 +1,4 @@
 import coreModule from 'app/core/core_module';
-import { IQService } from 'angular';
-import { BackendSrv } from 'app/core/services/backend_srv';
 
 const hitTypes = {
   FOLDER: 'dash-folder',
@@ -11,17 +9,17 @@ export class ValidationSrv {
   rootName = 'general';
 
   /** @ngInject */
-  constructor(private $q: IQService, private backendSrv: BackendSrv) {}
+  constructor(private $q, private backendSrv) {}
 
-  validateNewDashboardName(folderId: any, name: string) {
+  validateNewDashboardName(folderId, name) {
     return this.validate(folderId, name, 'A dashboard in this folder with the same name already exists');
   }
 
-  validateNewFolderName(name: string) {
+  validateNewFolderName(name) {
     return this.validate(0, name, 'A folder or dashboard in the general folder with the same name already exists');
   }
 
-  private validate(folderId: any, name: string, existingErrorMessage: string) {
+  private validate(folderId, name, existingErrorMessage) {
     name = (name || '').trim();
     const nameLowerCased = name.toLowerCase();
 
@@ -46,7 +44,7 @@ export class ValidationSrv {
     promises.push(this.backendSrv.search({ type: hitTypes.DASHBOARD, folderIds: [folderId], query: name }));
 
     this.$q.all(promises).then(res => {
-      let hits: any[] = [];
+      let hits = [];
 
       if (res.length > 0 && res[0].length > 0) {
         hits = res[0];

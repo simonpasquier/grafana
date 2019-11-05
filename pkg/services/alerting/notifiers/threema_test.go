@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/models"
+	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -17,7 +17,7 @@ func TestThreemaNotifier(t *testing.T) {
 				json := `{ }`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "threema_testing",
 					Type:     "threema",
 					Settings: settingsJSON,
@@ -36,7 +36,7 @@ func TestThreemaNotifier(t *testing.T) {
 				}`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "threema_testing",
 					Type:     "threema",
 					Settings: settingsJSON,
@@ -63,7 +63,7 @@ func TestThreemaNotifier(t *testing.T) {
 				}`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "threema_testing",
 					Type:     "threema",
 					Settings: settingsJSON,
@@ -83,7 +83,7 @@ func TestThreemaNotifier(t *testing.T) {
 				}`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "threema_testing",
 					Type:     "threema",
 					Settings: settingsJSON,
@@ -103,7 +103,7 @@ func TestThreemaNotifier(t *testing.T) {
 				}`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "threema_testing",
 					Type:     "threema",
 					Settings: settingsJSON,
@@ -113,6 +113,7 @@ func TestThreemaNotifier(t *testing.T) {
 				So(not, ShouldBeNil)
 				So(err.(alerting.ValidationError).Reason, ShouldEqual, "Invalid Threema Recipient ID: Must be 8 characters long")
 			})
+
 		})
 	})
 }

@@ -59,14 +59,6 @@ export function dropdownTypeahead($compile: any) {
         []
       );
 
-      const closeDropdownMenu = () => {
-        $input.hide();
-        $input.val('');
-        $button.show();
-        $button.focus();
-        elem.removeClass('open');
-      };
-
       $scope.menuItemSelected = (index: number, subIndex: number) => {
         const menuItem = $scope.menuItems[index];
         const payload: any = { $item: menuItem };
@@ -74,7 +66,6 @@ export function dropdownTypeahead($compile: any) {
           payload.$subItem = menuItem.submenu[subIndex];
         }
         $scope.dropdownTypeaheadOnSelect(payload);
-        closeDropdownMenu();
       };
 
       $input.attr('data-provide', 'typeahead');
@@ -112,10 +103,6 @@ export function dropdownTypeahead($compile: any) {
 
       $input.keyup(() => {
         elem.toggleClass('open', $input.val() === '');
-      });
-
-      elem.mousedown((evt: Event) => {
-        evt.preventDefault();
       });
 
       $input.blur(() => {

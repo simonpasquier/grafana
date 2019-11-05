@@ -1,5 +1,5 @@
 // Libaries
-import angular, { IQService, ILocationService, auto, IPromise } from 'angular';
+import angular from 'angular';
 import _ from 'lodash';
 
 // Utils & Services
@@ -11,7 +11,7 @@ import { TimeSrv } from 'app/features/dashboard/services/TimeSrv';
 import { DashboardModel } from 'app/features/dashboard/state/DashboardModel';
 
 // Types
-import { TimeRange } from '@grafana/data';
+import { TimeRange } from '@grafana/ui/src';
 
 export class VariableSrv {
   dashboard: DashboardModel;
@@ -19,9 +19,9 @@ export class VariableSrv {
 
   /** @ngInject */
   constructor(
-    private $q: IQService,
-    private $location: ILocationService,
-    private $injector: auto.IInjectorService,
+    private $q,
+    private $location,
+    private $injector,
     private templateSrv: TemplateSrv,
     private timeSrv: TimeSrv
   ) {}
@@ -71,7 +71,7 @@ export class VariableSrv {
     });
   }
 
-  processVariable(variable: any, queryParams: any) {
+  processVariable(variable, queryParams) {
     const dependencies = [];
 
     for (const otherVariable of this.variables) {
@@ -100,8 +100,7 @@ export class VariableSrv {
       });
   }
 
-  createVariableFromModel(model: any) {
-    // @ts-ignore
+  createVariableFromModel(model) {
     const ctor = variableTypes[model.type].ctor;
     if (!ctor) {
       throw {
@@ -113,24 +112,24 @@ export class VariableSrv {
     return variable;
   }
 
-  addVariable(variable: any) {
+  addVariable(variable) {
     this.variables.push(variable);
     this.templateSrv.updateIndex();
     this.dashboard.updateSubmenuVisibility();
   }
 
-  removeVariable(variable: any) {
+  removeVariable(variable) {
     const index = _.indexOf(this.variables, variable);
     this.variables.splice(index, 1);
     this.templateSrv.updateIndex();
     this.dashboard.updateSubmenuVisibility();
   }
 
-  updateOptions(variable: any) {
+  updateOptions(variable) {
     return variable.updateOptions();
   }
 
-  variableUpdated(variable: any, emitChangeEvents?: any) {
+  variableUpdated(variable, emitChangeEvents?) {
     // if there is a variable lock ignore cascading update because we are in a boot up scenario
     if (variable.initLock) {
       return this.$q.when();
@@ -153,7 +152,7 @@ export class VariableSrv {
     });
   }
 
-  selectOptionsForCurrentValue(variable: any) {
+  selectOptionsForCurrentValue(variable) {
     let i, y, value, option;
     const selected: any = [];
 
@@ -177,7 +176,7 @@ export class VariableSrv {
     return selected;
   }
 
-  validateVariableSelectionState(variable: any) {
+  validateVariableSelectionState(variable) {
     if (!variable.current) {
       variable.current = {};
     }
@@ -195,7 +194,7 @@ export class VariableSrv {
           }),
           text: _.map(selected, val => {
             return val.text;
-          }),
+          }).join(' + '),
         };
       }
 
@@ -215,14 +214,7 @@ export class VariableSrv {
     }
   }
 
-  /**
-   * Sets the current selected option (or options) based on the query params in the url. It is possible for values
-   * in the url to not match current options of the variable. In that case the variables current value will be still set
-   * to that value.
-   * @param variable Instance of Variable
-   * @param urlValue Value of the query parameter
-   */
-  setOptionFromUrl(variable: any, urlValue: string | string[]): IPromise<any> {
+  setOptionFromUrl(variable, urlValue) {
     let promise = this.$q.when();
 
     if (variable.refresh) {
@@ -230,46 +222,33 @@ export class VariableSrv {
     }
 
     return promise.then(() => {
-      // Simple case. Value in url matches existing options text or value.
       let option: any = _.find(variable.options, op => {
         return op.text === urlValue || op.value === urlValue;
       });
 
-      // No luck either it is array or value does not exist in the variables options.
-      if (!option) {
-        let defaultText = urlValue;
-        const defaultValue = urlValue;
+      let defaultText = urlValue;
+      const defaultValue = urlValue;
 
-        if (_.isArray(urlValue)) {
-          // Multiple values in the url. We construct text as a list of texts from all matched options.
-          defaultText = urlValue.reduce((acc, item) => {
-            const t: any = _.find(variable.options, { value: item });
-            if (t) {
-              acc.push(t.text);
-            } else {
-              acc.push(item);
-            }
+      if (!option && _.isArray(urlValue)) {
+        defaultText = [];
 
-            return acc;
-          }, []);
+        for (let n = 0; n < urlValue.length; n++) {
+          const t: any = _.find(variable.options, op => {
+            return op.value === urlValue[n];
+          });
+
+          if (t) {
+            defaultText.push(t.text);
+          }
         }
-
-        // It is possible that we did not match the value to any existing option. In that case the url value will be
-        // used anyway for both text and value.
-        option = { text: defaultText, value: defaultValue };
       }
 
-      if (variable.multi) {
-        // In case variable is multiple choice, we cast to array to preserve the same behaviour as when selecting
-        // the option directly, which will return even single value in an array.
-        option = { text: _.castArray(option.text), value: _.castArray(option.value) };
-      }
-
+      option = option || { text: defaultText, value: defaultValue };
       return variable.setValue(option);
     });
   }
 
-  setOptionAsCurrent(variable: any, option: any) {
+  setOptionAsCurrent(variable, option) {
     variable.current = _.cloneDeep(option);
 
     if (_.isArray(variable.current.text) && variable.current.text.length > 0) {
@@ -299,7 +278,7 @@ export class VariableSrv {
     this.$location.search(params);
   }
 
-  setAdhocFilter(options: any) {
+  setAdhocFilter(options) {
     let variable: any = _.find(this.variables, {
       type: 'adhoc',
       datasource: options.datasource,

@@ -7,8 +7,8 @@ import (
 
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/log"
+	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 )
 
@@ -32,8 +32,7 @@ func init() {
 	})
 }
 
-// NewKafkaNotifier is the constructor function for the Kafka notifier.
-func NewKafkaNotifier(model *models.AlertNotification) (alerting.Notifier, error) {
+func NewKafkaNotifier(model *m.AlertNotification) (alerting.Notifier, error) {
 	endpoint := model.Settings.Get("kafkaRestProxy").MustString()
 	if endpoint == "" {
 		return nil, alerting.ValidationError{Reason: "Could not find kafka rest proxy endpoint property in settings"}
@@ -51,8 +50,6 @@ func NewKafkaNotifier(model *models.AlertNotification) (alerting.Notifier, error
 	}, nil
 }
 
-// KafkaNotifier is responsible for sending
-// alert notifications to Kafka.
 type KafkaNotifier struct {
 	NotifierBase
 	Endpoint string
@@ -60,8 +57,8 @@ type KafkaNotifier struct {
 	log      log.Logger
 }
 
-// Notify sends the alert notification.
-func (kn *KafkaNotifier) Notify(evalContext *alerting.EvalContext) error {
+func (this *KafkaNotifier) Notify(evalContext *alerting.EvalContext) error {
+
 	state := evalContext.Rule.State
 
 	customData := triggMetrString
@@ -69,7 +66,7 @@ func (kn *KafkaNotifier) Notify(evalContext *alerting.EvalContext) error {
 		customData = customData + fmt.Sprintf("%s: %v\n", evt.Metric, evt.Value)
 	}
 
-	kn.log.Info("Notifying Kafka", "alert_state", state)
+	this.log.Info("Notifying Kafka", "alert_state", state)
 
 	recordJSON := simplejson.New()
 	records := make([]interface{}, 1)
@@ -78,20 +75,20 @@ func (kn *KafkaNotifier) Notify(evalContext *alerting.EvalContext) error {
 	bodyJSON.Set("description", evalContext.Rule.Name+" - "+evalContext.Rule.Message)
 	bodyJSON.Set("client", "Grafana")
 	bodyJSON.Set("details", customData)
-	bodyJSON.Set("incident_key", "alertId-"+strconv.FormatInt(evalContext.Rule.ID, 10))
+	bodyJSON.Set("incident_key", "alertId-"+strconv.FormatInt(evalContext.Rule.Id, 10))
 
-	ruleURL, err := evalContext.GetRuleURL()
+	ruleUrl, err := evalContext.GetRuleUrl()
 	if err != nil {
-		kn.log.Error("Failed get rule link", "error", err)
+		this.log.Error("Failed get rule link", "error", err)
 		return err
 	}
-	bodyJSON.Set("client_url", ruleURL)
+	bodyJSON.Set("client_url", ruleUrl)
 
-	if evalContext.ImagePublicURL != "" {
+	if evalContext.ImagePublicUrl != "" {
 		contexts := make([]interface{}, 1)
 		imageJSON := simplejson.New()
 		imageJSON.Set("type", "image")
-		imageJSON.Set("src", evalContext.ImagePublicURL)
+		imageJSON.Set("src", evalContext.ImagePublicUrl)
 		contexts[0] = imageJSON
 		bodyJSON.Set("contexts", contexts)
 	}
@@ -102,10 +99,10 @@ func (kn *KafkaNotifier) Notify(evalContext *alerting.EvalContext) error {
 	recordJSON.Set("records", records)
 	body, _ := recordJSON.MarshalJSON()
 
-	topicURL := kn.Endpoint + "/topics/" + kn.Topic
+	topicUrl := this.Endpoint + "/topics/" + this.Topic
 
-	cmd := &models.SendWebhookSync{
-		Url:        topicURL,
+	cmd := &m.SendWebhookSync{
+		Url:        topicUrl,
 		Body:       string(body),
 		HttpMethod: "POST",
 		HttpHeader: map[string]string{
@@ -115,7 +112,7 @@ func (kn *KafkaNotifier) Notify(evalContext *alerting.EvalContext) error {
 	}
 
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
-		kn.log.Error("Failed to send notification to Kafka", "error", err, "body", string(body))
+		this.log.Error("Failed to send notification to Kafka", "error", err, "body", string(body))
 		return err
 	}
 

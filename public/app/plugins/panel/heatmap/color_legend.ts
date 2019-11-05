@@ -90,14 +90,7 @@ coreModule.directive('heatmapLegend', () => {
   };
 });
 
-function drawColorLegend(
-  elem: JQuery,
-  colorScheme: any,
-  rangeFrom: number,
-  rangeTo: number,
-  maxValue: number,
-  minValue: number
-) {
+function drawColorLegend(elem, colorScheme, rangeFrom, rangeTo, maxValue, minValue) {
   const legendElem = $(elem).find('svg');
   const legend = d3.select(legendElem.get(0));
   clearLegend(elem);
@@ -128,14 +121,7 @@ function drawColorLegend(
   drawLegendValues(elem, rangeFrom, rangeTo, maxValue, minValue, legendWidth, valuesRange);
 }
 
-function drawOpacityLegend(
-  elem: JQuery,
-  options: { cardColor: null },
-  rangeFrom: number,
-  rangeTo: number,
-  maxValue: any,
-  minValue: number
-) {
+function drawOpacityLegend(elem, options, rangeFrom, rangeTo, maxValue, minValue) {
   const legendElem = $(elem).find('svg');
   const legend = d3.select(legendElem.get(0));
   clearLegend(elem);
@@ -167,15 +153,7 @@ function drawOpacityLegend(
   drawLegendValues(elem, rangeFrom, rangeTo, maxValue, minValue, legendWidth, valuesRange);
 }
 
-function drawLegendValues(
-  elem: JQuery,
-  rangeFrom: number,
-  rangeTo: number,
-  maxValue: any,
-  minValue: any,
-  legendWidth: number,
-  valuesRange: number[]
-) {
+function drawLegendValues(elem, rangeFrom, rangeTo, maxValue, minValue, legendWidth, valuesRange) {
   const legendElem = $(elem).find('svg');
   const legend = d3.select(legendElem.get(0));
 
@@ -210,7 +188,7 @@ function drawLegendValues(
     .remove();
 }
 
-function drawSimpleColorLegend(elem: JQuery, colorScale: any) {
+function drawSimpleColorLegend(elem, colorScale) {
   const legendElem = $(elem).find('svg');
   clearLegend(elem);
 
@@ -237,7 +215,7 @@ function drawSimpleColorLegend(elem: JQuery, colorScale: any) {
   }
 }
 
-function drawSimpleOpacityLegend(elem: JQuery, options: { colorScale: string; exponent: number; cardColor: string }) {
+function drawSimpleOpacityLegend(elem, options) {
   const legendElem = $(elem).find('svg');
   clearLegend(elem);
 
@@ -246,7 +224,7 @@ function drawSimpleOpacityLegend(elem: JQuery, options: { colorScale: string; ex
   const legendHeight = legendElem.attr('height');
 
   if (legendWidth) {
-    let legendOpacityScale: any;
+    let legendOpacityScale;
     if (options.colorScale === 'linear') {
       legendOpacityScale = d3
         .scaleLinear()
@@ -283,13 +261,13 @@ function drawSimpleOpacityLegend(elem: JQuery, options: { colorScale: string; ex
   }
 }
 
-function clearLegend(elem: JQuery) {
+function clearLegend(elem) {
   const legendElem = $(elem).find('svg');
   legendElem.empty();
 }
 
-function getSvgElemX(elem: JQuery) {
-  const svgElem: any = elem.get(0) as any;
+function getSvgElemX(elem) {
+  const svgElem = elem.get(0);
   if (svgElem && svgElem.x && svgElem.x.baseVal) {
     return svgElem.x.baseVal.value;
   } else {
@@ -297,8 +275,8 @@ function getSvgElemX(elem: JQuery) {
   }
 }
 
-function getSvgElemHeight(elem: JQuery) {
-  const svgElem: any = elem.get(0);
+function getSvgElemHeight(elem) {
+  const svgElem = elem.get(0);
   if (svgElem && svgElem.height && svgElem.height.baseVal) {
     return svgElem.height.baseVal.value;
   } else {
@@ -306,7 +284,7 @@ function getSvgElemHeight(elem: JQuery) {
   }
 }
 
-function buildLegendTicks(rangeFrom: number, rangeTo: number, maxValue: number, minValue: number) {
+function buildLegendTicks(rangeFrom, rangeTo, maxValue, minValue) {
   const range = rangeTo - rangeFrom;
   const tickStepSize = tickStep(rangeFrom, rangeTo, 3);
   const ticksNum = Math.ceil(range / tickStepSize);
@@ -338,12 +316,12 @@ function buildLegendTicks(rangeFrom: number, rangeTo: number, maxValue: number, 
   return ticks;
 }
 
-function isValueCloseTo(val: number, valueTo: number, step: number) {
+function isValueCloseTo(val, valueTo, step) {
   const diff = Math.abs(val - valueTo);
   return diff < step * 0.3;
 }
 
-function getFirstCloseTick(minValue: number, step: number) {
+function getFirstCloseTick(minValue, step) {
   if (minValue < 0) {
     return Math.floor(minValue / step) * step;
   }

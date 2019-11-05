@@ -9,7 +9,7 @@ jest.mock('app/core/app_events', () => {
 });
 
 describe('SearchResultsCtrl', () => {
-  let ctrl: any;
+  let ctrl;
 
   describe('when checking an item that is not checked', () => {
     const item = { checked: false };
@@ -50,11 +50,11 @@ describe('SearchResultsCtrl', () => {
   });
 
   describe('when selecting a tag', () => {
-    let selectedTag: any = null;
+    let selectedTag = null;
 
     beforeEach(() => {
       ctrl = new SearchResultsCtrl({});
-      ctrl.onTagSelected = (tag: any) => (selectedTag = tag);
+      ctrl.onTagSelected = tag => (selectedTag = tag);
       ctrl.selectTag('tag-test');
     });
 

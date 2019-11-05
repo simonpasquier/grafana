@@ -64,10 +64,6 @@ func deleteAlertByIdInternal(alertId int64, reason string, sess *DBSession) erro
 		return err
 	}
 
-	if _, err := sess.Exec("DELETE FROM alert_rule_tag WHERE alert_id = ?", alertId); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -219,21 +215,6 @@ func updateAlerts(existingAlerts []*m.Alert, cmd *m.SaveAlertsCommand, sess *DBS
 
 			sqlog.Debug("Alert inserted", "name", alert.Name, "id", alert.Id)
 		}
-		tags := alert.GetTagsFromSettings()
-		if _, err := sess.Exec("DELETE FROM alert_rule_tag WHERE alert_id = ?", alert.Id); err != nil {
-			return err
-		}
-		if tags != nil {
-			tags, err := EnsureTagsExist(sess, tags)
-			if err != nil {
-				return err
-			}
-			for _, tag := range tags {
-				if _, err := sess.Exec("INSERT INTO alert_rule_tag (alert_id, tag_id) VALUES(?,?)", alert.Id, tag.Id); err != nil {
-					return err
-				}
-			}
-		}
 	}
 
 	return nil
@@ -298,10 +279,7 @@ func SetAlertState(cmd *m.SetAlertStateCommand) error {
 			alert.ExecutionError = cmd.Error
 		}
 
-		_, err := sess.ID(alert.Id).Update(&alert)
-		if err != nil {
-			return err
-		}
+		sess.ID(alert.Id).Update(&alert)
 
 		cmd.Result = alert
 		return nil

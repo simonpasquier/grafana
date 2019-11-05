@@ -7,11 +7,11 @@ export class Emitter {
     this.emitter = new EventEmitter();
   }
 
-  emit(name: string, data?: any) {
+  emit(name, data?) {
     this.emitter.emit(name, data);
   }
 
-  on(name: string, handler: (payload?: any) => void, scope?: any) {
+  on(name, handler, scope?) {
     this.emitter.on(name, handler);
 
     if (scope) {
@@ -22,11 +22,11 @@ export class Emitter {
     }
   }
 
-  removeAllListeners(evt?: string) {
+  removeAllListeners(evt?) {
     this.emitter.removeAllListeners(evt);
   }
 
-  off(name: string, handler: (payload?: any) => void) {
+  off(name, handler) {
     this.emitter.off(name, handler);
   }
 

@@ -1,24 +1,18 @@
 import { renderHook, act } from 'react-hooks-testing-library';
 import { DataSourceStatus } from '@grafana/ui/src/types/datasource';
-import { AbsoluteTimeRange } from '@grafana/data';
 
 import LanguageProvider from 'app/plugins/datasource/loki/language_provider';
-
 import { useLokiSyntax } from './useLokiSyntax';
 import { CascaderOption } from 'app/plugins/datasource/loki/components/LokiQueryFieldForm';
-import { makeMockLokiDatasource } from '../mocks';
 
 describe('useLokiSyntax hook', () => {
-  const datasource = makeMockLokiDatasource({});
+  const datasource = {
+    metadataRequest: () => ({ data: { data: [] as any[] } }),
+  };
   const languageProvider = new LanguageProvider(datasource);
   const logLabelOptionsMock = ['Holy mock!'];
   const logLabelOptionsMock2 = ['Mock the hell?!'];
   const logLabelOptionsMock3 = ['Oh my mock!'];
-
-  const rangeMock: AbsoluteTimeRange = {
-    from: 1560153109000,
-    to: 1560163909000,
-  };
 
   languageProvider.refreshLogLabels = () => {
     languageProvider.logLabelOptions = logLabelOptionsMock;
@@ -36,9 +30,7 @@ describe('useLokiSyntax hook', () => {
   };
 
   it('should provide Loki syntax when used', async () => {
-    const { result, waitForNextUpdate } = renderHook(() =>
-      useLokiSyntax(languageProvider, DataSourceStatus.Connected, rangeMock)
-    );
+    const { result, waitForNextUpdate } = renderHook(() => useLokiSyntax(languageProvider, DataSourceStatus.Connected));
     expect(result.current.syntax).toEqual(null);
 
     await waitForNextUpdate();
@@ -47,9 +39,7 @@ describe('useLokiSyntax hook', () => {
   });
 
   it('should fetch labels on first call', async () => {
-    const { result, waitForNextUpdate } = renderHook(() =>
-      useLokiSyntax(languageProvider, DataSourceStatus.Connected, rangeMock)
-    );
+    const { result, waitForNextUpdate } = renderHook(() => useLokiSyntax(languageProvider, DataSourceStatus.Connected));
     expect(result.current.isSyntaxReady).toBeFalsy();
     expect(result.current.logLabelOptions).toEqual([]);
 
@@ -60,9 +50,7 @@ describe('useLokiSyntax hook', () => {
   });
 
   it('should try to fetch missing options when active option changes', async () => {
-    const { result, waitForNextUpdate } = renderHook(() =>
-      useLokiSyntax(languageProvider, DataSourceStatus.Connected, rangeMock)
-    );
+    const { result, waitForNextUpdate } = renderHook(() => useLokiSyntax(languageProvider, DataSourceStatus.Connected));
     await waitForNextUpdate();
     expect(result.current.logLabelOptions).toEqual(logLabelOptionsMock2);
 

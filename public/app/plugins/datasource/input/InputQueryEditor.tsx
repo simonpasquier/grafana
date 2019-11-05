@@ -2,15 +2,12 @@
 import React, { PureComponent } from 'react';
 
 // Types
-import { InputDatasource, describeDataFrame } from './InputDatasource';
-import { InputQuery, InputOptions } from './types';
+import { InputDatasource } from './InputDatasource';
+import { InputQuery } from './types';
 
-import { FormLabel, Select, QueryEditorProps, TableInputCSV } from '@grafana/ui';
-import { DataFrame, toCSV, SelectableValue, MutableDataFrame } from '@grafana/data';
+import { FormLabel, Select, QueryEditorProps, SelectOptionItem, SeriesData, TableInputCSV, toCSV } from '@grafana/ui';
 
-import { dataFrameToCSV } from './utils';
-
-type Props = QueryEditorProps<InputDatasource, InputQuery, InputOptions>;
+type Props = QueryEditorProps<InputDatasource, InputQuery>;
 
 const options = [
   { value: 'panel', label: 'Panel', description: 'Save data in the panel configuration.' },
@@ -28,20 +25,25 @@ export class InputQueryEditor extends PureComponent<Props, State> {
 
   onComponentDidMount() {
     const { query } = this.props;
-    const text = dataFrameToCSV(query.data);
+    const text = query.data ? toCSV(query.data) : '';
     this.setState({ text });
   }
 
-  onSourceChange = (item: SelectableValue<string>) => {
+  onSourceChange = (item: SelectOptionItem<string>) => {
     const { datasource, query, onChange, onRunQuery } = this.props;
-    let data: DataFrame[] | undefined = undefined;
+    let data: SeriesData[] | undefined = undefined;
     if (item.value === 'panel') {
       if (query.data) {
         return;
       }
       data = [...datasource.data];
       if (!data) {
-        data = [new MutableDataFrame()];
+        data = [
+          {
+            fields: [],
+            rows: [],
+          },
+        ];
       }
       this.setState({ text: toCSV(data) });
     }
@@ -49,11 +51,16 @@ export class InputQueryEditor extends PureComponent<Props, State> {
     onRunQuery();
   };
 
-  onSeriesParsed = (data: DataFrame[], text: string) => {
+  onSeriesParsed = (data: SeriesData[], text: string) => {
     const { query, onChange, onRunQuery } = this.props;
     this.setState({ text });
     if (!data) {
-      data = [new MutableDataFrame()];
+      data = [
+        {
+          fields: [],
+          rows: [],
+        },
+      ];
     }
     onChange({ ...query, data });
     onRunQuery();
@@ -73,10 +80,10 @@ export class InputQueryEditor extends PureComponent<Props, State> {
 
           <div className="btn btn-link">
             {query.data ? (
-              describeDataFrame(query.data)
+              datasource.getDescription(query.data)
             ) : (
               <a href={`datasources/edit/${id}/`}>
-                {name}: {describeDataFrame(datasource.data)} &nbsp;&nbsp;
+                {name}: {datasource.getDescription(datasource.data)} &nbsp;&nbsp;
                 <i className="fa fa-pencil-square-o" />
               </a>
             )}

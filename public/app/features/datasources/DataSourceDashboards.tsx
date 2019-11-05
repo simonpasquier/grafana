@@ -17,8 +17,7 @@ import { getDataSource } from './state/selectors';
 
 // Types
 import { PluginDashboard, StoreState } from 'app/types';
-import { DataSourceSettings } from '@grafana/ui';
-import { NavModel } from '@grafana/data';
+import { NavModel, DataSourceSettings } from '@grafana/ui';
 
 export interface Props {
   navModel: NavModel;
@@ -42,10 +41,10 @@ export class DataSourceDashboards extends PureComponent<Props> {
 
   onImport = (dashboard: PluginDashboard, overwrite: boolean) => {
     const { dataSource, importDashboard } = this.props;
-    const data: any = {
+    const data = {
       pluginId: dashboard.pluginId,
       path: dashboard.path,
-      overwrite,
+      overwrite: overwrite,
       inputs: [],
     };
 

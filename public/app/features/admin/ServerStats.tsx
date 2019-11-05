@@ -5,7 +5,7 @@ import { StoreState } from 'app/types';
 import { getNavModel } from 'app/core/selectors/navModel';
 import { getServerStats, ServerStat } from './state/apis';
 import Page from 'app/core/components/Page/Page';
-import { NavModel } from '@grafana/data';
+import { NavModel } from '@grafana/ui';
 
 interface Props {
   navModel: NavModel;

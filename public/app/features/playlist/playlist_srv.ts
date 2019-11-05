@@ -75,7 +75,7 @@ export class PlaylistSrv {
     }
   }
 
-  start(playlistId: number) {
+  start(playlistId) {
     this.stop();
 
     this.startUrl = window.location.href;
@@ -88,8 +88,8 @@ export class PlaylistSrv {
 
     appEvents.emit('playlist-started');
 
-    return this.backendSrv.get(`/api/playlists/${playlistId}`).then((playlist: any) => {
-      return this.backendSrv.get(`/api/playlists/${playlistId}/dashboards`).then((dashboards: any) => {
+    return this.backendSrv.get(`/api/playlists/${playlistId}`).then(playlist => {
+      return this.backendSrv.get(`/api/playlists/${playlistId}/dashboards`).then(dashboards => {
         this.dashboards = dashboards;
         this.interval = kbn.interval_to_ms(playlist.interval);
         this.next();

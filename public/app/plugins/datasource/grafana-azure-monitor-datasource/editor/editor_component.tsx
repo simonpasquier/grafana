@@ -11,7 +11,6 @@ interface EditorProps {
   variables: () => string[] | string[];
   getSchema?: () => Promise<any>;
   execute?: () => void;
-  query?: string;
 }
 
 class Editor extends Component<EditorProps, any> {
@@ -19,7 +18,7 @@ class Editor extends Component<EditorProps, any> {
     placeholder: 'Enter a query',
   };
 
-  constructor(props: EditorProps) {
+  constructor(props) {
     super(props);
     this.state = {
       edited: false,
@@ -27,7 +26,7 @@ class Editor extends Component<EditorProps, any> {
     };
   }
 
-  onChangeQuery = (value: any) => {
+  onChangeQuery = value => {
     const { index, change } = this.props;
     const { query } = this.state;
     const edited = query !== value;

@@ -38,7 +38,10 @@ Just add it as a datasource and you are ready to query your log data in [Explore
 
 ## Querying Logs
 
-Querying and displaying log data from Loki is available via [Explore](/features/explore), and with the [logs panel](/features/panels/logs/) in dashboards. Select the Loki data source, and then enter a log query to display your logs.
+Querying and displaying log data from Loki is available via [Explore](/features/explore).
+Select the Loki data source, and then enter a log query to display your logs.
+
+> Viewing Loki data in dashboard panels is not supported yet, but is being worked on.
 
 ### Log Queries
 
@@ -88,23 +91,6 @@ Example queries:
 * `{job="mysql"} error`
 * `{name="kafka"} tsdb-ops.*io:2003`
 * `{instance=~"kafka-[23]",name="kafka"} kafka.server:type=ReplicaManager`
-
-## Live Tailing
-
-To view your logs live as they are added, choose `Live` from the refresh dropdown, and you should see your logs be displayed in real time.
-
-Note that Live Tailing relies on two Websocket connections: one between the browser and the Grafana server, and another between the Grafana server and the Loki server. If you run any reverse proxies, please configure them accordingly.
-
-
-> Note: This feature is only available in Grafana v6.3+
-
-## Log Context
-
-When using a search expression as detailed above, you now have the ability to retrieve the context surrounding your filtered results.
-By clicking the `Show Context` link on the filtered rows, you'll be able to investigate the log messages that came before and after the
-log message you're interested in.
-
-> Note: This feature is only available in Grafana v6.3+
 
 ## Templating
 

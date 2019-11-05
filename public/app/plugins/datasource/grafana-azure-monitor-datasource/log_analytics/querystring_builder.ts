@@ -1,7 +1,7 @@
-import { dateTime } from '@grafana/data';
+import moment from 'moment';
 
 export default class LogAnalyticsQuerystringBuilder {
-  constructor(public rawQueryString: string, public options: any, public defaultTimeField: any) {}
+  constructor(public rawQueryString, public options, public defaultTimeField) {}
 
   generate() {
     let queryString = this.rawQueryString;
@@ -21,16 +21,12 @@ export default class LogAnalyticsQuerystringBuilder {
         if (p1 === 'timeFilter') {
           return this.getTimeFilter(p2, this.options);
         }
-        if (p1 === 'timeFrom') {
-          return this.getFrom(this.options);
-        }
-        if (p1 === 'timeTo') {
-          return this.getUntil(this.options);
-        }
 
         return match;
       });
       queryString = queryString.replace(/\$__interval/gi, this.options.interval);
+      queryString = queryString.replace(/\$__from/gi, this.getFrom(this.options));
+      queryString = queryString.replace(/\$__to/gi, this.getUntil(this.options));
     }
     const rawQuery = queryString;
     queryString = encodeURIComponent(queryString);
@@ -39,28 +35,25 @@ export default class LogAnalyticsQuerystringBuilder {
     return { uriString, rawQuery };
   }
 
-  getFrom(options: any) {
+  getFrom(options) {
     const from = options.range.from;
-    return `datetime(${dateTime(from)
+    return `datetime(${moment(from)
       .startOf('minute')
       .toISOString()})`;
   }
 
-  getUntil(options: any) {
+  getUntil(options) {
     if (options.rangeRaw.to === 'now') {
-      const now = Date.now();
-      return `datetime(${dateTime(now)
-        .startOf('minute')
-        .toISOString()})`;
+      return 'now()';
     } else {
       const until = options.range.to;
-      return `datetime(${dateTime(until)
+      return `datetime(${moment(until)
         .startOf('minute')
         .toISOString()})`;
     }
   }
 
-  getTimeFilter(timeFieldArg: any, options: any) {
+  getTimeFilter(timeFieldArg, options) {
     const timeField = timeFieldArg || this.defaultTimeField;
     if (options.rangeRaw.to === 'now') {
       return `${timeField} >= ${this.getFrom(options)}`;

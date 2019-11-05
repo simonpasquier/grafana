@@ -1,9 +1,9 @@
 import React from 'react';
 import PageHeader from './PageHeader';
-import { shallow, ShallowWrapper } from 'enzyme';
+import { shallow } from 'enzyme';
 
 describe('PageHeader', () => {
-  let wrapper: ShallowWrapper<PageHeader>;
+  let wrapper;
 
   describe('when the nav tree has a node with a title', () => {
     beforeAll(() => {

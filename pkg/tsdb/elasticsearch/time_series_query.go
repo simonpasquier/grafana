@@ -163,7 +163,7 @@ func (e *timeSeriesQuery) execute() (*tsdb.Response, error) {
 		return nil, err
 	}
 
-	rp := newResponseParser(res.Responses, queries, res.DebugInfo)
+	rp := newResponseParser(res.Responses, queries)
 	return rp.getTimeSeries()
 }
 

@@ -1,9 +1,8 @@
 import _ from 'lodash';
+import moment from 'moment';
 import { coreModule } from 'app/core/core';
 import { MetricsPanelCtrl } from 'app/plugins/sdk';
-import { AnnotationEvent } from '@grafana/data';
-import { dateTime } from '@grafana/data';
-import { AnnotationsSrv } from './all';
+import { AnnotationEvent } from '@grafana/ui';
 
 export class EventEditorCtrl {
   panelCtrl: MetricsPanelCtrl;
@@ -14,7 +13,7 @@ export class EventEditorCtrl {
   timeFormated: string;
 
   /** @ngInject */
-  constructor(private annotationsSrv: AnnotationsSrv) {
+  constructor(private annotationsSrv) {
     this.event.panelId = this.panelCtrl.panel.id;
     this.event.dashboardId = this.panelCtrl.dashboard.id;
 
@@ -84,10 +83,10 @@ export class EventEditorCtrl {
   }
 }
 
-function tryEpochToMoment(timestamp: any) {
+function tryEpochToMoment(timestamp) {
   if (timestamp && _.isNumber(timestamp)) {
     const epoch = Number(timestamp);
-    return dateTime(epoch);
+    return moment(epoch);
   } else {
     return timestamp;
   }

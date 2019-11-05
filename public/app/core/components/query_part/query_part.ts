@@ -40,7 +40,7 @@ export class QueryPart {
     return this.def.renderer(this, innerExpr);
   }
 
-  hasMultipleParamsInString(strValue: string, index: number) {
+  hasMultipleParamsInString(strValue, index) {
     if (strValue.indexOf(',') === -1) {
       return false;
     }
@@ -48,7 +48,7 @@ export class QueryPart {
     return this.def.params[index + 1] && this.def.params[index + 1].optional;
   }
 
-  updateParam(strValue: string, index: number) {
+  updateParam(strValue, index) {
     // handle optional parameters
     // if string contains ',' and next param is optional, split and update both
     if (this.hasMultipleParamsInString(strValue, index)) {
@@ -81,7 +81,7 @@ export class QueryPart {
   }
 }
 
-export function functionRenderer(part: any, innerExpr: string) {
+export function functionRenderer(part, innerExpr) {
   const str = part.def.type + '(';
   const parameters = _.map(part.params, (value, index) => {
     const paramType = part.def.params[index];
@@ -105,14 +105,14 @@ export function functionRenderer(part: any, innerExpr: string) {
   return str + parameters.join(', ') + ')';
 }
 
-export function suffixRenderer(part: QueryPartDef, innerExpr: string) {
+export function suffixRenderer(part, innerExpr) {
   return innerExpr + ' ' + part.params[0];
 }
 
-export function identityRenderer(part: QueryPartDef, innerExpr: string) {
+export function identityRenderer(part, innerExpr) {
   return part.params[0];
 }
 
-export function quotedIdentityRenderer(part: QueryPartDef, innerExpr: string) {
+export function quotedIdentityRenderer(part, innerExpr) {
   return '"' + part.params[0] + '"';
 }

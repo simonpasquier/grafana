@@ -1,5 +1,8 @@
-import { Organization, ThunkResult } from 'app/types';
-import { getBackendSrv } from '@grafana/runtime';
+import { ThunkAction } from 'redux-thunk';
+import { Organization, StoreState } from 'app/types';
+import { getBackendSrv } from 'app/core/services/backend_srv';
+
+type ThunkResult<R> = ThunkAction<R, StoreState, undefined, any>;
 
 export enum ActionTypes {
   LoadOrganization = 'LOAD_ORGANIZATION',
@@ -28,7 +31,7 @@ export const setOrganizationName = (orgName: string) => ({
 
 export type Action = LoadOrganizationAction | SetOrganizationNameAction;
 
-export function loadOrganization(): ThunkResult<any> {
+export function loadOrganization(): ThunkResult<void> {
   return async dispatch => {
     const organizationResponse = await getBackendSrv().get('/api/org');
     dispatch(organizationLoaded(organizationResponse));
@@ -37,7 +40,7 @@ export function loadOrganization(): ThunkResult<any> {
   };
 }
 
-export function updateOrganization(): ThunkResult<any> {
+export function updateOrganization() {
   return async (dispatch, getStore) => {
     const organization = getStore().organization.organization;
 

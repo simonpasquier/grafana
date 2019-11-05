@@ -34,7 +34,6 @@ type PluginListItem struct {
 	LatestVersion string              `json:"latestVersion"`
 	HasUpdate     bool                `json:"hasUpdate"`
 	DefaultNavUrl string              `json:"defaultNavUrl"`
-	Category      string              `json:"category"`
 	State         plugins.PluginState `json:"state"`
 }
 

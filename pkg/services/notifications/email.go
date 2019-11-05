@@ -5,22 +5,13 @@ import (
 	"github.com/grafana/grafana/pkg/setting"
 )
 
-// AttachedFile is struct representating email attached files
-type AttachedFile struct {
-	Name    string
-	Content []byte
-}
-
-// Message is representation of the email message
 type Message struct {
-	To            []string
-	From          string
-	Subject       string
-	Body          string
-	Info          string
-	ReplyTo       []string
-	EmbededFiles  []string
-	AttachedFiles []*AttachedFile
+	To           []string
+	From         string
+	Subject      string
+	Body         string
+	Info         string
+	EmbededFiles []string
 }
 
 func setDefaultTemplateData(data map[string]interface{}, u *m.User) {

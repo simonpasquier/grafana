@@ -1,75 +1,76 @@
 import React, { PureComponent } from 'react';
 import classNames from 'classnames';
-import { hot } from 'react-hot-loader';
-import { connect } from 'react-redux';
-import { PanelPlugin, PanelPluginMeta, Tooltip } from '@grafana/ui';
-import { AngularComponent, config } from '@grafana/runtime';
 
 import { QueriesTab } from './QueriesTab';
 import VisualizationTab from './VisualizationTab';
 import { GeneralTab } from './GeneralTab';
 import { AlertTab } from '../../alerting/AlertTab';
+
+import config from 'app/core/config';
+import { store } from 'app/store/store';
+import { updateLocation } from 'app/core/actions';
+import { AngularComponent } from 'app/core/services/AngularLoader';
+
 import { PanelModel } from '../state/PanelModel';
 import { DashboardModel } from '../state/DashboardModel';
-import { StoreState } from '../../../types';
-import { PanelEditorTab, PanelEditorTabIds } from './state/reducers';
-import { changePanelEditorTab, panelEditorCleanUp, refreshPanelEditor } from './state/actions';
-import { getActiveTabAndTabs } from './state/selectors';
+import { Tooltip, PanelPlugin, PanelPluginMeta } from '@grafana/ui';
 
 interface PanelEditorProps {
   panel: PanelModel;
   dashboard: DashboardModel;
   plugin: PanelPlugin;
   angularPanel?: AngularComponent;
-  onPluginTypeChange: (newType: PanelPluginMeta) => void;
-  activeTab: PanelEditorTabIds;
-  tabs: PanelEditorTab[];
-  refreshPanelEditor: typeof refreshPanelEditor;
-  panelEditorCleanUp: typeof panelEditorCleanUp;
-  changePanelEditorTab: typeof changePanelEditorTab;
+  onTypeChanged: (newType: PanelPluginMeta) => void;
 }
 
-class UnConnectedPanelEditor extends PureComponent<PanelEditorProps> {
+interface PanelEditorTab {
+  id: string;
+  text: string;
+}
+
+enum PanelEditorTabIds {
+  Queries = 'queries',
+  Visualization = 'visualization',
+  Advanced = 'advanced',
+  Alert = 'alert',
+}
+
+interface PanelEditorTab {
+  id: string;
+  text: string;
+}
+
+const panelEditorTabTexts = {
+  [PanelEditorTabIds.Queries]: 'Queries',
+  [PanelEditorTabIds.Visualization]: 'Visualization',
+  [PanelEditorTabIds.Advanced]: 'General',
+  [PanelEditorTabIds.Alert]: 'Alert',
+};
+
+const getPanelEditorTab = (tabId: PanelEditorTabIds): PanelEditorTab => {
+  return {
+    id: tabId,
+    text: panelEditorTabTexts[tabId],
+  };
+};
+
+export class PanelEditor extends PureComponent<PanelEditorProps> {
   constructor(props: PanelEditorProps) {
     super(props);
   }
 
-  componentDidMount(): void {
-    this.refreshFromState();
-  }
-
-  componentWillUnmount(): void {
-    const { panelEditorCleanUp } = this.props;
-    panelEditorCleanUp();
-  }
-
-  refreshFromState = (meta?: PanelPluginMeta) => {
-    const { refreshPanelEditor, plugin } = this.props;
-    meta = meta || plugin.meta;
-
-    refreshPanelEditor({
-      hasQueriesTab: !meta.skipDataQuery,
-      usesGraphPlugin: meta.id === 'graph',
-      alertingEnabled: config.alertingEnabled,
-    });
-  };
-
   onChangeTab = (tab: PanelEditorTab) => {
-    const { changePanelEditorTab } = this.props;
-    // Angular Query Components can potentially refresh the PanelModel
-    // onBlur so this makes sure we change tab after that
-    setTimeout(() => changePanelEditorTab(tab), 10);
-  };
-
-  onPluginTypeChange = (newType: PanelPluginMeta) => {
-    const { onPluginTypeChange } = this.props;
-    onPluginTypeChange(newType);
-
-    this.refreshFromState(newType);
+    store.dispatch(
+      updateLocation({
+        query: { tab: tab.id, openVizPicker: null },
+        partial: true,
+      })
+    );
+    this.forceUpdate();
   };
 
   renderCurrentTab(activeTab: string) {
-    const { panel, dashboard, plugin, angularPanel } = this.props;
+    const { panel, dashboard, onTypeChanged, plugin, angularPanel } = this.props;
 
     switch (activeTab) {
       case 'advanced':
@@ -84,7 +85,7 @@ class UnConnectedPanelEditor extends PureComponent<PanelEditorProps> {
             panel={panel}
             dashboard={dashboard}
             plugin={plugin}
-            onPluginTypeChange={this.onPluginTypeChange}
+            onTypeChanged={onTypeChanged}
             angularPanel={angularPanel}
           />
         );
@@ -94,7 +95,28 @@ class UnConnectedPanelEditor extends PureComponent<PanelEditorProps> {
   }
 
   render() {
-    const { activeTab, tabs } = this.props;
+    const { plugin } = this.props;
+    let activeTab: PanelEditorTabIds = store.getState().location.query.tab || PanelEditorTabIds.Queries;
+
+    const tabs: PanelEditorTab[] = [
+      getPanelEditorTab(PanelEditorTabIds.Queries),
+      getPanelEditorTab(PanelEditorTabIds.Visualization),
+      getPanelEditorTab(PanelEditorTabIds.Advanced),
+    ];
+
+    // handle panels that do not have queries tab
+    if (plugin.meta.dataFormats.length === 0) {
+      // remove queries tab
+      tabs.shift();
+      // switch tab
+      if (activeTab === PanelEditorTabIds.Queries) {
+        activeTab = PanelEditorTabIds.Visualization;
+      }
+    }
+
+    if (config.alertingEnabled && plugin.meta.id === 'graph') {
+      tabs.push(getPanelEditorTab(PanelEditorTabIds.Alert));
+    }
 
     return (
       <div className="panel-editor-container__editor">
@@ -108,17 +130,6 @@ class UnConnectedPanelEditor extends PureComponent<PanelEditorProps> {
     );
   }
 }
-
-export const mapStateToProps = (state: StoreState) => getActiveTabAndTabs(state.location, state.panelEditor);
-
-const mapDispatchToProps = { refreshPanelEditor, panelEditorCleanUp, changePanelEditorTab };
-
-export const PanelEditor = hot(module)(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )(UnConnectedPanelEditor)
-);
 
 interface TabItemParams {
   tab: PanelEditorTab;
@@ -134,7 +145,7 @@ function TabItem({ tab, activeTab, onClick }: TabItemParams) {
 
   return (
     <div className="panel-editor-tabs__item" onClick={() => onClick(tab)}>
-      <a className={tabClasses} aria-label={`${tab.text} tab button`}>
+      <a className={tabClasses}>
         <Tooltip content={`${tab.text}`} placement="auto">
           <i className={`gicon gicon-${tab.id}${activeTab === tab.id ? '-active' : ''}`} />
         </Tooltip>

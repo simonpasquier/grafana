@@ -8,9 +8,7 @@ import { loadPlugins, setPluginsLayoutMode, setPluginsSearchQuery } from './stat
 import { getNavModel } from 'app/core/selectors/navModel';
 import { getLayoutMode, getPlugins, getPluginsSearchQuery } from './state/selectors';
 import { LayoutMode } from 'app/core/components/LayoutSelector/LayoutSelector';
-import { NavModel } from '@grafana/data';
-import { PluginMeta } from '@grafana/ui';
-import { StoreState } from 'app/types';
+import { PluginMeta, NavModel } from '@grafana/ui';
 
 export interface Props {
   navModel: NavModel;
@@ -67,7 +65,7 @@ export class PluginListPage extends PureComponent<Props> {
   }
 }
 
-function mapStateToProps(state: StoreState) {
+function mapStateToProps(state) {
   return {
     navModel: getNavModel(state.navIndex, 'plugins'),
     plugins: getPlugins(state.plugins),

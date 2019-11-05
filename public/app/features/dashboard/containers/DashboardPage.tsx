@@ -245,7 +245,7 @@ export class DashboardPage extends PureComponent<Props, State> {
         <AlertBox
           severity={AppNotificationSeverity.Error}
           title={initError.message}
-          body={getMessageFromError(initError.error)}
+          text={getMessageFromError(initError.error)}
         />
       </div>
     );

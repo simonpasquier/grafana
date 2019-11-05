@@ -18,7 +18,7 @@ func TestStateIsUpdatedWhenNeeded(t *testing.T) {
 		ctx.PrevAlertState = models.AlertStateOK
 		ctx.Rule.State = models.AlertStateAlerting
 
-		if !ctx.shouldUpdateAlertState() {
+		if !ctx.ShouldUpdateAlertState() {
 			t.Fatalf("expected should updated to be true")
 		}
 	})
@@ -27,7 +27,7 @@ func TestStateIsUpdatedWhenNeeded(t *testing.T) {
 		ctx.PrevAlertState = models.AlertStateOK
 		ctx.Rule.State = models.AlertStateOK
 
-		if ctx.shouldUpdateAlertState() {
+		if ctx.ShouldUpdateAlertState() {
 			t.Fatalf("expected should updated to be false")
 		}
 	})

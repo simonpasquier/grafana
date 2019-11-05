@@ -1,15 +1,14 @@
-import angular, { auto, IQService } from 'angular';
+import angular from 'angular';
 import _ from 'lodash';
 import { InfluxQueryBuilder } from './query_builder';
-import InfluxQueryModel from './influx_query_model';
+import InfluxQuery from './influx_query';
 import queryPart from './query_part';
 import { QueryCtrl } from 'app/plugins/sdk';
-import { TemplateSrv } from 'app/features/templating/template_srv';
 
 export class InfluxQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
 
-  queryModel: InfluxQueryModel;
+  queryModel: InfluxQuery;
   queryBuilder: any;
   groupBySegment: any;
   resultFormats: any[];
@@ -21,16 +20,10 @@ export class InfluxQueryCtrl extends QueryCtrl {
   removeTagFilterSegment: any;
 
   /** @ngInject */
-  constructor(
-    $scope: any,
-    $injector: auto.IInjectorService,
-    private templateSrv: TemplateSrv,
-    private $q: IQService,
-    private uiSegmentSrv: any
-  ) {
+  constructor($scope, $injector, private templateSrv, private $q, private uiSegmentSrv) {
     super($scope, $injector);
     this.target = this.target;
-    this.queryModel = new InfluxQueryModel(this.target, templateSrv, this.panel.scopedVars);
+    this.queryModel = new InfluxQuery(this.target, templateSrv, this.panel.scopedVars);
     this.queryBuilder = new InfluxQueryBuilder(this.target, this.datasource.database);
     this.groupBySegment = this.uiSegmentSrv.newPlusButton();
     this.resultFormats = [{ text: 'Time series', value: 'time_series' }, { text: 'Table', value: 'table' }];
@@ -80,7 +73,7 @@ export class InfluxQueryCtrl extends QueryCtrl {
       (memo, cat, key) => {
         const menu = {
           text: key,
-          submenu: cat.map((item: any) => {
+          submenu: cat.map(item => {
             return { text: item.type, value: item.type };
           }),
         };
@@ -96,7 +89,7 @@ export class InfluxQueryCtrl extends QueryCtrl {
 
     return this.datasource
       .metricFindQuery(query)
-      .then((tags: any) => {
+      .then(tags => {
         const options = [];
         if (!this.queryModel.hasFill()) {
           options.push(this.uiSegmentSrv.newSegment({ value: 'fill(null)' }));
@@ -153,12 +146,12 @@ export class InfluxQueryCtrl extends QueryCtrl {
     this.panelCtrl.refresh();
   }
 
-  addSelectPart(selectParts: any, cat: any, subitem: { value: any }) {
+  addSelectPart(selectParts, cat, subitem) {
     this.queryModel.addSelectPart(selectParts, subitem.value);
     this.panelCtrl.refresh();
   }
 
-  handleSelectPartEvent(selectParts: any, part: any, evt: { name: any }) {
+  handleSelectPartEvent(selectParts, part, evt) {
     switch (evt.name) {
       case 'get-param-options': {
         const fieldsQuery = this.queryBuilder.buildExploreQuery('FIELDS');
@@ -182,7 +175,7 @@ export class InfluxQueryCtrl extends QueryCtrl {
     }
   }
 
-  handleGroupByPartEvent(part: any, index: any, evt: { name: any }) {
+  handleGroupByPartEvent(part, index, evt) {
     switch (evt.name) {
       case 'get-param-options': {
         const tagsQuery = this.queryBuilder.buildExploreQuery('TAG_KEYS');
@@ -242,7 +235,7 @@ export class InfluxQueryCtrl extends QueryCtrl {
     this.target.rawQuery = !this.target.rawQuery;
   }
 
-  getMeasurements(measurementFilter: any) {
+  getMeasurements(measurementFilter) {
     const query = this.queryBuilder.buildExploreQuery('MEASUREMENTS', undefined, measurementFilter);
     return this.datasource
       .metricFindQuery(query)
@@ -250,13 +243,13 @@ export class InfluxQueryCtrl extends QueryCtrl {
       .catch(this.handleQueryError.bind(this));
   }
 
-  handleQueryError(err: any): any[] {
+  handleQueryError(err) {
     this.error = err.message || 'Failed to issue metric query';
     return [];
   }
 
-  transformToSegments(addTemplateVars: any) {
-    return (results: any) => {
+  transformToSegments(addTemplateVars) {
+    return results => {
       const segments = _.map(results, segment => {
         return this.uiSegmentSrv.newSegment({
           value: segment.text,
@@ -280,7 +273,7 @@ export class InfluxQueryCtrl extends QueryCtrl {
     };
   }
 
-  getTagsOrValues(segment: { type: string }, index: number) {
+  getTagsOrValues(segment, index) {
     if (segment.type === 'condition') {
       return this.$q.when([this.uiSegmentSrv.newSegment('AND'), this.uiSegmentSrv.newSegment('OR')]);
     }
@@ -305,7 +298,7 @@ export class InfluxQueryCtrl extends QueryCtrl {
     return this.datasource
       .metricFindQuery(query)
       .then(this.transformToSegments(addTemplateVars))
-      .then((results: any) => {
+      .then(results => {
         if (segment.type === 'key') {
           results.splice(0, 0, angular.copy(this.removeTagFilterSegment));
         }
@@ -322,7 +315,7 @@ export class InfluxQueryCtrl extends QueryCtrl {
       .catch(this.handleQueryError);
   }
 
-  tagSegmentUpdated(segment: { value: any; type: string; cssClass: string }, index: number) {
+  tagSegmentUpdated(segment, index) {
     this.tagSegments[index] = segment;
 
     // handle remove tag condition
@@ -356,7 +349,7 @@ export class InfluxQueryCtrl extends QueryCtrl {
   }
 
   rebuildTargetTagConditions() {
-    const tags: any[] = [];
+    const tags = [];
     let tagIndex = 0;
     let tagOperator = '';
 
@@ -385,7 +378,7 @@ export class InfluxQueryCtrl extends QueryCtrl {
     this.panelCtrl.refresh();
   }
 
-  getTagValueOperator(tagValue: string, tagOperator: string): string {
+  getTagValueOperator(tagValue, tagOperator): string {
     if (tagOperator !== '=~' && tagOperator !== '!~' && /^\/.*\/$/.test(tagValue)) {
       return '=~';
     } else if ((tagOperator === '=~' || tagOperator === '!~') && /^(?!\/.*\/$)/.test(tagValue)) {

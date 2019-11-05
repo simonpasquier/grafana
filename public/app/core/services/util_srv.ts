@@ -5,7 +5,7 @@ export class UtilSrv {
   modalScope: any;
 
   /** @ngInject */
-  constructor(private $rootScope: any, private $modal: any) {}
+  constructor(private $rootScope, private $modal) {}
 
   init() {
     appEvents.on('show-modal', this.showModal.bind(this), this.$rootScope);
@@ -19,7 +19,7 @@ export class UtilSrv {
     }
   }
 
-  showModal(options: any) {
+  showModal(options) {
     if (this.modalScope && this.modalScope.dismiss) {
       this.modalScope.dismiss();
     }
@@ -49,10 +49,10 @@ export class UtilSrv {
     });
   }
 
-  showConfirmModal(payload: any) {
+  showConfirmModal(payload) {
     const scope = this.$rootScope.$new();
 
-    scope.updateConfirmText = (value: any) => {
+    scope.updateConfirmText = value => {
       scope.confirmTextValid = payload.confirmText.toLowerCase() === value.toLowerCase();
     };
 

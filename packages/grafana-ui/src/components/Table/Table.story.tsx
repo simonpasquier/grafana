@@ -4,8 +4,7 @@ import { Table } from './Table';
 import { getTheme } from '../../themes';
 
 import { migratedTestTable, migratedTestStyles, simpleTable } from './examples';
-import { GrafanaThemeType } from '../../types/index';
-import { DataFrame, FieldType, ArrayVector, ScopedVars } from '@grafana/data';
+import { ScopedVars, SeriesData, GrafanaThemeType } from '../../types/index';
 import { withFullSizeStory } from '../../utils/storybook/withFullSizeStory';
 import { number, boolean } from '@storybook/addon-knobs';
 
@@ -30,22 +29,17 @@ export function columnIndexToLeter(column: number) {
   return String.fromCharCode(A + c2);
 }
 
-export function makeDummyTable(columnCount: number, rowCount: number): DataFrame {
+export function makeDummyTable(columnCount: number, rowCount: number): SeriesData {
   return {
     fields: Array.from(new Array(columnCount), (x, i) => {
-      const colId = columnIndexToLeter(i);
-      const values = new ArrayVector<string>();
-      for (let i = 0; i < rowCount; i++) {
-        values.buffer.push(colId + (i + 1));
-      }
       return {
-        name: colId,
-        type: FieldType.string,
-        config: {},
-        values,
+        name: columnIndexToLeter(i),
       };
     }),
-    length: rowCount,
+    rows: Array.from(new Array(rowCount), (x, rowId) => {
+      const suffix = (rowId + 1).toString();
+      return Array.from(new Array(columnCount), (x, colId) => columnIndexToLeter(colId) + suffix);
+    }),
   };
 }
 

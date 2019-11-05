@@ -29,7 +29,7 @@ export const thunkTester = (initialState: any, debug?: boolean): ThunkGiven => {
 
     dispatchedActions = store.getActions();
     if (debug) {
-      console.log('resultingActions:', JSON.stringify(dispatchedActions, null, 2));
+      console.log('resultingActions:', dispatchedActions);
     }
 
     return dispatchedActions;

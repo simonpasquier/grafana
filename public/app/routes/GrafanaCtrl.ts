@@ -1,45 +1,35 @@
 // Libraries
 import _ from 'lodash';
 import $ from 'jquery';
-// @ts-ignore
 import Drop from 'tether-drop';
 
 // Utils and servies
 import { colors } from '@grafana/ui';
-import { setBackendSrv, BackendSrv, setDataSourceSrv } from '@grafana/runtime';
 import config from 'app/core/config';
 import coreModule from 'app/core/core_module';
 import { profiler } from 'app/core/profiler';
 import appEvents from 'app/core/app_events';
+import { BackendSrv, setBackendSrv } from 'app/core/services/backend_srv';
 import { TimeSrv, setTimeSrv } from 'app/features/dashboard/services/TimeSrv';
-import { DatasourceSrv } from 'app/features/plugins/datasource_srv';
+import { DatasourceSrv, setDatasourceSrv } from 'app/features/plugins/datasource_srv';
 import { KeybindingSrv, setKeybindingSrv } from 'app/core/services/keybindingSrv';
 import { AngularLoader, setAngularLoader } from 'app/core/services/AngularLoader';
 import { configureStore } from 'app/store/configureStore';
 
-import { LocationUpdate, setLocationSrv } from '@grafana/runtime';
-import { updateLocation } from 'app/core/actions';
-
 // Types
 import { KioskUrlValue } from 'app/types';
-import { setLinkSrv, LinkSrv } from 'app/features/panel/panellinks/link_srv';
-import { UtilSrv } from 'app/core/services/util_srv';
-import { ContextSrv } from 'app/core/services/context_srv';
-import { BridgeSrv } from 'app/core/services/bridge_srv';
-import { PlaylistSrv } from 'app/features/playlist/playlist_srv';
-import { ILocationService, ITimeoutService, IRootScopeService } from 'angular';
 
 export class GrafanaCtrl {
   /** @ngInject */
   constructor(
-    $scope: any,
-    utilSrv: UtilSrv,
-    $rootScope: any,
-    contextSrv: ContextSrv,
-    bridgeSrv: BridgeSrv,
+    $scope,
+    utilSrv,
+    $rootScope,
+    $controller,
+    contextSrv,
+    bridgeSrv,
     backendSrv: BackendSrv,
     timeSrv: TimeSrv,
-    linkSrv: LinkSrv,
     datasourceSrv: DatasourceSrv,
     keybindingSrv: KeybindingSrv,
     angularLoader: AngularLoader
@@ -47,16 +37,10 @@ export class GrafanaCtrl {
     // make angular loader service available to react components
     setAngularLoader(angularLoader);
     setBackendSrv(backendSrv);
-    setDataSourceSrv(datasourceSrv);
+    setDatasourceSrv(datasourceSrv);
     setTimeSrv(timeSrv);
-    setLinkSrv(linkSrv);
     setKeybindingSrv(keybindingSrv);
-    const store = configureStore();
-    setLocationSrv({
-      update: (opt: LocationUpdate) => {
-        store.dispatch(updateLocation(opt));
-      },
-    });
+    configureStore();
 
     $scope.init = () => {
       $scope.contextSrv = contextSrv;
@@ -70,7 +54,7 @@ export class GrafanaCtrl {
 
     $rootScope.colors = colors;
 
-    $rootScope.onAppEvent = function(name: string, callback: () => void, localScope: any) {
+    $rootScope.onAppEvent = function(name, callback, localScope) {
       const unbind = $rootScope.$on(name, callback);
       let callerScope = this;
       if (callerScope.$id === 1 && !localScope) {
@@ -82,7 +66,7 @@ export class GrafanaCtrl {
       callerScope.$on('$destroy', unbind);
     };
 
-    $rootScope.appEvent = (name: string, payload: any) => {
+    $rootScope.appEvent = (name, payload) => {
       $rootScope.$emit(name, payload);
       appEvents.emit(name, payload);
     };
@@ -111,17 +95,11 @@ function setViewModeBodyClass(body: JQuery, mode: KioskUrlValue) {
 }
 
 /** @ngInject */
-export function grafanaAppDirective(
-  playlistSrv: PlaylistSrv,
-  contextSrv: ContextSrv,
-  $timeout: ITimeoutService,
-  $rootScope: IRootScopeService,
-  $location: ILocationService
-) {
+export function grafanaAppDirective(playlistSrv, contextSrv, $timeout, $rootScope, $location) {
   return {
     restrict: 'E',
     controller: GrafanaCtrl,
-    link: (scope: any, elem: JQuery) => {
+    link: (scope, elem) => {
       const body = $('body');
 
       // see https://github.com/zenorocha/clipboard.js/issues/155
@@ -152,8 +130,8 @@ export function grafanaAppDirective(
 
       // tooltip removal fix
       // manage page classes
-      let pageClass: string;
-      scope.$on('$routeChangeSuccess', (evt: any, data: any) => {
+      let pageClass;
+      scope.$on('$routeChangeSuccess', (evt, data) => {
         if (pageClass) {
           body.removeClass(pageClass);
         }
@@ -206,7 +184,7 @@ export function grafanaAppDirective(
         }
 
         $timeout(() => $location.search(search));
-        setViewModeBodyClass(body, search.kiosk!);
+        setViewModeBodyClass(body, search.kiosk);
       });
 
       // handle in active view state class
@@ -287,6 +265,28 @@ export function grafanaAppDirective(
         const popover = elem.find('.popover');
         if (popover.length > 0 && target.parents('.graph-legend').length === 0) {
           popover.hide();
+        }
+
+        // hide time picker
+        const timePickerDropDownIsOpen = elem.find('.gf-timepicker-dropdown').length > 0;
+        if (timePickerDropDownIsOpen) {
+          const targetIsInTimePickerDropDown = target.parents('.gf-timepicker-dropdown').length > 0;
+          const targetIsInTimePickerNav = target.parents('.gf-timepicker-nav').length > 0;
+          const targetIsDatePickerRowBtn = target.parents('td[id^="datepicker-"]').length > 0;
+          const targetIsDatePickerHeaderBtn = target.parents('button[id^="datepicker-"]').length > 0;
+
+          if (
+            targetIsInTimePickerNav ||
+            targetIsInTimePickerDropDown ||
+            targetIsDatePickerRowBtn ||
+            targetIsDatePickerHeaderBtn
+          ) {
+            return;
+          }
+
+          scope.$apply(() => {
+            scope.appEvent('closeTimepicker');
+          });
         }
       });
     },

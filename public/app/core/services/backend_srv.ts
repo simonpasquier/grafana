@@ -7,9 +7,8 @@ import { DashboardModel } from 'app/features/dashboard/state/DashboardModel';
 import { DashboardSearchHit } from 'app/types/search';
 import { ContextSrv } from './context_srv';
 import { FolderInfo, DashboardDTO } from 'app/types';
-import { BackendSrv as BackendService, getBackendSrv as getBackendService, BackendSrvRequest } from '@grafana/runtime';
 
-export class BackendSrv implements BackendService {
+export class BackendSrv {
   private inFlightRequests: { [key: string]: Array<angular.IDeferred<any>> } = {};
   private HTTP_REQUEST_CANCELED = -1;
   private noBackendCache: boolean;
@@ -30,7 +29,7 @@ export class BackendSrv implements BackendService {
     return this.request({ method: 'DELETE', url });
   }
 
-  post(url: string, data?: any) {
+  post(url: string, data: any) {
     return this.request({ method: 'POST', url, data });
   }
 
@@ -84,7 +83,7 @@ export class BackendSrv implements BackendService {
     throw data;
   }
 
-  request(options: BackendSrvRequest) {
+  request(options: any) {
     options.retry = options.retry || 0;
     const requestIsLocal = !options.url.match(/^http/);
     const firstAttempt = options.retry === 0;
@@ -157,7 +156,6 @@ export class BackendSrv implements BackendService {
     // is canceled, canceling the previous datasource request if it is still
     // in-flight.
     const requestId = options.requestId;
-
     if (requestId) {
       this.resolveCancelerIfExists(requestId);
       // create new canceler
@@ -264,15 +262,14 @@ export class BackendSrv implements BackendService {
     return this.get(`/api/folders/${uid}`);
   }
 
-  saveDashboard(
-    dash: DashboardModel,
-    { message = '', folderId, overwrite = false }: { message?: string; folderId?: number; overwrite?: boolean } = {}
-  ) {
+  saveDashboard(dash: DashboardModel, options: any) {
+    options = options || {};
+
     return this.post('/api/dashboards/db/', {
       dashboard: dash,
-      folderId,
-      overwrite,
-      message,
+      folderId: options.folderId,
+      overwrite: options.overwrite === true,
+      message: options.message || '',
     });
   }
 
@@ -388,7 +385,16 @@ export class BackendSrv implements BackendService {
 
 coreModule.service('backendSrv', BackendSrv);
 
-// Used for testing and things that really need BackendSrv
+//
+// Code below is to expore the service to react components
+//
+
+let singletonInstance: BackendSrv;
+
+export function setBackendSrv(instance: BackendSrv) {
+  singletonInstance = instance;
+}
+
 export function getBackendSrv(): BackendSrv {
-  return getBackendService() as BackendSrv;
+  return singletonInstance;
 }

@@ -55,12 +55,9 @@
             </a>
           </td>
           <td class="text-right">
-            <span class="label label-tag" ng-style="user.authLabelStyle" ng-if="user.authLabel">
-              {{user.authLabel}}
-            </span>
-          </td>
-          <td class="text-right">
-            <span class="label label-tag label-tag--gray" ng-if="user.isDisabled">Disabled</span>
+            <a ng-click="ctrl.deleteUser(user)" class="btn btn-danger btn-small">
+              <i class="fa fa-remove"></i>
+            </a>
           </td>
         </tr>
       </tbody>

@@ -1,5 +1,4 @@
 import InfluxDatasource from '../datasource';
-//@ts-ignore
 import $q from 'q';
 import { TemplateSrvStub } from 'test/specs/helpers';
 
@@ -7,7 +6,6 @@ describe('InfluxDataSource', () => {
   const ctx: any = {
     backendSrv: {},
     $q: $q,
-    //@ts-ignore
     templateSrv: new TemplateSrvStub(),
     instanceSettings: { url: 'url', name: 'influxDb', jsonData: { httpMode: 'GET' } },
   };
@@ -25,10 +23,10 @@ describe('InfluxDataSource', () => {
         to: '2018-01-02T00:00:00Z',
       },
     };
-    let requestQuery: any, requestMethod: any, requestData: any;
+    let requestQuery, requestMethod, requestData;
 
     beforeEach(async () => {
-      ctx.backendSrv.datasourceRequest = (req: any) => {
+      ctx.backendSrv.datasourceRequest = req => {
         requestMethod = req.method;
         requestQuery = req.params.q;
         requestData = req.data;
@@ -47,7 +45,7 @@ describe('InfluxDataSource', () => {
         });
       };
 
-      await ctx.ds.metricFindQuery(query, queryOptions).then(() => {});
+      await ctx.ds.metricFindQuery(query, queryOptions).then(_ => {});
     });
 
     it('should replace $timefilter', () => {
@@ -67,8 +65,7 @@ describe('InfluxDataSource', () => {
 describe('InfluxDataSource in POST query mode', () => {
   const ctx: any = {
     backendSrv: {},
-    $q,
-    //@ts-ignore
+    $q: $q,
     templateSrv: new TemplateSrvStub(),
     instanceSettings: { url: 'url', name: 'influxDb', jsonData: { httpMode: 'POST' } },
   };
@@ -81,10 +78,10 @@ describe('InfluxDataSource in POST query mode', () => {
   describe('When issuing metricFindQuery', () => {
     const query = 'SELECT max(value) FROM measurement';
     const queryOptions: any = {};
-    let requestMethod: any, requestQueryParameter: any, queryEncoded: any, requestQuery: any;
+    let requestMethod, requestQueryParameter, queryEncoded, requestQuery;
 
     beforeEach(async () => {
-      ctx.backendSrv.datasourceRequest = (req: any) => {
+      ctx.backendSrv.datasourceRequest = req => {
         requestMethod = req.method;
         requestQueryParameter = req.params;
         requestQuery = req.data;
@@ -104,7 +101,7 @@ describe('InfluxDataSource in POST query mode', () => {
       };
 
       queryEncoded = await ctx.ds.serializeParams({ q: query });
-      await ctx.ds.metricFindQuery(query, queryOptions).then(() => {});
+      await ctx.ds.metricFindQuery(query, queryOptions).then(_ => {});
     });
 
     it('should have the query form urlencoded', () => {

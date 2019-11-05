@@ -1,5 +1,3 @@
-import { TemplateSrv } from 'app/features/templating/template_srv';
-
 export class AzureMonitorAnnotationsQueryCtrl {
   static templateUrl = 'partials/annotations.editor.html';
   datasource: any;
@@ -11,7 +9,7 @@ export class AzureMonitorAnnotationsQueryCtrl {
     '<your table>\n| where $__timeFilter() \n| project TimeGenerated, Text=YourTitleColumn, Tags="tag1,tag2"';
 
   /** @ngInject */
-  constructor(private templateSrv: TemplateSrv) {
+  constructor(private templateSrv) {
     this.annotation.queryType = this.annotation.queryType || 'Azure Log Analytics';
     this.annotation.rawQuery = this.annotation.rawQuery || this.defaultQuery;
     this.initDropdowns();
@@ -27,7 +25,7 @@ export class AzureMonitorAnnotationsQueryCtrl {
       return;
     }
 
-    return this.datasource.azureMonitorDatasource.getSubscriptions().then((subs: any[]) => {
+    return this.datasource.azureMonitorDatasource.getSubscriptions().then(subs => {
       this.subscriptions = subs;
 
       if (!this.annotation.subscription && this.annotation.queryType === 'Azure Log Analytics') {
@@ -47,7 +45,7 @@ export class AzureMonitorAnnotationsQueryCtrl {
 
     return this.datasource
       .getAzureLogAnalyticsWorkspaces(this.annotation.subscription)
-      .then((list: any[]) => {
+      .then(list => {
         this.workspaces = list;
         if (list.length > 0 && !this.annotation.workspace) {
           this.annotation.workspace = list[0].value;
@@ -74,6 +72,6 @@ export class AzureMonitorAnnotationsQueryCtrl {
   };
 
   get templateVariables() {
-    return this.templateSrv.variables.map((t: any) => '$' + t.name);
+    return this.templateSrv.variables.map(t => '$' + t.name);
   }
 }

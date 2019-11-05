@@ -3,13 +3,13 @@ const head = document.getElementsByTagName('head')[0];
 
 // get all link tags in the page
 const links = document.getElementsByTagName('link');
-const linkHrefs: string[] = [];
+const linkHrefs = [];
 for (let i = 0; i < links.length; i++) {
   linkHrefs.push(links[i].href);
 }
 
 const isWebkit = !!window.navigator.userAgent.match(/AppleWebKit\/([^ ;]*)/);
-const webkitLoadCheck = (link: HTMLLinkElement, callback: Function) => {
+const webkitLoadCheck = (link, callback) => {
   setTimeout(() => {
     for (let i = 0; i < document.styleSheets.length; i++) {
       const sheet = document.styleSheets[i];
@@ -23,14 +23,14 @@ const webkitLoadCheck = (link: HTMLLinkElement, callback: Function) => {
 
 const noop = () => {};
 
-const loadCSS = (url: string) => {
+const loadCSS = url => {
   return new Promise((resolve, reject) => {
     const link = document.createElement('link');
     const timeout = setTimeout(() => {
       reject('Unable to load CSS');
     }, waitSeconds * 1000);
 
-    const _callback = (error: any) => {
+    const _callback = error => {
       clearTimeout(timeout);
       link.onload = link.onerror = noop;
       setTimeout(() => {
@@ -62,7 +62,7 @@ const loadCSS = (url: string) => {
   });
 };
 
-export function fetch(load: any): any {
+export function fetch(load): any {
   if (typeof window === 'undefined') {
     return '';
   }

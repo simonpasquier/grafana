@@ -1,6 +1,5 @@
 import _ from 'lodash';
-import { sanitize, escapeHtml } from 'app/core/utils/text';
-import { renderMarkdown } from '@grafana/data';
+import Remarkable from 'remarkable';
 
 import config from 'app/core/config';
 import { profiler } from 'app/core/core';
@@ -16,10 +15,6 @@ import {
 } from 'app/features/dashboard/utils/panel';
 
 import { GRID_COLUMN_COUNT } from 'app/core/constants';
-import { auto } from 'angular';
-import { TemplateSrv } from '../templating/template_srv';
-import { PanelPluginMeta } from '@grafana/ui/src/types/panel';
-import { getPanelLinksSupplier } from './panellinks/linkSuppliers';
 
 export class PanelCtrl {
   panel: any;
@@ -29,7 +24,7 @@ export class PanelCtrl {
   pluginId: string;
   editorTabs: any;
   $scope: any;
-  $injector: auto.IInjectorService;
+  $injector: any;
   $location: any;
   $timeout: any;
   inspector: any;
@@ -41,7 +36,7 @@ export class PanelCtrl {
   timing: any;
   maxPanelsPerRowOptions: number[];
 
-  constructor($scope: any, $injector: auto.IInjectorService) {
+  constructor($scope, $injector) {
     this.$injector = $injector;
     this.$location = $injector.get('$location');
     this.$scope = $scope;
@@ -65,21 +60,21 @@ export class PanelCtrl {
   }
 
   renderingCompleted() {
-    profiler.renderingCompleted();
+    profiler.renderingCompleted(this.panel.id);
   }
 
   refresh() {
     this.panel.refresh();
   }
 
-  publishAppEvent(evtName: string, evt: any) {
+  publishAppEvent(evtName, evt) {
     this.$scope.$root.appEvent(evtName, evt);
   }
 
-  changeView(fullscreen: boolean, edit: boolean) {
+  changeView(fullscreen, edit) {
     this.publishAppEvent('panel-change-view', {
-      fullscreen,
-      edit,
+      fullscreen: fullscreen,
+      edit: edit,
       panelId: this.panel.id,
     });
   }
@@ -104,7 +99,7 @@ export class PanelCtrl {
     }
   }
 
-  addEditorTab(title: string, directiveFn: any, index?: number, icon?: any) {
+  addEditorTab(title, directiveFn, index?, icon?) {
     const editorTab = { title, directiveFn, icon };
 
     if (_.isString(directiveFn)) {
@@ -120,7 +115,7 @@ export class PanelCtrl {
     }
   }
 
-  async getMenu() {
+  getMenu() {
     const menu = [];
     menu.push({
       text: 'View',
@@ -147,7 +142,7 @@ export class PanelCtrl {
     });
 
     // Additional items from sub-class
-    menu.push(...(await this.getAdditionalMenuItems()));
+    menu.push(...this.getAdditionalMenuItems());
 
     const extendedMenu = this.getExtendedMenu();
     menu.push({
@@ -198,7 +193,7 @@ export class PanelCtrl {
   }
 
   // Override in sub-class to add items before extended menu
-  async getAdditionalMenuItems(): Promise<any[]> {
+  getAdditionalMenuItems() {
     return [];
   }
 
@@ -206,12 +201,12 @@ export class PanelCtrl {
     return this.dashboard.meta.fullscreen && !this.panel.fullscreen;
   }
 
-  calculatePanelHeight(containerHeight: number) {
+  calculatePanelHeight(containerHeight) {
     this.containerHeight = containerHeight;
     this.height = calculateInnerPanelHeight(this.panel, containerHeight);
   }
 
-  render(payload?: any) {
+  render(payload?) {
     this.events.emit('render', payload);
   }
 
@@ -248,43 +243,38 @@ export class PanelCtrl {
     return '';
   }
 
-  getInfoContent(options: { mode: string }) {
-    const { panel } = this;
-    let markdown = panel.description || '';
+  getInfoContent(options) {
+    let markdown = this.panel.description;
 
     if (options.mode === 'tooltip') {
-      markdown = this.error || panel.description || '';
+      markdown = this.error || this.panel.description;
     }
 
-    const templateSrv: TemplateSrv = this.$injector.get('templateSrv');
-    const interpolatedMarkdown = templateSrv.replace(markdown, panel.scopedVars);
-    let html = '<div class="markdown-html panel-info-content">';
+    const linkSrv = this.$injector.get('linkSrv');
+    const sanitize = this.$injector.get('$sanitize');
+    const templateSrv = this.$injector.get('templateSrv');
+    const interpolatedMarkdown = templateSrv.replace(markdown, this.panel.scopedVars);
+    let html = '<div class="markdown-html">';
 
-    const md = renderMarkdown(interpolatedMarkdown);
-    html += config.disableSanitizeHtml ? md : sanitize(md);
+    html += new Remarkable().render(interpolatedMarkdown);
 
-    if (panel.links && panel.links.length > 0) {
-      const interpolatedLinks = getPanelLinksSupplier(panel).getLinks();
-
-      html += '<ul class="panel-info-corner-links">';
-      for (const link of interpolatedLinks) {
+    if (this.panel.links && this.panel.links.length > 0) {
+      html += '<ul>';
+      for (const link of this.panel.links) {
+        const info = linkSrv.getPanelLinkAnchorInfo(link, this.panel.scopedVars);
         html +=
           '<li><a class="panel-menu-link" href="' +
-          escapeHtml(link.href) +
+          info.href +
           '" target="' +
-          escapeHtml(link.target) +
+          info.target +
           '">' +
-          escapeHtml(link.title) +
+          info.title +
           '</a></li>';
       }
       html += '</ul>';
     }
 
     html += '</div>';
-
-    return html;
+    return sanitize(html);
   }
-
-  // overriden from react
-  onPluginTypeChange = (plugin: PanelPluginMeta) => {};
 }

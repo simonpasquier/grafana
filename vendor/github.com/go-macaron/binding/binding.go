@@ -29,11 +29,11 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/unknwon/com"
+	"github.com/Unknwon/com"
 	"gopkg.in/macaron.v1"
 )
 
-const _VERSION = "0.6.1"
+const _VERSION = "0.6.0"
 
 func Version() string {
 	return _VERSION

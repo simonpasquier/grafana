@@ -1,24 +1,44 @@
 // Types
 import {
   DataQueryRequest,
+  SeriesData,
   DataQueryResponse,
   DataSourceApi,
   DataSourceInstanceSettings,
-  MetricFindValue,
-} from '@grafana/ui';
-import { DataFrame, DataFrameDTO, toDataFrame } from '@grafana/data';
-
+} from '@grafana/ui/src/types';
 import { InputQuery, InputOptions } from './types';
 
-export class InputDatasource extends DataSourceApi<InputQuery, InputOptions> {
-  data: DataFrame[] = [];
+export class InputDatasource implements DataSourceApi<InputQuery> {
+  data: SeriesData[];
+
+  // Filled in by grafana plugin system
+  name?: string;
+
+  // Filled in by grafana plugin system
+  id?: number;
 
   constructor(instanceSettings: DataSourceInstanceSettings<InputOptions>) {
-    super(instanceSettings);
-
-    if (instanceSettings.jsonData.data) {
-      this.data = instanceSettings.jsonData.data.map(v => toDataFrame(v));
+    if (instanceSettings.jsonData) {
+      this.data = instanceSettings.jsonData.data;
     }
+
+    if (!this.data) {
+      this.data = [];
+    }
+  }
+
+  getDescription(data: SeriesData[]): string {
+    if (!data) {
+      return '';
+    }
+    if (data.length > 1) {
+      const count = data.reduce((acc, series) => {
+        return acc + series.rows.length;
+      }, 0);
+      return `${data.length} Series, ${count} Rows`;
+    }
+    const series = data[0];
+    return `${series.fields.length} Fields, ${series.rows.length} Rows`;
   }
 
   /**
@@ -26,12 +46,12 @@ export class InputDatasource extends DataSourceApi<InputQuery, InputOptions> {
    */
   getQueryDisplayText(query: InputQuery): string {
     if (query.data) {
-      return 'Panel Data: ' + describeDataFrame(query.data);
+      return 'Panel Data: ' + this.getDescription(query.data);
     }
-    return `Shared Data From: ${this.name} (${describeDataFrame(this.data)})`;
+    return `Shared Data From: ${this.name} (${this.getDescription(this.data)})`;
   }
 
-  metricFindQuery(query: string, options?: any): Promise<MetricFindValue[]> {
+  metricFindQuery(query: string, options?: any) {
     return new Promise((resolve, reject) => {
       const names = [];
       for (const series of this.data) {
@@ -47,16 +67,16 @@ export class InputDatasource extends DataSourceApi<InputQuery, InputOptions> {
   }
 
   query(options: DataQueryRequest<InputQuery>): Promise<DataQueryResponse> {
-    const results: DataFrame[] = [];
+    const results: SeriesData[] = [];
     for (const query of options.targets) {
-      let data = this.data;
-      if (query.data) {
-        data = query.data.map(v => toDataFrame(v));
+      if (query.hide) {
+        continue;
       }
-      for (let i = 0; i < data.length; i++) {
+      const data = query.data ? query.data : this.data;
+      for (const series of data) {
         results.push({
-          ...data[i],
           refId: query.refId,
+          ...series,
         });
       }
     }
@@ -68,9 +88,8 @@ export class InputDatasource extends DataSourceApi<InputQuery, InputOptions> {
       let rowCount = 0;
       let info = `${this.data.length} Series:`;
       for (const series of this.data) {
-        const length = series.length;
-        info += ` [${series.fields.length} Fields, ${length} Rows]`;
-        rowCount += length;
+        info += ` [${series.fields.length} Fields, ${series.rows.length} Rows]`;
+        rowCount += series.rows.length;
       }
 
       if (rowCount > 0) {
@@ -85,34 +104,6 @@ export class InputDatasource extends DataSourceApi<InputQuery, InputOptions> {
       });
     });
   }
-}
-
-function getLength(data?: DataFrameDTO | DataFrame) {
-  if (!data || !data.fields || !data.fields.length) {
-    return 0;
-  }
-  if (data.hasOwnProperty('length')) {
-    return (data as DataFrame).length;
-  }
-  return data.fields[0].values.length;
-}
-
-export function describeDataFrame(data: Array<DataFrameDTO | DataFrame>): string {
-  if (!data || !data.length) {
-    return '';
-  }
-  if (data.length > 1) {
-    const count = data.reduce((acc, series) => {
-      return acc + getLength(series);
-    }, 0);
-    return `${data.length} Series, ${count} Rows`;
-  }
-  const series = data[0];
-  if (!series.fields) {
-    return 'Missing Fields';
-  }
-  const length = getLength(series);
-  return `${series.fields.length} Fields, ${length} Rows`;
 }
 
 export default InputDatasource;

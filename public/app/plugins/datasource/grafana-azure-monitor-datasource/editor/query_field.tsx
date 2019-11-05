@@ -7,23 +7,23 @@ import RunnerPlugin from 'app/features/explore/slate-plugins/runner';
 import Typeahead from './typeahead';
 import { getKeybindingSrv, KeybindingSrv } from 'app/core/services/keybindingSrv';
 
-import { Block, Document, Text, Value, Editor as CoreEditor } from 'slate';
-import { Editor } from '@grafana/slate-react';
+import { Block, Document, Text, Value } from 'slate';
+import { Editor } from 'slate-react';
 import Plain from 'slate-plain-serializer';
 import ReactDOM from 'react-dom';
 import React from 'react';
 import _ from 'lodash';
 
-function flattenSuggestions(s: any) {
-  return s ? s.reduce((acc: any, g: any) => acc.concat(g.items), []) : [];
+function flattenSuggestions(s) {
+  return s ? s.reduce((acc, g) => acc.concat(g.items), []) : [];
 }
 
-export const makeFragment = (text: string) => {
-  const lines = text.split('\n').map((line: any) =>
+export const makeFragment = text => {
+  const lines = text.split('\n').map(line =>
     Block.create({
       type: 'paragraph',
       nodes: [Text.create(line)],
-    } as any)
+    })
   );
 
   const fragment = Document.create({
@@ -32,12 +32,12 @@ export const makeFragment = (text: string) => {
   return fragment;
 };
 
-export const getInitialValue = (query: string) => Value.create({ document: makeFragment(query) });
+export const getInitialValue = query => Value.create({ document: makeFragment(query) });
 
 class Portal extends React.Component<any, any> {
   node: any;
 
-  constructor(props: any) {
+  constructor(props) {
     super(props);
     const { index = 0, prefix = 'query' } = props;
     this.node = document.createElement('div');
@@ -60,7 +60,7 @@ class QueryField extends React.Component<any, any> {
   resetTimer: any;
   keybindingSrv: KeybindingSrv = getKeybindingSrv();
 
-  constructor(props: any, context: any) {
+  constructor(props, context) {
     super(props, context);
 
     const { prismDefinition = {}, prismLanguage = 'kusto' } = props;
@@ -96,7 +96,7 @@ class QueryField extends React.Component<any, any> {
     this.updateMenu();
   }
 
-  onChange = ({ value }: { value: Value }) => {
+  onChange = ({ value }) => {
     const changed = value.document !== this.state.value.document;
     this.setState({ value }, () => {
       if (changed) {
@@ -107,7 +107,7 @@ class QueryField extends React.Component<any, any> {
     });
   };
 
-  request = (url?: string) => {
+  request = (url?) => {
     if (this.props.request) {
       return this.props.request(url);
     }
@@ -122,15 +122,14 @@ class QueryField extends React.Component<any, any> {
     }
   };
 
-  onKeyDown = (event: Event, editor: CoreEditor, next: Function) => {
+  onKeyDown = (event, change) => {
     const { typeaheadIndex, suggestions } = this.state;
-    const keyboardEvent = event as KeyboardEvent;
 
-    switch (keyboardEvent.key) {
+    switch (event.key) {
       case 'Escape': {
         if (this.menuEl) {
-          keyboardEvent.preventDefault();
-          keyboardEvent.stopPropagation();
+          event.preventDefault();
+          event.stopPropagation();
           this.resetTypeahead();
           return true;
         }
@@ -138,8 +137,8 @@ class QueryField extends React.Component<any, any> {
       }
 
       case ' ': {
-        if (keyboardEvent.ctrlKey) {
-          keyboardEvent.preventDefault();
+        if (event.ctrlKey) {
+          event.preventDefault();
           this.onTypeahead(true);
           return true;
         }
@@ -150,9 +149,9 @@ class QueryField extends React.Component<any, any> {
       case 'Enter': {
         if (this.menuEl) {
           // Dont blur input
-          keyboardEvent.preventDefault();
-          if (!suggestions || !suggestions.length) {
-            return next();
+          event.preventDefault();
+          if (!suggestions || suggestions.length === 0) {
+            return undefined;
           }
 
           // Get the currently selected suggestion
@@ -161,7 +160,8 @@ class QueryField extends React.Component<any, any> {
           const selectedIndex = selected % flattenedSuggestions.length || 0;
           const suggestion = flattenedSuggestions[selectedIndex];
 
-          return this.applyTypeahead(editor, suggestion);
+          this.applyTypeahead(change, suggestion);
+          return true;
         }
         break;
       }
@@ -169,7 +169,7 @@ class QueryField extends React.Component<any, any> {
       case 'ArrowDown': {
         if (this.menuEl) {
           // Select next suggestion
-          keyboardEvent.preventDefault();
+          event.preventDefault();
           this.setState({ typeaheadIndex: typeaheadIndex + 1 });
         }
         break;
@@ -178,7 +178,7 @@ class QueryField extends React.Component<any, any> {
       case 'ArrowUp': {
         if (this.menuEl) {
           // Select previous suggestion
-          keyboardEvent.preventDefault();
+          event.preventDefault();
           this.setState({ typeaheadIndex: Math.max(0, typeaheadIndex - 1) });
         }
         break;
@@ -189,33 +189,27 @@ class QueryField extends React.Component<any, any> {
         break;
       }
     }
-    return next();
+    return undefined;
   };
 
-  onTypeahead = (change = false, item?: any): boolean | void => {
-    return change;
+  onTypeahead = (change?, item?) => {
+    return change || this.state.value.change();
   };
 
-  applyTypeahead = (
-    editor?: CoreEditor,
-    suggestion?: { text: any; type: string; deleteBackwards: any }
-  ): { value: Value } => {
-    return { value: new Value() };
+  applyTypeahead(change?, suggestion?): { value: object } {
+    return { value: {} };
+  }
+
+  resetTypeahead = () => {
+    this.setState({
+      suggestions: [],
+      typeaheadIndex: 0,
+      typeaheadPrefix: '',
+      typeaheadContext: null,
+    });
   };
 
-  resetTypeahead = (callback?: () => void) => {
-    this.setState(
-      {
-        suggestions: [],
-        typeaheadIndex: 0,
-        typeaheadPrefix: '',
-        typeaheadContext: null,
-      },
-      callback
-    );
-  };
-
-  handleBlur = (event: Event, editor: CoreEditor, next: Function) => {
+  handleBlur = () => {
     const { onBlur } = this.props;
     // If we dont wait here, menu clicks wont work because the menu
     // will be gone.
@@ -224,17 +218,15 @@ class QueryField extends React.Component<any, any> {
       onBlur();
     }
     this.restoreEscapeKeyBinding();
-    return next();
   };
 
-  handleFocus = (event: Event, editor: CoreEditor, next: Function) => {
+  handleFocus = () => {
     const { onFocus } = this.props;
     if (onFocus) {
       onFocus();
     }
     // Don't go back to dashboard if Escape pressed inside the editor.
     this.removeEscapeKeyBinding();
-    return next();
   };
 
   removeEscapeKeyBinding() {
@@ -245,14 +237,21 @@ class QueryField extends React.Component<any, any> {
     this.keybindingSrv.setupGlobal();
   }
 
-  onClickItem = (item: any) => {
+  onClickItem = item => {
     const { suggestions } = this.state;
     if (!suggestions || suggestions.length === 0) {
       return;
     }
 
+    // Get the currently selected suggestion
+    const flattenedSuggestions = flattenSuggestions(suggestions);
+    const suggestion: any = _.find(
+      flattenedSuggestions,
+      suggestion => suggestion.display === item || suggestion.text === item
+    );
+
     // Manually triggering change
-    const change = this.applyTypeahead();
+    const change = this.applyTypeahead(this.state.value.change(), suggestion);
     this.onChange(change);
   };
 
@@ -296,7 +295,7 @@ class QueryField extends React.Component<any, any> {
     }
   };
 
-  menuRef = (el: any) => {
+  menuRef = el => {
     this.menuEl = el;
   };
 

@@ -1,16 +1,24 @@
 import _ from 'lodash';
-import { TimeSeries } from 'app/core/core';
-import { Bucket, HeatmapCard, HeatmapCardStats, YBucket, XBucket } from './types';
 
 const VALUE_INDEX = 0;
 const TIME_INDEX = 1;
+
+interface XBucket {
+  x: number;
+  buckets: any;
+}
+
+interface YBucket {
+  y: number;
+  values: number[];
+}
 
 /**
  * Convert histogram represented by the list of series to heatmap object.
  * @param seriesList List of time series
  */
-function histogramToHeatmap(seriesList: TimeSeries[]) {
-  const heatmap: any = {};
+function histogramToHeatmap(seriesList) {
+  const heatmap = {};
 
   for (let i = 0; i < seriesList.length; i++) {
     const series = seriesList[i];
@@ -51,7 +59,7 @@ function histogramToHeatmap(seriesList: TimeSeries[]) {
 /**
  * Sort series representing histogram by label value.
  */
-function sortSeriesByLabel(s1: { label: string }, s2: { label: string }) {
+function sortSeriesByLabel(s1, s2) {
   let label1, label2;
 
   try {
@@ -83,6 +91,22 @@ function parseHistogramLabel(label: string): number {
     throw new Error(`Error parsing histogram label: ${label} is not a number`);
   }
   return value;
+}
+
+interface HeatmapCard {
+  x: number;
+  y: number;
+  yBounds: {
+    top: number | null;
+    bottom: number | null;
+  };
+  values: number[];
+  count: number;
+}
+
+interface HeatmapCardStats {
+  min: number;
+  max: number;
 }
 
 /**
@@ -138,11 +162,11 @@ function convertToCards(buckets: any, hideZero = false): { cards: HeatmapCard[];
  * @param  {Number} minValue Minimum series value
  * @return {Object}          Transformed buckets
  */
-function mergeZeroBuckets(buckets: any, minValue: number) {
+function mergeZeroBuckets(buckets, minValue) {
   _.forEach(buckets, xBucket => {
     const yBuckets = xBucket.buckets;
 
-    const emptyBucket: any = {
+    const emptyBucket = {
       bounds: { bottom: 0, top: 0 },
       values: [],
       points: [],
@@ -152,7 +176,7 @@ function mergeZeroBuckets(buckets: any, minValue: number) {
     const nullBucket = yBuckets[0] || emptyBucket;
     const minBucket = yBuckets[minValue] || emptyBucket;
 
-    const newBucket: any = {
+    const newBucket = {
       y: 0,
       bounds: { bottom: minValue, top: minBucket.bounds.top || minValue },
       values: [],
@@ -204,7 +228,7 @@ function mergeZeroBuckets(buckets: any, minValue: number) {
  *   xBucketBound_N: {}
  * }
  */
-function convertToHeatMap(seriesList: TimeSeries[], yBucketSize: number, xBucketSize: number, logBase = 1) {
+function convertToHeatMap(seriesList, yBucketSize, xBucketSize, logBase = 1) {
   const heatmap = {};
 
   for (const series of seriesList) {
@@ -240,7 +264,7 @@ function convertToHeatMap(seriesList: TimeSeries[], yBucketSize: number, xBucket
   return heatmap;
 }
 
-function pushToXBuckets(buckets: any, point: any[], bucketNum: number, seriesName: string) {
+function pushToXBuckets(buckets, point, bucketNum, seriesName) {
   const value = point[VALUE_INDEX];
   if (value === null || value === undefined || isNaN(value)) {
     return;
@@ -261,13 +285,7 @@ function pushToXBuckets(buckets: any, point: any[], bucketNum: number, seriesNam
   }
 }
 
-function pushToYBuckets(
-  buckets: Bucket,
-  bucketNum: number,
-  value: any,
-  point: string[],
-  bounds: { bottom: number; top: number }
-) {
+function pushToYBuckets(buckets, bucketNum, value, point, bounds) {
   let count = 1;
   // Use the 3rd argument as scale/count
   if (point.length > 3) {
@@ -288,7 +306,7 @@ function pushToYBuckets(
   }
 }
 
-function getValueBucketBound(value: any, yBucketSize: number, logBase: number) {
+function getValueBucketBound(value, yBucketSize, logBase) {
   if (logBase === 1) {
     return getBucketBound(value, yBucketSize);
   } else {
@@ -299,7 +317,7 @@ function getValueBucketBound(value: any, yBucketSize: number, logBase: number) {
 /**
  * Find bucket for given value (for linear scale)
  */
-function getBucketBounds(value: number, bucketSize: number) {
+function getBucketBounds(value, bucketSize) {
   let bottom, top;
   bottom = Math.floor(value / bucketSize) * bucketSize;
   top = (Math.floor(value / bucketSize) + 1) * bucketSize;
@@ -307,12 +325,12 @@ function getBucketBounds(value: number, bucketSize: number) {
   return { bottom, top };
 }
 
-function getBucketBound(value: number, bucketSize: number) {
+function getBucketBound(value, bucketSize) {
   const bounds = getBucketBounds(value, bucketSize);
   return bounds.bottom;
 }
 
-function convertToValueBuckets(xBucket: { values: any; points: any }, bucketSize: number) {
+function convertToValueBuckets(xBucket, bucketSize) {
   const values = xBucket.values;
   const points = xBucket.points;
   const buckets = {};
@@ -329,7 +347,7 @@ function convertToValueBuckets(xBucket: { values: any; points: any }, bucketSize
 /**
  * Find bucket for given value (for log scales)
  */
-function getLogScaleBucketBounds(value: number, yBucketSplitFactor: number, logBase: number) {
+function getLogScaleBucketBounds(value, yBucketSplitFactor, logBase) {
   let top, bottom;
   if (value === 0) {
     return { bottom: 0, top: 0 };
@@ -353,16 +371,12 @@ function getLogScaleBucketBounds(value: number, yBucketSplitFactor: number, logB
   return { bottom, top };
 }
 
-function getLogScaleBucketBound(value: number, yBucketSplitFactor: number, logBase: number) {
+function getLogScaleBucketBound(value, yBucketSplitFactor, logBase) {
   const bounds = getLogScaleBucketBounds(value, yBucketSplitFactor, logBase);
   return bounds.bottom;
 }
 
-function convertToLogScaleValueBuckets(
-  xBucket: { values: any; points: any },
-  yBucketSplitFactor: number,
-  logBase: number
-) {
+function convertToLogScaleValueBuckets(xBucket, yBucketSplitFactor, logBase) {
   const values = xBucket.values;
   const points = xBucket.points;
 
@@ -381,7 +395,7 @@ function convertToLogScaleValueBuckets(
  * @param value
  * @param base logarithm base
  */
-function logp(value: number, base: number) {
+function logp(value, base) {
   return Math.log(value) / Math.log(base);
 }
 

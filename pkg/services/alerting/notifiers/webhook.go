@@ -3,8 +3,8 @@ package notifiers
 import (
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/log"
+	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 )
 
@@ -40,9 +40,7 @@ func init() {
 
 }
 
-// NewWebHookNotifier is the constructor for
-// the WebHook notifier.
-func NewWebHookNotifier(model *models.AlertNotification) (alerting.Notifier, error) {
+func NewWebHookNotifier(model *m.AlertNotification) (alerting.Notifier, error) {
 	url := model.Settings.Get("url").MustString()
 	if url == "" {
 		return nil, alerting.ValidationError{Reason: "Could not find url property in settings"}
@@ -50,52 +48,40 @@ func NewWebHookNotifier(model *models.AlertNotification) (alerting.Notifier, err
 
 	return &WebhookNotifier{
 		NotifierBase: NewNotifierBase(model),
-		URL:          url,
+		Url:          url,
 		User:         model.Settings.Get("username").MustString(),
 		Password:     model.Settings.Get("password").MustString(),
-		HTTPMethod:   model.Settings.Get("httpMethod").MustString("POST"),
+		HttpMethod:   model.Settings.Get("httpMethod").MustString("POST"),
 		log:          log.New("alerting.notifier.webhook"),
 	}, nil
 }
 
-// WebhookNotifier is responsible for sending
-// alert notifications as webhooks.
 type WebhookNotifier struct {
 	NotifierBase
-	URL        string
+	Url        string
 	User       string
 	Password   string
-	HTTPMethod string
+	HttpMethod string
 	log        log.Logger
 }
 
-// Notify send alert notifications as
-// webhook as http requests.
-func (wn *WebhookNotifier) Notify(evalContext *alerting.EvalContext) error {
-	wn.log.Info("Sending webhook")
+func (this *WebhookNotifier) Notify(evalContext *alerting.EvalContext) error {
+	this.log.Info("Sending webhook")
 
 	bodyJSON := simplejson.New()
 	bodyJSON.Set("title", evalContext.GetNotificationTitle())
-	bodyJSON.Set("ruleId", evalContext.Rule.ID)
+	bodyJSON.Set("ruleId", evalContext.Rule.Id)
 	bodyJSON.Set("ruleName", evalContext.Rule.Name)
 	bodyJSON.Set("state", evalContext.Rule.State)
 	bodyJSON.Set("evalMatches", evalContext.EvalMatches)
 
-	tags := make(map[string]string)
-
-	for _, tag := range evalContext.Rule.AlertRuleTags {
-		tags[tag.Key] = tag.Value
-	}
-
-	bodyJSON.Set("tags", tags)
-
-	ruleURL, err := evalContext.GetRuleURL()
+	ruleUrl, err := evalContext.GetRuleUrl()
 	if err == nil {
-		bodyJSON.Set("ruleUrl", ruleURL)
+		bodyJSON.Set("ruleUrl", ruleUrl)
 	}
 
-	if evalContext.ImagePublicURL != "" {
-		bodyJSON.Set("imageUrl", evalContext.ImagePublicURL)
+	if evalContext.ImagePublicUrl != "" {
+		bodyJSON.Set("imageUrl", evalContext.ImagePublicUrl)
 	}
 
 	if evalContext.Rule.Message != "" {
@@ -104,16 +90,16 @@ func (wn *WebhookNotifier) Notify(evalContext *alerting.EvalContext) error {
 
 	body, _ := bodyJSON.MarshalJSON()
 
-	cmd := &models.SendWebhookSync{
-		Url:        wn.URL,
-		User:       wn.User,
-		Password:   wn.Password,
+	cmd := &m.SendWebhookSync{
+		Url:        this.Url,
+		User:       this.User,
+		Password:   this.Password,
 		Body:       string(body),
-		HttpMethod: wn.HTTPMethod,
+		HttpMethod: this.HttpMethod,
 	}
 
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
-		wn.log.Error("Failed to send webhook", "error", err, "webhook", wn.Name)
+		this.log.Error("Failed to send webhook", "error", err, "webhook", this.Name)
 		return err
 	}
 

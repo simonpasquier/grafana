@@ -1,6 +1,6 @@
 import React from 'react';
 
-function scrollIntoView(el: any) {
+function scrollIntoView(el) {
   if (!el || !el.offsetParent) {
     return;
   }
@@ -12,13 +12,13 @@ function scrollIntoView(el: any) {
 
 class TypeaheadItem extends React.PureComponent<any, any> {
   el: any;
-  componentDidUpdate(prevProps: any) {
+  componentDidUpdate(prevProps) {
     if (this.props.isSelected && !prevProps.isSelected) {
       scrollIntoView(this.el);
     }
   }
 
-  getRef = (el: any) => {
+  getRef = el => {
     this.el = el;
   };
 
@@ -42,7 +42,7 @@ class TypeaheadGroup extends React.PureComponent<any, any> {
       <li className="typeahead-group">
         <div className="typeahead-group__title">{label}</div>
         <ul className="typeahead-group__list">
-          {items.map((item: any) => {
+          {items.map(item => {
             const text = typeof item === 'object' ? item.text : item;
             const label = typeof item === 'object' ? item.display || item.text : item;
             return (
@@ -66,7 +66,7 @@ class Typeahead extends React.PureComponent<any, any> {
     const { groupedItems, menuRef, selectedItems, onClickItem } = this.props;
     return (
       <ul className="typeahead" ref={menuRef}>
-        {groupedItems.map((g: any) => (
+        {groupedItems.map(g => (
           <TypeaheadGroup key={g.label} onClickItem={onClickItem} selected={selectedItems} {...g} />
         ))}
       </ul>

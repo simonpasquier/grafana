@@ -7,7 +7,6 @@ module.exports = function(config) {
     src: [
       'public/sass/**/*.scss',
       'packages/**/*.scss',
-      '!**/node_modules/**/*.scss'
     ],
   };
 };

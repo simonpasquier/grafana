@@ -5,7 +5,7 @@ import _ from 'lodash';
  * @param yAxes data [{min: min_y1, min: max_y1}, {min: min_y2, max: max_y2}]
  * @param level Y level
  */
-export function alignYLevel(yAxes: any, level: any) {
+export function alignYLevel(yAxes, level) {
   if (isNaN(level) || !checkCorrectAxis(yAxes)) {
     return;
   }
@@ -65,7 +65,7 @@ export function alignYLevel(yAxes: any, level: any) {
   restoreLevelFromZero(yLeft, yRight, level);
 }
 
-function expandStuckValues(yLeft: { max: number; min: number }, yRight: { max: number; min: number }) {
+function expandStuckValues(yLeft, yRight) {
   // wide Y min and max using increased wideFactor
   const wideFactor = 0.25;
   if (yLeft.max === yLeft.min) {
@@ -78,7 +78,7 @@ function expandStuckValues(yLeft: { max: number; min: number }, yRight: { max: n
   }
 }
 
-function moveLevelToZero(yLeft: { min: number; max: number }, yRight: { min: number; max: number }, level: number) {
+function moveLevelToZero(yLeft, yRight, level) {
   if (level !== 0) {
     yLeft.min -= level;
     yLeft.max -= level;
@@ -87,11 +87,7 @@ function moveLevelToZero(yLeft: { min: number; max: number }, yRight: { min: num
   }
 }
 
-function restoreLevelFromZero(
-  yLeft: { min: number; max: number },
-  yRight: { min: number; max: number },
-  level: number
-) {
+function restoreLevelFromZero(yLeft, yRight, level) {
   if (level !== 0) {
     yLeft.min += level;
     yLeft.max += level;
@@ -100,35 +96,30 @@ function restoreLevelFromZero(
   }
 }
 
-interface AxisSide {
-  max: number;
-  min: number;
-}
-
-function checkCorrectAxis(axis: any[]) {
+function checkCorrectAxis(axis) {
   return axis.length === 2 && checkCorrectAxes(axis[0]) && checkCorrectAxes(axis[1]);
 }
 
-function checkCorrectAxes(axes: any) {
+function checkCorrectAxes(axes) {
   return 'min' in axes && 'max' in axes;
 }
 
-function checkOneSide(yLeft: AxisSide, yRight: AxisSide) {
+function checkOneSide(yLeft, yRight) {
   // on the one hand with respect to zero
   return (yLeft.min >= 0 && yRight.min >= 0) || (yLeft.max <= 0 && yRight.max <= 0);
 }
 
-function checkTwoCross(yLeft: AxisSide, yRight: AxisSide) {
+function checkTwoCross(yLeft, yRight) {
   // both across zero
   return yLeft.min <= 0 && yLeft.max >= 0 && yRight.min <= 0 && yRight.max >= 0;
 }
 
-function checkOppositeSides(yLeft: AxisSide, yRight: AxisSide) {
+function checkOppositeSides(yLeft, yRight) {
   // on the opposite sides with respect to zero
   return (yLeft.min >= 0 && yRight.max <= 0) || (yLeft.max <= 0 && yRight.min >= 0);
 }
 
-function getRate(yLeft: AxisSide, yRight: AxisSide) {
+function getRate(yLeft, yRight) {
   let rateLeft, rateRight, rate;
   if (checkTwoCross(yLeft, yRight)) {
     rateLeft = yRight.min ? yLeft.min / yRight.min : 0;

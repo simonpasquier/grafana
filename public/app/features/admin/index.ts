@@ -5,17 +5,15 @@ import AdminEditOrgCtrl from './AdminEditOrgCtrl';
 import StyleGuideCtrl from './StyleGuideCtrl';
 
 import coreModule from 'app/core/core_module';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { NavModelSrv } from 'app/core/core';
 
 class AdminSettingsCtrl {
   navModel: any;
 
   /** @ngInject */
-  constructor($scope: any, backendSrv: BackendSrv, navModelSrv: NavModelSrv) {
+  constructor($scope, backendSrv, navModelSrv) {
     this.navModel = navModelSrv.getNav('admin', 'server-settings', 0);
 
-    backendSrv.get('/api/admin/settings').then((settings: any) => {
+    backendSrv.get('/api/admin/settings').then(settings => {
       $scope.settings = settings;
     });
   }
@@ -25,8 +23,8 @@ class AdminHomeCtrl {
   navModel: any;
 
   /** @ngInject */
-  constructor(navModelSrv: NavModelSrv) {
-    this.navModel = navModelSrv.getNav('admin');
+  constructor(navModelSrv) {
+    this.navModel = navModelSrv.getNav('admin', 0);
   }
 }
 

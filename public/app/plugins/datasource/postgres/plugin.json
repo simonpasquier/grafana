@@ -2,10 +2,9 @@
   "type": "datasource",
   "name": "PostgreSQL",
   "id": "postgres",
-  "category": "sql",
 
   "info": {
-    "description": "Data source for PostgreSQL and compatible databases",
+    "description": "PostgreSQL Data Source for Grafana",
     "author": {
       "name": "Grafana Project",
       "url": "https://grafana.com"
@@ -19,6 +18,7 @@
   "alerting": true,
   "annotations": true,
   "metrics": true,
+  "tables": true,
 
   "queryOptions": {
     "minInterval": true

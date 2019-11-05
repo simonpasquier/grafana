@@ -3,11 +3,22 @@ import tinycolor from 'tinycolor2';
 import { css, cx } from 'emotion';
 import { Themeable, GrafanaTheme } from '../../types';
 import { selectThemeVariant } from '../../themes/selectThemeVariant';
-import { stylesFactory } from '../../themes/stylesFactory';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'inverse' | 'transparent';
+export enum ButtonVariant {
+  Primary = 'primary',
+  Secondary = 'secondary',
+  Danger = 'danger',
+  Inverse = 'inverse',
+  Transparent = 'transparent',
+}
 
-export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+export enum ButtonSize {
+  ExtraSmall = 'xs',
+  Small = 'sm',
+  Medium = 'md',
+  Large = 'lg',
+  ExtraLarge = 'xl',
+}
 
 export interface CommonButtonProps {
   size?: ButtonSize;
@@ -20,9 +31,7 @@ export interface CommonButtonProps {
   className?: string;
 }
 
-export interface LinkButtonProps extends CommonButtonProps, AnchorHTMLAttributes<HTMLAnchorElement> {
-  disabled?: boolean;
-}
+export interface LinkButtonProps extends CommonButtonProps, AnchorHTMLAttributes<HTMLAnchorElement> {}
 export interface ButtonProps extends CommonButtonProps, ButtonHTMLAttributes<HTMLButtonElement> {}
 
 interface AbstractButtonProps extends CommonButtonProps, Themeable {
@@ -50,13 +59,7 @@ const buttonVariantStyles = (
   }
 `;
 
-interface StyleDeps {
-  theme: GrafanaTheme;
-  size: ButtonSize;
-  variant: ButtonVariant;
-  withIcon: boolean;
-}
-const getButtonStyles = stylesFactory(({ theme, size, variant, withIcon }: StyleDeps) => {
+const getButtonStyles = (theme: GrafanaTheme, size: ButtonSize, variant: ButtonVariant, withIcon: boolean) => {
   const borderRadius = theme.border.radius.sm;
   let padding,
     background,
@@ -66,19 +69,13 @@ const getButtonStyles = stylesFactory(({ theme, size, variant, withIcon }: Style
     fontWeight = theme.typography.weight.semibold;
 
   switch (size) {
-    case 'sm':
+    case ButtonSize.Small:
       padding = `${theme.spacing.xs} ${theme.spacing.sm}`;
       fontSize = theme.typography.size.sm;
       iconDistance = theme.spacing.xs;
       height = theme.height.sm;
       break;
-    case 'md':
-      padding = `${theme.spacing.sm} ${theme.spacing.md}`;
-      fontSize = theme.typography.size.md;
-      iconDistance = theme.spacing.sm;
-      height = theme.height.md;
-      break;
-    case 'lg':
+    case ButtonSize.Large:
       padding = `${theme.spacing.md} ${theme.spacing.lg}`;
       fontSize = theme.typography.size.lg;
       fontWeight = theme.typography.weight.regular;
@@ -93,16 +90,16 @@ const getButtonStyles = stylesFactory(({ theme, size, variant, withIcon }: Style
   }
 
   switch (variant) {
-    case 'primary':
+    case ButtonVariant.Primary:
       background = buttonVariantStyles(theme.colors.greenBase, theme.colors.greenShade, theme.colors.white);
       break;
-    case 'secondary':
+    case ButtonVariant.Secondary:
       background = buttonVariantStyles(theme.colors.blueBase, theme.colors.blueShade, theme.colors.white);
       break;
-    case 'danger':
+    case ButtonVariant.Danger:
       background = buttonVariantStyles(theme.colors.redBase, theme.colors.redShade, theme.colors.white);
       break;
-    case 'inverse':
+    case ButtonVariant.Inverse:
       const from = selectThemeVariant({ light: theme.colors.gray5, dark: theme.colors.dark6 }, theme.type) as string;
       const to = selectThemeVariant(
         {
@@ -118,7 +115,7 @@ const getButtonStyles = stylesFactory(({ theme, size, variant, withIcon }: Style
 
       background = buttonVariantStyles(from, to, theme.colors.link, 'rgba(0, 0, 0, 0.1)', true);
       break;
-    case 'transparent':
+    case ButtonVariant.Transparent:
       background = css`
         ${buttonVariantStyles('', '', theme.colors.link, 'rgba(0, 0, 0, 0.1)', true)};
         background: transparent;
@@ -129,7 +126,7 @@ const getButtonStyles = stylesFactory(({ theme, size, variant, withIcon }: Style
   return {
     button: css`
       label: button;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       font-weight: ${fontWeight};
       font-size: ${fontSize};
@@ -162,19 +159,19 @@ const getButtonStyles = stylesFactory(({ theme, size, variant, withIcon }: Style
       filter: brightness(100);
     `,
   };
-});
+};
 
 export const AbstractButton: React.FunctionComponent<AbstractButtonProps> = ({
   renderAs,
   theme,
-  size = 'md',
-  variant = 'primary',
+  size = ButtonSize.Medium,
+  variant = ButtonVariant.Primary,
   className,
   icon,
   children,
   ...otherProps
 }) => {
-  const buttonStyles = getButtonStyles({ theme, size, variant, withIcon: !!icon });
+  const buttonStyles = getButtonStyles(theme, size, variant, !!icon);
   const nonHtmlProps = {
     theme,
     size,

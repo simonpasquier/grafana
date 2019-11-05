@@ -29,10 +29,8 @@ describe('GraphiteQueryCtrl', () => {
 
     ctx.ctrl = new GraphiteQueryCtrl(
       {},
-      {} as any,
-      //@ts-ignore
+      {},
       new uiSegmentSrv({ trustAsHtml: html => html }, { highlightVariablesAsHtml: () => {} }),
-      //@ts-ignore
       new TemplateSrvStub(),
       {}
     );
@@ -123,7 +121,7 @@ describe('GraphiteQueryCtrl', () => {
       ctx.ctrl.target.target = 'test.count';
       ctx.ctrl.datasource.metricFindQuery = () => Promise.resolve([]);
       ctx.ctrl.parseTarget();
-      ctx.ctrl.getAltSegments(1).then((results: any) => {
+      ctx.ctrl.getAltSegments(1).then(results => {
         ctx.altSegments = results;
       });
     });

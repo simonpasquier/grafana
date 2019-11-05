@@ -19,11 +19,10 @@
     "noEmitOnError": false,
     "emitDecoratorMetadata": false,
     "experimentalDecorators": true,
-    "strictNullChecks": false,
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noImplicitUseStrict": false,
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "downlevelIteration": true,
     "noUnusedLocals": true,
     "baseUrl": "public",
@@ -31,17 +30,9 @@
     "typeRoots": ["node_modules/@types", "public/app/types"],
     "paths": {
       "app": ["app"],
-      "sass": ["sass"],
-      "@grafana/slate-react": ["../node_modules/@types/slate-react"]
+      "sass": ["sass"]
     },
-    "skipLibCheck": true,
-    "preserveSymlinks": true
+    "skipLibCheck": true
   },
-  "include": [
-    "public/app/**/*.ts",
-    "public/app/**/*.tsx",
-    "public/test/**/*.ts",
-    "public/vendor/**/*.ts",
-    "public/e2e-test/**/*.ts"
-  ]
+  "include": ["public/app/**/*.ts", "public/app/**/*.tsx", "public/test/**/*.ts", "public/vendor/**/*.ts"]
 }

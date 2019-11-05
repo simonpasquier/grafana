@@ -2,7 +2,7 @@
  * @preserve jquery-param (c) 2015 KNOWLEDGECODE | MIT
  */
 
-import { UrlQueryMap } from '@grafana/runtime';
+import { UrlQueryMap } from 'app/types';
 
 export function renderUrl(path: string, query: UrlQueryMap | undefined): string {
   if (query && Object.keys(query).length > 0) {
@@ -11,7 +11,7 @@ export function renderUrl(path: string, query: UrlQueryMap | undefined): string 
   return path;
 }
 
-export function encodeURIComponentAsAngularJS(val: string, pctEncodeSpaces?: boolean) {
+export function encodeURIComponentAsAngularJS(val, pctEncodeSpaces) {
   return encodeURIComponent(val)
     .replace(/%40/gi, '@')
     .replace(/%3A/gi, ':')
@@ -21,15 +21,15 @@ export function encodeURIComponentAsAngularJS(val: string, pctEncodeSpaces?: boo
     .replace(/%20/g, pctEncodeSpaces ? '%20' : '+');
 }
 
-export function toUrlParams(a: any) {
-  const s: any[] = [];
+export function toUrlParams(a) {
+  const s = [];
   const rbracket = /\[\]$/;
 
-  const isArray = (obj: any) => {
+  const isArray = obj => {
     return Object.prototype.toString.call(obj) === '[object Array]';
   };
 
-  const add = (k: string, v: any) => {
+  const add = (k, v) => {
     v = typeof v === 'function' ? v() : v === null ? '' : v === undefined ? '' : v;
     if (typeof v !== 'boolean') {
       s[s.length] = encodeURIComponentAsAngularJS(k, true) + '=' + encodeURIComponentAsAngularJS(v, true);
@@ -38,7 +38,7 @@ export function toUrlParams(a: any) {
     }
   };
 
-  const buildParams = (prefix: string, obj: any) => {
+  const buildParams = (prefix, obj) => {
     let i, len, key;
 
     if (prefix) {
@@ -70,20 +70,4 @@ export function toUrlParams(a: any) {
   };
 
   return buildParams('', a).join('&');
-}
-
-export function appendQueryToUrl(url: string, stringToAppend: string) {
-  if (stringToAppend !== undefined && stringToAppend !== null && stringToAppend !== '') {
-    const pos = url.indexOf('?');
-    if (pos !== -1) {
-      if (url.length - pos > 1) {
-        url += '&';
-      }
-    } else {
-      url += '?';
-    }
-    url += stringToAppend;
-  }
-
-  return url;
 }

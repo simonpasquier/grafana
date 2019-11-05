@@ -2,9 +2,9 @@ import TimeSeries from 'app/core/time_series2';
 import { updateLegendValues } from 'app/core/time_series2';
 
 describe('TimeSeries', () => {
-  let points, series: any;
+  let points, series;
   const yAxisFormats = ['short', 'ms'];
-  let testData: { alias?: string; datapoints: any };
+  let testData;
 
   beforeEach(() => {
     testData = {
@@ -174,7 +174,7 @@ describe('TimeSeries', () => {
   });
 
   describe('can detect if series contains ms precision', () => {
-    let fakedata: any;
+    let fakedata;
 
     beforeEach(() => {
       fakedata = testData;
@@ -194,7 +194,7 @@ describe('TimeSeries', () => {
   });
 
   describe('series overrides', () => {
-    let series: any;
+    let series;
     beforeEach(() => {
       series = new TimeSeries(testData);
     });
@@ -313,7 +313,7 @@ describe('TimeSeries', () => {
   });
 
   describe('value formatter', () => {
-    let series: any;
+    let series;
     beforeEach(() => {
       series = new TimeSeries(testData);
     });
@@ -328,7 +328,7 @@ describe('TimeSeries', () => {
   });
 
   describe('legend decimals', () => {
-    let series: any, panel: any;
+    let series, panel;
     const height = 200;
     beforeEach(() => {
       testData = {

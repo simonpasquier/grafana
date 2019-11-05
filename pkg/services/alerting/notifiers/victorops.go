@@ -5,7 +5,7 @@ import (
 
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/infra/log"
+	"github.com/grafana/grafana/pkg/log"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 	"github.com/grafana/grafana/pkg/setting"
@@ -14,7 +14,7 @@ import (
 // AlertStateCritical - Victorops uses "CRITICAL" string to indicate "Alerting" state
 const AlertStateCritical = "CRITICAL"
 
-const alertStateRecovery = "RECOVERY"
+const AlertStateRecovery = "RECOVERY"
 
 func init() {
 	alerting.RegisterNotifier(&alerting.NotifierPlugin{
@@ -69,17 +69,17 @@ type VictoropsNotifier struct {
 }
 
 // Notify sends notification to Victorops via POST to URL endpoint
-func (vn *VictoropsNotifier) Notify(evalContext *alerting.EvalContext) error {
-	vn.log.Info("Executing victorops notification", "ruleId", evalContext.Rule.ID, "notification", vn.Name)
+func (this *VictoropsNotifier) Notify(evalContext *alerting.EvalContext) error {
+	this.log.Info("Executing victorops notification", "ruleId", evalContext.Rule.Id, "notification", this.Name)
 
-	ruleURL, err := evalContext.GetRuleURL()
+	ruleUrl, err := evalContext.GetRuleUrl()
 	if err != nil {
-		vn.log.Error("Failed get rule link", "error", err)
+		this.log.Error("Failed get rule link", "error", err)
 		return err
 	}
 
-	if evalContext.Rule.State == models.AlertStateOK && !vn.AutoResolve {
-		vn.log.Info("Not alerting VictorOps", "state", evalContext.Rule.State, "auto resolve", vn.AutoResolve)
+	if evalContext.Rule.State == models.AlertStateOK && !this.AutoResolve {
+		this.log.Info("Not alerting VictorOps", "state", evalContext.Rule.State, "auto resolve", this.AutoResolve)
 		return nil
 	}
 
@@ -89,10 +89,10 @@ func (vn *VictoropsNotifier) Notify(evalContext *alerting.EvalContext) error {
 	}
 
 	if evalContext.Rule.State == models.AlertStateOK {
-		messageType = alertStateRecovery
+		messageType = AlertStateRecovery
 	}
 
-	fields := make(map[string]interface{})
+	fields := make(map[string]interface{}, 0)
 	fieldLimitCount := 4
 	for index, evt := range evalContext.EvalMatches {
 		fields[evt.Metric] = evt.Value
@@ -109,22 +109,22 @@ func (vn *VictoropsNotifier) Notify(evalContext *alerting.EvalContext) error {
 	bodyJSON.Set("state_start_time", evalContext.StartTime.Unix())
 	bodyJSON.Set("state_message", evalContext.Rule.Message)
 	bodyJSON.Set("monitoring_tool", "Grafana v"+setting.BuildVersion)
-	bodyJSON.Set("alert_url", ruleURL)
+	bodyJSON.Set("alert_url", ruleUrl)
 	bodyJSON.Set("metrics", fields)
 
 	if evalContext.Error != nil {
 		bodyJSON.Set("error_message", evalContext.Error.Error())
 	}
 
-	if evalContext.ImagePublicURL != "" {
-		bodyJSON.Set("image_url", evalContext.ImagePublicURL)
+	if evalContext.ImagePublicUrl != "" {
+		bodyJSON.Set("image_url", evalContext.ImagePublicUrl)
 	}
 
 	data, _ := bodyJSON.MarshalJSON()
-	cmd := &models.SendWebhookSync{Url: vn.URL, Body: string(data)}
+	cmd := &models.SendWebhookSync{Url: this.URL, Body: string(data)}
 
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
-		vn.log.Error("Failed to send Victorops notification", "error", err, "webhook", vn.Name)
+		this.log.Error("Failed to send Victorops notification", "error", err, "webhook", this.Name)
 		return err
 	}
 

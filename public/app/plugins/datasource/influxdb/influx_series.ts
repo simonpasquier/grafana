@@ -1,20 +1,20 @@
 import _ from 'lodash';
 import TableModel from 'app/core/table_model';
-import { FieldType } from '@grafana/data';
+import { FieldType } from '@grafana/ui';
 
 export default class InfluxSeries {
   series: any;
   alias: any;
   annotation: any;
 
-  constructor(options: { series: any; alias?: any; annotation?: any }) {
+  constructor(options) {
     this.series = options.series;
     this.alias = options.alias;
     this.annotation = options.annotation;
   }
 
   getTimeSeries() {
-    const output: any[] = [];
+    const output = [];
     let i, j;
 
     if (this.series.length === 0) {
@@ -54,11 +54,11 @@ export default class InfluxSeries {
     return output;
   }
 
-  _getSeriesName(series: any, index: number) {
+  _getSeriesName(series, index) {
     const regex = /\$(\w+)|\[\[([\s\S]+?)\]\]/g;
     const segments = series.name.split('.');
 
-    return this.alias.replace(regex, (match: any, g1: any, g2: any) => {
+    return this.alias.replace(regex, (match, g1, g2) => {
       const group = g1 || g2;
       const segIndex = parseInt(group, 10);
 
@@ -84,13 +84,13 @@ export default class InfluxSeries {
   }
 
   getAnnotations() {
-    const list: any[] = [];
+    const list = [];
 
     _.each(this.series, series => {
-      let titleCol: any = null;
-      let timeCol: any = null;
-      const tagsCol: any = [];
-      let textCol: any = null;
+      let titleCol = null;
+      let timeCol = null;
+      const tagsCol = [];
+      let textCol = null;
 
       _.each(series.columns, (column, index) => {
         if (column === 'time') {
@@ -126,10 +126,10 @@ export default class InfluxSeries {
           // Remove empty values, then split in different tags for comma separated values
           tags: _.flatten(
             tagsCol
-              .filter((t: any) => {
+              .filter(t => {
                 return value[t];
               })
-              .map((t: any) => {
+              .map(t => {
                 return value[t].split(',');
               })
           ),
