@@ -1,12 +1,3 @@
-import DatasourceSrv from 'app/features/plugins/datasource_srv';
-
-export interface JWT {
-  private_key: any;
-  token_uri: any;
-  client_email: any;
-  project_id: any;
-}
-
 export class StackdriverConfigCtrl {
   static templateUrl = 'public/app/plugins/datasource/stackdriver/partials/config.html';
   datasourceSrv: any;
@@ -18,7 +9,7 @@ export class StackdriverConfigCtrl {
   defaultAuthenticationType: string;
 
   /** @ngInject */
-  constructor(datasourceSrv: DatasourceSrv) {
+  constructor(datasourceSrv) {
     this.defaultAuthenticationType = 'jwt';
     this.datasourceSrv = datasourceSrv;
     this.current.jsonData = this.current.jsonData || {};
@@ -33,14 +24,14 @@ export class StackdriverConfigCtrl {
     ];
   }
 
-  save(jwt: JWT) {
+  save(jwt) {
     this.current.secureJsonData.privateKey = jwt.private_key;
     this.current.jsonData.tokenUri = jwt.token_uri;
     this.current.jsonData.clientEmail = jwt.client_email;
     this.current.jsonData.defaultProject = jwt.project_id;
   }
 
-  validateJwt(jwt: JWT) {
+  validateJwt(jwt) {
     this.resetValidationMessages();
     if (!jwt.private_key || jwt.private_key.length === 0) {
       this.validationErrors.push('Private key field missing in JWT file.');
@@ -66,14 +57,14 @@ export class StackdriverConfigCtrl {
     return false;
   }
 
-  onUpload(json: JWT) {
+  onUpload(json) {
     this.jsonText = '';
     if (this.validateJwt(json)) {
       this.save(json);
     }
   }
 
-  onPasteJwt(e: any) {
+  onPasteJwt(e) {
     try {
       const json = JSON.parse(e.originalEvent.clipboardData.getData('text/plain') || this.jsonText);
       if (this.validateJwt(json)) {

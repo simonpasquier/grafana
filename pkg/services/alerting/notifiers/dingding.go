@@ -7,13 +7,13 @@ import (
 
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/log"
+	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 )
 
-const defaultDingdingMsgType = "link"
-const dingdingOptionsTemplate = `
+const DefaultDingdingMsgType = "link"
+const DingdingOptionsTemplate = `
       <h3 class="page-heading">DingDing settings</h3>
       <div class="gf-form">
         <span class="gf-form-label width-10">Url</span>
@@ -21,7 +21,7 @@ const dingdingOptionsTemplate = `
       </div>
       <div class="gf-form">
         <span class="gf-form-label width-10">MessageType</span>
-        <select class="gf-form-input max-width-14" ng-model="ctrl.model.settings.msgType" ng-options="s for s in ['link','actionCard']" ng-init="ctrl.model.settings.msgType=ctrl.model.settings.msgType || '` + defaultDingdingMsgType + `'"></select>
+        <select class="gf-form-input max-width-14" ng-model="ctrl.model.settings.msgType" ng-options="s for s in ['link','actionCard']" ng-init="ctrl.model.settings.msgType=ctrl.model.settings.msgType || '` + DefaultDingdingMsgType + `'"></select>
       </div>
 `
 
@@ -30,59 +30,57 @@ func init() {
 		Type:            "dingding",
 		Name:            "DingDing",
 		Description:     "Sends HTTP POST request to DingDing",
-		Factory:         newDingDingNotifier,
-		OptionsTemplate: dingdingOptionsTemplate,
+		Factory:         NewDingDingNotifier,
+		OptionsTemplate: DingdingOptionsTemplate,
 	})
 
 }
 
-func newDingDingNotifier(model *models.AlertNotification) (alerting.Notifier, error) {
+func NewDingDingNotifier(model *m.AlertNotification) (alerting.Notifier, error) {
 	url := model.Settings.Get("url").MustString()
 	if url == "" {
 		return nil, alerting.ValidationError{Reason: "Could not find url property in settings"}
 	}
 
-	msgType := model.Settings.Get("msgType").MustString(defaultDingdingMsgType)
+	msgType := model.Settings.Get("msgType").MustString(DefaultDingdingMsgType)
 
 	return &DingDingNotifier{
 		NotifierBase: NewNotifierBase(model),
 		MsgType:      msgType,
-		URL:          url,
+		Url:          url,
 		log:          log.New("alerting.notifier.dingding"),
 	}, nil
 }
 
-// DingDingNotifier is responsible for sending alert notifications to ding ding.
 type DingDingNotifier struct {
 	NotifierBase
 	MsgType string
-	URL     string
+	Url     string
 	log     log.Logger
 }
 
-// Notify sends the alert notification to dingding.
-func (dd *DingDingNotifier) Notify(evalContext *alerting.EvalContext) error {
-	dd.log.Info("Sending dingding")
+func (this *DingDingNotifier) Notify(evalContext *alerting.EvalContext) error {
+	this.log.Info("Sending dingding")
 
-	messageURL, err := evalContext.GetRuleURL()
+	messageUrl, err := evalContext.GetRuleUrl()
 	if err != nil {
-		dd.log.Error("Failed to get messageUrl", "error", err, "dingding", dd.Name)
-		messageURL = ""
+		this.log.Error("Failed to get messageUrl", "error", err, "dingding", this.Name)
+		messageUrl = ""
 	}
 
 	q := url.Values{
 		"pc_slide": {"false"},
-		"url":      {messageURL},
+		"url":      {messageUrl},
 	}
 
 	// Use special link to auto open the message url outside of Dingding
 	// Refer: https://open-doc.dingtalk.com/docs/doc.htm?treeId=385&articleId=104972&docType=1#s9
-	messageURL = "dingtalk://dingtalkclient/page/link?" + q.Encode()
+	messageUrl = "dingtalk://dingtalkclient/page/link?" + q.Encode()
 
-	dd.log.Info("messageUrl:" + messageURL)
+	this.log.Info("messageUrl:" + messageUrl)
 
 	message := evalContext.Rule.Message
-	picURL := evalContext.ImagePublicURL
+	picUrl := evalContext.ImagePublicUrl
 	title := evalContext.GetNotificationTitle()
 	if message == "" {
 		message = title
@@ -93,10 +91,10 @@ func (dd *DingDingNotifier) Notify(evalContext *alerting.EvalContext) error {
 	}
 
 	var bodyStr string
-	if dd.MsgType == "actionCard" {
+	if this.MsgType == "actionCard" {
 		// Embed the pic into the markdown directly because actionCard doesn't have a picUrl field
-		if picURL != "" {
-			message = "![](" + picURL + ")\\n\\n" + message
+		if picUrl != "" {
+			message = "![](" + picUrl + ")\\n\\n" + message
 		}
 
 		bodyStr = `{
@@ -105,7 +103,7 @@ func (dd *DingDingNotifier) Notify(evalContext *alerting.EvalContext) error {
 				"text": "` + strings.Replace(message, `"`, "'", -1) + `",
 				"title": "` + strings.Replace(title, `"`, "'", -1) + `",
 				"singleTitle": "More",
-				"singleURL": "` + messageURL + `"
+				"singleURL": "` + messageUrl + `"
 			}
 		}`
 	} else {
@@ -114,8 +112,8 @@ func (dd *DingDingNotifier) Notify(evalContext *alerting.EvalContext) error {
 			"link": {
 				"text": "` + message + `",
 				"title": "` + title + `",
-				"picUrl": "` + picURL + `",
-				"messageUrl": "` + messageURL + `"
+				"picUrl": "` + picUrl + `",
+				"messageUrl": "` + messageUrl + `"
 			}
 		}`
 	}
@@ -123,7 +121,7 @@ func (dd *DingDingNotifier) Notify(evalContext *alerting.EvalContext) error {
 	bodyJSON, err := simplejson.NewJson([]byte(bodyStr))
 
 	if err != nil {
-		dd.log.Error("Failed to create Json data", "error", err, "dingding", dd.Name)
+		this.log.Error("Failed to create Json data", "error", err, "dingding", this.Name)
 	}
 
 	body, err := bodyJSON.MarshalJSON()
@@ -131,13 +129,13 @@ func (dd *DingDingNotifier) Notify(evalContext *alerting.EvalContext) error {
 		return err
 	}
 
-	cmd := &models.SendWebhookSync{
-		Url:  dd.URL,
+	cmd := &m.SendWebhookSync{
+		Url:  this.Url,
 		Body: string(body),
 	}
 
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
-		dd.log.Error("Failed to send DingDing", "error", err, "dingding", dd.Name)
+		this.log.Error("Failed to send DingDing", "error", err, "dingding", this.Name)
 		return err
 	}
 

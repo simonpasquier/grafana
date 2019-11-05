@@ -2,14 +2,11 @@ import { stackdriverUnitMappings } from './constants';
 import appEvents from 'app/core/app_events';
 import _ from 'lodash';
 import StackdriverMetricFindQuery from './StackdriverMetricFindQuery';
-import { StackdriverQuery, MetricDescriptor, StackdriverOptions } from './types';
-import { DataSourceApi, DataQueryRequest, DataSourceInstanceSettings } from '@grafana/ui';
-import { ScopedVars } from '@grafana/data';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { TemplateSrv } from 'app/features/templating/template_srv';
-import { TimeSrv } from 'app/features/dashboard/services/TimeSrv';
+import { StackdriverQuery, MetricDescriptor } from './types';
+import { DataSourceApi, DataQueryRequest } from '@grafana/ui/src/types';
 
-export default class StackdriverDatasource extends DataSourceApi<StackdriverQuery, StackdriverOptions> {
+export default class StackdriverDatasource implements DataSourceApi<StackdriverQuery> {
+  id: number;
   url: string;
   baseUrl: string;
   projectName: string;
@@ -18,26 +15,21 @@ export default class StackdriverDatasource extends DataSourceApi<StackdriverQuer
   metricTypes: any[];
 
   /** @ngInject */
-  constructor(
-    instanceSettings: DataSourceInstanceSettings<StackdriverOptions>,
-    private backendSrv: BackendSrv,
-    private templateSrv: TemplateSrv,
-    private timeSrv: TimeSrv
-  ) {
-    super(instanceSettings);
+  constructor(instanceSettings, private backendSrv, private templateSrv, private timeSrv) {
     this.baseUrl = `/stackdriver/`;
     this.url = instanceSettings.url;
+    this.id = instanceSettings.id;
     this.projectName = instanceSettings.jsonData.defaultProject || '';
     this.authenticationType = instanceSettings.jsonData.authenticationType || 'jwt';
     this.metricTypes = [];
   }
 
-  async getTimeSeries(options: any) {
+  async getTimeSeries(options) {
     const queries = options.targets
-      .filter((target: any) => {
+      .filter(target => {
         return !target.hide && target.metricType;
       })
-      .map((t: any) => {
+      .map(t => {
         return {
           refId: t.refId,
           intervalMs: options.intervalMs,
@@ -70,7 +62,7 @@ export default class StackdriverDatasource extends DataSourceApi<StackdriverQuer
     }
   }
 
-  interpolateFilters(filters: string[], scopedVars: ScopedVars) {
+  interpolateFilters(filters: string[], scopedVars: object) {
     return (filters || []).map(f => {
       return this.templateSrv.replace(f, scopedVars || {}, 'regex');
     });
@@ -93,8 +85,8 @@ export default class StackdriverDatasource extends DataSourceApi<StackdriverQuer
     return response.results[refId];
   }
 
-  interpolateGroupBys(groupBys: string[], scopedVars: {}): string[] {
-    let interpolatedGroupBys: any[] = [];
+  interpolateGroupBys(groupBys: string[], scopedVars): string[] {
+    let interpolatedGroupBys = [];
     (groupBys || []).forEach(gb => {
       const interpolated = this.templateSrv.replace(gb, scopedVars || {}, 'csv').split(',');
       if (Array.isArray(interpolated)) {
@@ -110,7 +102,6 @@ export default class StackdriverDatasource extends DataSourceApi<StackdriverQuer
     let unit;
     if (targets.length > 0 && targets.every(t => t.unit === targets[0].unit)) {
       if (stackdriverUnitMappings.hasOwnProperty(targets[0].unit)) {
-        // @ts-ignore
         unit = stackdriverUnitMappings[targets[0].unit];
       }
     }
@@ -118,7 +109,7 @@ export default class StackdriverDatasource extends DataSourceApi<StackdriverQuer
   }
 
   async query(options: DataQueryRequest<StackdriverQuery>) {
-    const result: any[] = [];
+    const result = [];
     const data = await this.getTimeSeries(options);
     if (data.results) {
       Object['values'](data.results).forEach((queryRes: any) => {
@@ -145,7 +136,7 @@ export default class StackdriverDatasource extends DataSourceApi<StackdriverQuer
     }
   }
 
-  async annotationQuery(options: any) {
+  async annotationQuery(options) {
     const annotation = options.annotation;
     const queries = [
       {
@@ -158,7 +149,7 @@ export default class StackdriverDatasource extends DataSourceApi<StackdriverQuer
         text: this.templateSrv.replace(annotation.target.text, options.scopedVars || {}),
         tags: this.templateSrv.replace(annotation.target.tags, options.scopedVars || {}),
         view: 'FULL',
-        filters: (annotation.target.filters || []).map((f: any) => {
+        filters: (annotation.target.filters || []).map(f => {
           return this.templateSrv.replace(f, options.scopedVars || {});
         }),
         type: 'annotationQuery',
@@ -175,20 +166,20 @@ export default class StackdriverDatasource extends DataSourceApi<StackdriverQuer
       },
     });
 
-    const results = data.results['annotationQuery'].tables[0].rows.map((v: any) => {
+    const results = data.results['annotationQuery'].tables[0].rows.map(v => {
       return {
         annotation: annotation,
         time: Date.parse(v[0]),
         title: v[1],
         tags: [],
         text: v[3],
-      } as any;
+      };
     });
 
     return results;
   }
 
-  async metricFindQuery(query: string) {
+  async metricFindQuery(query) {
     const stackdriverMetricFindQuery = new StackdriverMetricFindQuery(this);
     return stackdriverMetricFindQuery.execute(query);
   }
@@ -226,7 +217,7 @@ export default class StackdriverDatasource extends DataSourceApi<StackdriverQuer
     }
   }
 
-  formatStackdriverError(error: any) {
+  formatStackdriverError(error) {
     let message = 'Stackdriver: ';
     message += error.statusText ? error.statusText + ': ' : '';
     if (error.data && error.data.error) {
@@ -274,7 +265,7 @@ export default class StackdriverDatasource extends DataSourceApi<StackdriverQuer
         const metricsApiPath = `v3/projects/${projectName}/metricDescriptors`;
         const { data } = await this.doRequest(`${this.baseUrl}${metricsApiPath}`);
 
-        this.metricTypes = data.metricDescriptors.map((m: any) => {
+        this.metricTypes = data.metricDescriptors.map(m => {
           const [service] = m.type.split('/');
           const [serviceShortName] = service.split('.');
           m.service = service;
@@ -292,13 +283,13 @@ export default class StackdriverDatasource extends DataSourceApi<StackdriverQuer
     }
   }
 
-  async doRequest(url: string, maxRetries = 1) {
+  async doRequest(url, maxRetries = 1) {
     return this.backendSrv
       .datasourceRequest({
         url: this.url + url,
         method: 'GET',
       })
-      .catch((error: any) => {
+      .catch(error => {
         if (maxRetries > 0) {
           return this.doRequest(url, maxRetries - 1);
         }

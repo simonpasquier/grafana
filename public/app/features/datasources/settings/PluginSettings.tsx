@@ -1,19 +1,10 @@
 import React, { PureComponent } from 'react';
 import _ from 'lodash';
-import {
-  DataSourceSettings,
-  DataSourcePlugin,
-  DataSourcePluginMeta,
-  DataSourceApi,
-  DataQuery,
-  DataSourceJsonData,
-} from '@grafana/ui';
-import { getAngularLoader, AngularComponent } from '@grafana/runtime';
-
-export type GenericDataSourcePlugin = DataSourcePlugin<DataSourceApi<DataQuery, DataSourceJsonData>>;
+import { DataSourceSettings, DataSourcePlugin, DataSourcePluginMeta } from '@grafana/ui';
+import { getAngularLoader, AngularComponent } from 'app/core/services/AngularLoader';
 
 export interface Props {
-  plugin: GenericDataSourcePlugin;
+  plugin: DataSourcePlugin;
   dataSource: DataSourceSettings;
   dataSourceMeta: DataSourcePluginMeta;
   onModelChange: (dataSource: DataSourceSettings) => void;
@@ -54,7 +45,7 @@ export class PluginSettings extends PureComponent<Props> {
     }
   }
 
-  componentDidUpdate(prevProps: Props) {
+  componentDidUpdate(prevProps) {
     const { plugin } = this.props;
     if (!plugin.components.ConfigEditor && this.props.dataSource !== prevProps.dataSource) {
       this.scopeProps.ctrl.current = _.cloneDeep(this.props.dataSource);

@@ -6,7 +6,7 @@ import { PanelPluginMeta, EmptySearchResult } from '@grafana/ui';
 
 export interface Props {
   current: PanelPluginMeta;
-  onTypeChange: (newType: PanelPluginMeta) => void;
+  onTypeChanged: (newType: PanelPluginMeta) => void;
   searchQuery: string;
   onClose: () => void;
 }
@@ -34,11 +34,16 @@ export class VizTypePicker extends PureComponent<Props> {
   }
 
   renderVizPlugin = (plugin: PanelPluginMeta, index: number) => {
-    const { onTypeChange } = this.props;
+    const { onTypeChanged } = this.props;
     const isCurrent = plugin.id === this.props.current.id;
 
     return (
-      <VizTypePickerPlugin key={plugin.id} isCurrent={isCurrent} plugin={plugin} onClick={() => onTypeChange(plugin)} />
+      <VizTypePickerPlugin
+        key={plugin.id}
+        isCurrent={isCurrent}
+        plugin={plugin}
+        onClick={() => onTypeChanged(plugin)}
+      />
     );
   };
 

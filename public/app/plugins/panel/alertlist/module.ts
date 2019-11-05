@@ -1,11 +1,9 @@
 import _ from 'lodash';
+import moment from 'moment';
 import alertDef from '../../../features/alerting/state/alertDef';
 import { PanelCtrl } from 'app/plugins/sdk';
 
-import { dateMath } from '@grafana/data';
-import { dateTime } from '@grafana/data';
-import { auto } from 'angular';
-import { BackendSrv } from '@grafana/runtime';
+import * as dateMath from '@grafana/ui/src/utils/datemath';
 
 class AlertListPanel extends PanelCtrl {
   static templateUrl = 'module.html';
@@ -26,7 +24,7 @@ class AlertListPanel extends PanelCtrl {
   templateSrv: string;
 
   // Set and populate defaults
-  panelDefaults: any = {
+  panelDefaults = {
     show: 'current',
     limit: 10,
     stateFilter: [],
@@ -38,7 +36,7 @@ class AlertListPanel extends PanelCtrl {
   };
 
   /** @ngInject */
-  constructor($scope: any, $injector: auto.IInjectorService, private backendSrv: BackendSrv) {
+  constructor($scope, $injector, private backendSrv) {
     super($scope, $injector);
     _.defaults(this.panel, this.panelDefaults);
 
@@ -51,10 +49,9 @@ class AlertListPanel extends PanelCtrl {
     }
   }
 
-  sortResult(alerts: any[]) {
+  sortResult(alerts) {
     if (this.panel.sortOrder === 3) {
       return _.sortBy(alerts, a => {
-        // @ts-ignore
         return alertDef.alertStateSortScore[a.state];
       });
     }
@@ -160,7 +157,7 @@ class AlertListPanel extends PanelCtrl {
       this.currentAlerts = this.sortResult(
         _.map(res, al => {
           al.stateModel = alertDef.getStateDisplayModel(al.state);
-          al.newStateDateAgo = dateTime(al.newStateDate)
+          al.newStateDateAgo = moment(al.newStateDate)
             .locale('en')
             .fromNow(true);
           return al;

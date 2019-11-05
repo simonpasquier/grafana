@@ -1,59 +1,59 @@
-import { Plugin } from '@grafana/slate-react';
-import { Editor as CoreEditor } from 'slate';
-
-const BRACES: any = {
+const BRACES = {
   '[': ']',
   '{': '}',
   '(': ')',
 };
 
-export default function BracesPlugin(): Plugin {
+const NON_SELECTOR_SPACE_REGEXP = / (?![^}]+})/;
+
+export default function BracesPlugin() {
   return {
-    onKeyDown(event: KeyboardEvent, editor: CoreEditor, next: Function) {
-      const { value } = editor;
+    onKeyDown(event, change) {
+      const { value } = change;
+      if (!value.isCollapsed) {
+        return undefined;
+      }
 
       switch (event.key) {
-        case '(':
         case '{':
         case '[': {
           event.preventDefault();
-          const {
-            start: { offset: startOffset, key: startKey },
-            end: { offset: endOffset, key: endKey },
-            focus: { offset: focusOffset },
-          } = value.selection;
-          const text = value.focusText.text;
+          // Insert matching braces
+          change
+            .insertText(`${event.key}${BRACES[event.key]}`)
+            .move(-1)
+            .focus();
+          return true;
+        }
 
-          // If text is selected, wrap selected text in parens
-          if (value.selection.isExpanded) {
-            editor
-              .insertTextByKey(startKey, startOffset, event.key)
-              .insertTextByKey(endKey, endOffset + 1, BRACES[event.key])
-              .moveEndBackward(1);
-          } else if (
-            focusOffset === text.length ||
-            text[focusOffset] === ' ' ||
-            Object.values(BRACES).includes(text[focusOffset])
-          ) {
-            editor.insertText(`${event.key}${BRACES[event.key]}`).moveBackward(1);
-          } else {
-            editor.insertText(event.key);
-          }
-
+        case '(': {
+          event.preventDefault();
+          const text = value.anchorText.text;
+          const offset = value.anchorOffset;
+          const delimiterIndex = text.slice(offset).search(NON_SELECTOR_SPACE_REGEXP);
+          const length = delimiterIndex > -1 ? delimiterIndex + offset : text.length;
+          const forward = length - offset;
+          // Insert matching braces
+          change
+            .insertText(event.key)
+            .move(forward)
+            .insertText(BRACES[event.key])
+            .move(-1 - forward)
+            .focus();
           return true;
         }
 
         case 'Backspace': {
           const text = value.anchorText.text;
-          const offset = value.selection.anchor.offset;
+          const offset = value.anchorOffset;
           const previousChar = text[offset - 1];
           const nextChar = text[offset];
           if (BRACES[previousChar] && BRACES[previousChar] === nextChar) {
             event.preventDefault();
             // Remove closing brace if directly following
-            editor
-              .deleteBackward(1)
-              .deleteForward(1)
+            change
+              .deleteBackward()
+              .deleteForward()
               .focus();
             return true;
           }
@@ -63,8 +63,7 @@ export default function BracesPlugin(): Plugin {
           break;
         }
       }
-
-      return next();
+      return undefined;
     },
   };
 }

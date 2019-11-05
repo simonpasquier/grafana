@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
-import { renderMarkdown } from '@grafana/data';
-import { getBackendSrv } from '@grafana/runtime';
+import Remarkable from 'remarkable';
+import { getBackendSrv } from '../../services/backend_srv';
 
 interface Props {
   plugin: {
@@ -37,8 +37,9 @@ export class PluginHelp extends PureComponent<Props, State> {
 
     getBackendSrv()
       .get(`/api/plugins/${plugin.id}/markdown/${type}`)
-      .then((response: string) => {
-        const helpHtml = renderMarkdown(response);
+      .then(response => {
+        const markdown = new Remarkable();
+        const helpHtml = markdown.render(response);
 
         if (response === '' && type === 'help') {
           this.setState({

@@ -7,12 +7,6 @@ $popper-margin-from-ref: 5px;
   .popper__arrow {
     border-color: $backgroundColor;
   }
-
-  code {
-    border: none;
-    background: darken($backgroundColor, 15%);
-    color: lighten($textColor, 20%);
-  }
 }
 
 .popper {
@@ -20,15 +14,16 @@ $popper-margin-from-ref: 5px;
   z-index: $zindex-tooltip;
   color: $tooltipColor;
   max-width: 400px;
+  text-align: center;
 }
 
 .popper__background {
   background: $tooltipBackground;
   border-radius: $border-radius-sm;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
-  padding: $space-sm;
+  padding: 6px 10px;
   color: $tooltipColor;
-  font-weight: $font-weight-semi-bold;
+  font-weight: 500;
 
   .popper__arrow {
     border-color: $tooltipBackground;

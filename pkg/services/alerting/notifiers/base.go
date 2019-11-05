@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/grafana/grafana/pkg/infra/log"
+	"github.com/grafana/grafana/pkg/log"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 )
@@ -13,11 +13,10 @@ const (
 	triggMetrString = "Triggered metrics:\n\n"
 )
 
-// NotifierBase is the base implementation of a notifier.
 type NotifierBase struct {
 	Name                  string
 	Type                  string
-	UID                   string
+	Uid                   string
 	IsDeault              bool
 	UploadImage           bool
 	SendReminder          bool
@@ -27,7 +26,6 @@ type NotifierBase struct {
 	log log.Logger
 }
 
-// NewNotifierBase returns a new `NotifierBase`.
 func NewNotifierBase(model *models.AlertNotification) NotifierBase {
 	uploadImage := true
 	value, exist := model.Settings.CheckGet("uploadImage")
@@ -36,7 +34,7 @@ func NewNotifierBase(model *models.AlertNotification) NotifierBase {
 	}
 
 	return NotifierBase{
-		UID:                   model.Uid,
+		Uid:                   model.Uid,
 		Name:                  model.Name,
 		IsDeault:              model.IsDefault,
 		Type:                  model.Type,
@@ -71,10 +69,11 @@ func (n *NotifierBase) ShouldNotify(ctx context.Context, context *alerting.EvalC
 		}
 	}
 
+	unknownOrNoData := prevState == models.AlertStateUnknown || prevState == models.AlertStateNoData
 	okOrPending := newState == models.AlertStatePending || newState == models.AlertStateOK
 
-	// Do not notify when new state is ok/pending when previous is unknown
-	if prevState == models.AlertStateUnknown && okOrPending {
+	// Do not notify when new state is ok/pending when previous is unknown or no_data
+	if unknownOrNoData && okOrPending {
 		return false
 	}
 
@@ -109,40 +108,30 @@ func (n *NotifierBase) ShouldNotify(ctx context.Context, context *alerting.EvalC
 	return true
 }
 
-// GetType returns the notifier type.
 func (n *NotifierBase) GetType() string {
 	return n.Type
 }
 
-// NeedsImage returns true if an image is expected in the notification.
 func (n *NotifierBase) NeedsImage() bool {
 	return n.UploadImage
 }
 
-// GetNotifierUID returns the notifier `uid`.
-func (n *NotifierBase) GetNotifierUID() string {
-	return n.UID
+func (n *NotifierBase) GetNotifierUid() string {
+	return n.Uid
 }
 
-// GetIsDefault returns true if the notifiers should
-// be used for all alerts.
 func (n *NotifierBase) GetIsDefault() bool {
 	return n.IsDeault
 }
 
-// GetSendReminder returns true if reminders should be sent.
 func (n *NotifierBase) GetSendReminder() bool {
 	return n.SendReminder
 }
 
-// GetDisableResolveMessage returns true if ok alert notifications
-// should be skipped.
 func (n *NotifierBase) GetDisableResolveMessage() bool {
 	return n.DisableResolveMessage
 }
 
-// GetFrequency returns the freqency for how often
-// alerts should be evaluated.
 func (n *NotifierBase) GetFrequency() time.Duration {
 	return n.Frequency
 }

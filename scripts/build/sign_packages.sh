@@ -1,24 +1,12 @@
 #!/bin/bash
 
-set -e
-
-_files=$*
-
-if [ -z "$_files" ]; then
-    echo "_files (arg 1) has to be set"
-    exit 1
-fi
-
-if [ -z "$GPG_KEY_PASSWORD" ]; then
-    echo "GPG_KEY_PASSWORD has to be set"
-    exit 1
-fi
+git clone git@github.com:torkelo/private.git ~/private-repo
 
 gpg --allow-secret-key-import --import ~/private-repo/signing/private.key
 
 cp ./scripts/build/rpmmacros ~/.rpmmacros
 
-for package in $_files; do
+for package in dist/*.rpm; do
     [ -e "$package" ] || continue
-    ./scripts/build/sign_expect "$GPG_KEY_PASSWORD" "$package"
+    ./scripts/build/sign_expect $GPG_KEY_PASSWORD $package
 done

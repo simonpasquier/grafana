@@ -43,9 +43,7 @@ var (
 	workingDir            string
 	includeBuildId        bool     = true
 	buildId               string   = "0"
-	serverBinary          string   = "grafana-server"
-	cliBinary             string   = "grafana-cli"
-	binaries              []string = []string{serverBinary, cliBinary}
+	binaries              []string = []string{"grafana-server", "grafana-cli"}
 	isDev                 bool     = false
 	enterprise            bool     = false
 	skipRpmGen            bool     = false
@@ -232,7 +230,6 @@ type linuxPackageOptions struct {
 	packageType            string
 	packageArch            string
 	homeDir                string
-	homeBinDir             string
 	binPath                string
 	serverBinPath          string
 	cliBinPath             string
@@ -243,11 +240,10 @@ type linuxPackageOptions struct {
 	initdScriptFilePath    string
 	systemdServiceFilePath string
 
-	postinstSrc         string
-	initdScriptSrc      string
-	defaultFileSrc      string
-	systemdFileSrc      string
-	cliBinaryWrapperSrc string
+	postinstSrc    string
+	initdScriptSrc string
+	defaultFileSrc string
+	systemdFileSrc string
 
 	depends []string
 }
@@ -262,7 +258,6 @@ func createDebPackages() {
 		packageType:            "deb",
 		packageArch:            debPkgArch,
 		homeDir:                "/usr/share/grafana",
-		homeBinDir:             "/usr/share/grafana/bin",
 		binPath:                "/usr/sbin",
 		configDir:              "/etc/grafana",
 		etcDefaultPath:         "/etc/default",
@@ -270,11 +265,10 @@ func createDebPackages() {
 		initdScriptFilePath:    "/etc/init.d/grafana-server",
 		systemdServiceFilePath: "/usr/lib/systemd/system/grafana-server.service",
 
-		postinstSrc:         "packaging/deb/control/postinst",
-		initdScriptSrc:      "packaging/deb/init.d/grafana-server",
-		defaultFileSrc:      "packaging/deb/default/grafana-server",
-		systemdFileSrc:      "packaging/deb/systemd/grafana-server.service",
-		cliBinaryWrapperSrc: "packaging/wrappers/grafana-cli",
+		postinstSrc:    "packaging/deb/control/postinst",
+		initdScriptSrc: "packaging/deb/init.d/grafana-server",
+		defaultFileSrc: "packaging/deb/default/grafana-server",
+		systemdFileSrc: "packaging/deb/systemd/grafana-server.service",
 
 		depends: []string{"adduser", "libfontconfig1"},
 	})
@@ -292,7 +286,6 @@ func createRpmPackages() {
 		packageType:            "rpm",
 		packageArch:            rpmPkgArch,
 		homeDir:                "/usr/share/grafana",
-		homeBinDir:             "/usr/share/grafana/bin",
 		binPath:                "/usr/sbin",
 		configDir:              "/etc/grafana",
 		etcDefaultPath:         "/etc/sysconfig",
@@ -300,11 +293,10 @@ func createRpmPackages() {
 		initdScriptFilePath:    "/etc/init.d/grafana-server",
 		systemdServiceFilePath: "/usr/lib/systemd/system/grafana-server.service",
 
-		postinstSrc:         "packaging/rpm/control/postinst",
-		initdScriptSrc:      "packaging/rpm/init.d/grafana-server",
-		defaultFileSrc:      "packaging/rpm/sysconfig/grafana-server",
-		systemdFileSrc:      "packaging/rpm/systemd/grafana-server.service",
-		cliBinaryWrapperSrc: "packaging/wrappers/grafana-cli",
+		postinstSrc:    "packaging/rpm/control/postinst",
+		initdScriptSrc: "packaging/rpm/init.d/grafana-server",
+		defaultFileSrc: "packaging/rpm/sysconfig/grafana-server",
+		systemdFileSrc: "packaging/rpm/systemd/grafana-server.service",
 
 		depends: []string{"/sbin/service", "fontconfig", "freetype", "urw-fonts"},
 	})
@@ -331,12 +323,10 @@ func createPackage(options linuxPackageOptions) {
 	runPrint("mkdir", "-p", filepath.Join(packageRoot, "/usr/lib/systemd/system"))
 	runPrint("mkdir", "-p", filepath.Join(packageRoot, "/usr/sbin"))
 
-	// copy grafana-cli wrapper
-	runPrint("cp", "-p", options.cliBinaryWrapperSrc, filepath.Join(packageRoot, "/usr/sbin/"+cliBinary))
-
-	// copy grafana-server binary
-	runPrint("cp", "-p", filepath.Join(workingDir, "tmp/bin/"+serverBinary), filepath.Join(packageRoot, "/usr/sbin/"+serverBinary))
-
+	// copy binary
+	for _, binary := range binaries {
+		runPrint("cp", "-p", filepath.Join(workingDir, "tmp/bin/"+binary), filepath.Join(packageRoot, "/usr/sbin/"+binary))
+	}
 	// copy init.d script
 	runPrint("cp", "-p", options.initdScriptSrc, filepath.Join(packageRoot, options.initdScriptFilePath))
 	// copy environment var file
@@ -347,13 +337,6 @@ func createPackage(options linuxPackageOptions) {
 	runPrint("cp", "-a", filepath.Join(workingDir, "tmp")+"/.", filepath.Join(packageRoot, options.homeDir))
 	// remove bin path
 	runPrint("rm", "-rf", filepath.Join(packageRoot, options.homeDir, "bin"))
-
-	// create /bin within home
-	runPrint("mkdir", "-p", filepath.Join(packageRoot, options.homeBinDir))
-	// The grafana-cli binary is exposed through a wrapper to ensure a proper
-	// configuration is in place. To enable that, we need to store the original
-	// binary in a separate location to avoid conflicts.
-	runPrint("cp", "-p", filepath.Join(workingDir, "tmp/bin/"+cliBinary), filepath.Join(packageRoot, options.homeBinDir, cliBinary))
 
 	args := []string{
 		"-s", "dir",
@@ -408,7 +391,7 @@ func createPackage(options linuxPackageOptions) {
 		args = append(args, "--iteration", linuxPackageIteration)
 	}
 
-	// add dependencies
+	// add dependenciesj
 	for _, dep := range options.depends {
 		args = append(args, "--depends", dep)
 	}
@@ -528,9 +511,6 @@ func ldflags() string {
 	b.WriteString(fmt.Sprintf(" -X main.commit=%s", getGitSha()))
 	b.WriteString(fmt.Sprintf(" -X main.buildstamp=%d", buildStamp()))
 	b.WriteString(fmt.Sprintf(" -X main.buildBranch=%s", getGitBranch()))
-	if v := os.Getenv("LDFLAGS"); v != "" {
-		b.WriteString(fmt.Sprintf(" -extldflags=%s", v))
-	}
 	return b.String()
 }
 
@@ -595,11 +575,6 @@ func getGitSha() string {
 }
 
 func buildStamp() int64 {
-	// use SOURCE_DATE_EPOCH if set.
-	if s, _ := strconv.ParseInt(os.Getenv("SOURCE_DATE_EPOCH"), 10, 64); s > 0 {
-		return s
-	}
-
 	bs, err := runError("git", "show", "-s", "--format=%ct")
 	if err != nil {
 		return time.Now().Unix()

@@ -1,10 +1,9 @@
 import _ from 'lodash';
 import $ from 'jquery';
 import coreModule from 'app/core/core_module';
-import { TemplateSrv } from 'app/features/templating/template_srv';
 
 /** @ngInject */
-export function graphiteFuncEditor($compile: any, templateSrv: TemplateSrv) {
+export function graphiteFuncEditor($compile, templateSrv, popoverSrv) {
   const funcSpanTemplate = `
     <function-editor
       func="func"
@@ -18,27 +17,27 @@ export function graphiteFuncEditor($compile: any, templateSrv: TemplateSrv) {
 
   return {
     restrict: 'A',
-    link: function postLink($scope: any, elem: JQuery) {
+    link: function postLink($scope, elem) {
       const $funcLink = $(funcSpanTemplate);
       const ctrl = $scope.ctrl;
       const func = $scope.func;
       let scheduledRelink = false;
       let paramCountAtLink = 0;
-      let cancelBlur: any = null;
+      let cancelBlur = null;
 
-      ctrl.handleRemoveFunction = (func: any) => {
+      ctrl.handleRemoveFunction = func => {
         ctrl.removeFunction(func);
       };
 
-      ctrl.handleMoveLeft = (func: any) => {
+      ctrl.handleMoveLeft = func => {
         ctrl.moveFunction(func, -1);
       };
 
-      ctrl.handleMoveRight = (func: any) => {
+      ctrl.handleMoveRight = func => {
         ctrl.moveFunction(func, 1);
       };
 
-      function clickFuncParam(this: any, paramIndex: any) {
+      function clickFuncParam(this: any, paramIndex) {
         /*jshint validthis:true */
 
         const $link = $(this);
@@ -74,7 +73,7 @@ export function graphiteFuncEditor($compile: any, templateSrv: TemplateSrv) {
         }
       }
 
-      function paramDef(index: number) {
+      function paramDef(index) {
         if (index < func.def.params.length) {
           return func.def.params[index];
         }
@@ -84,7 +83,7 @@ export function graphiteFuncEditor($compile: any, templateSrv: TemplateSrv) {
         return {};
       }
 
-      function switchToLink(inputElem: HTMLElement, paramIndex: any) {
+      function switchToLink(inputElem, paramIndex) {
         /*jshint validthis:true */
         const $input = $(inputElem);
 
@@ -118,7 +117,7 @@ export function graphiteFuncEditor($compile: any, templateSrv: TemplateSrv) {
       }
 
       // this = input element
-      function inputBlur(this: any, paramIndex: any) {
+      function inputBlur(this: any, paramIndex) {
         /*jshint validthis:true */
         const inputElem = this;
         // happens long before the click event on the typeahead options
@@ -128,7 +127,7 @@ export function graphiteFuncEditor($compile: any, templateSrv: TemplateSrv) {
         }, 200);
       }
 
-      function inputKeyPress(this: any, paramIndex: any, e: any) {
+      function inputKeyPress(this: any, paramIndex, e) {
         /*jshint validthis:true */
         if (e.which === 13) {
           $(this).blur();
@@ -140,7 +139,7 @@ export function graphiteFuncEditor($compile: any, templateSrv: TemplateSrv) {
         this.style.width = (3 + this.value.length) * 8 + 'px';
       }
 
-      function addTypeahead($input: any, paramIndex: any) {
+      function addTypeahead($input, paramIndex) {
         $input.attr('data-provide', 'typeahead');
 
         let options = paramDef(paramIndex).options;
@@ -154,7 +153,7 @@ export function graphiteFuncEditor($compile: any, templateSrv: TemplateSrv) {
           source: options,
           minLength: 0,
           items: 20,
-          updater: (value: any) => {
+          updater: value => {
             $input.val(value);
             switchToLink($input[0], paramIndex);
             return value;

@@ -1,17 +1,11 @@
-import angular, { IQService } from 'angular';
+import angular from 'angular';
 import _ from 'lodash';
-import { DataSourceApi, DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse } from '@grafana/ui';
+import moment from 'moment';
 import { ElasticResponse } from './elastic_response';
 import { IndexPattern } from './index_pattern';
 import { ElasticQueryBuilder } from './query_builder';
-import { toUtc } from '@grafana/data';
-import * as queryDef from './query_def';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { TemplateSrv } from 'app/features/templating/template_srv';
-import { TimeSrv } from 'app/features/dashboard/services/TimeSrv';
-import { ElasticsearchOptions, ElasticsearchQuery } from './types';
 
-export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, ElasticsearchOptions> {
+export class ElasticDatasource {
   basicAuth: string;
   withCredentials: boolean;
   url: string;
@@ -23,47 +17,26 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
   maxConcurrentShardRequests: number;
   queryBuilder: ElasticQueryBuilder;
   indexPattern: IndexPattern;
-  logMessageField?: string;
-  logLevelField?: string;
 
   /** @ngInject */
-  constructor(
-    instanceSettings: DataSourceInstanceSettings<ElasticsearchOptions>,
-    private $q: IQService,
-    private backendSrv: BackendSrv,
-    private templateSrv: TemplateSrv,
-    private timeSrv: TimeSrv
-  ) {
-    super(instanceSettings);
+  constructor(instanceSettings, private $q, private backendSrv, private templateSrv, private timeSrv) {
     this.basicAuth = instanceSettings.basicAuth;
     this.withCredentials = instanceSettings.withCredentials;
     this.url = instanceSettings.url;
     this.name = instanceSettings.name;
-    this.index = instanceSettings.database;
-    const settingsData = instanceSettings.jsonData || ({} as ElasticsearchOptions);
-
-    this.timeField = settingsData.timeField;
-    this.esVersion = settingsData.esVersion;
-    this.indexPattern = new IndexPattern(this.index, settingsData.interval);
-    this.interval = settingsData.timeInterval;
-    this.maxConcurrentShardRequests = settingsData.maxConcurrentShardRequests;
+    this.index = instanceSettings.index;
+    this.timeField = instanceSettings.jsonData.timeField;
+    this.esVersion = instanceSettings.jsonData.esVersion;
+    this.indexPattern = new IndexPattern(instanceSettings.index, instanceSettings.jsonData.interval);
+    this.interval = instanceSettings.jsonData.timeInterval;
+    this.maxConcurrentShardRequests = instanceSettings.jsonData.maxConcurrentShardRequests;
     this.queryBuilder = new ElasticQueryBuilder({
       timeField: this.timeField,
       esVersion: this.esVersion,
     });
-    this.logMessageField = settingsData.logMessageField || '';
-    this.logLevelField = settingsData.logLevelField || '';
-
-    if (this.logMessageField === '') {
-      this.logMessageField = null;
-    }
-
-    if (this.logLevelField === '') {
-      this.logLevelField = null;
-    }
   }
 
-  private request(method: string, url: string, data?: undefined) {
+  private request(method, url, data?) {
     const options: any = {
       url: this.url + '/' + url,
       method: method,
@@ -82,29 +55,29 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     return this.backendSrv.datasourceRequest(options);
   }
 
-  private get(url: string) {
+  private get(url) {
     const range = this.timeSrv.timeRange();
     const indexList = this.indexPattern.getIndexList(range.from.valueOf(), range.to.valueOf());
     if (_.isArray(indexList) && indexList.length) {
-      return this.request('GET', indexList[0] + url).then((results: any) => {
+      return this.request('GET', indexList[0] + url).then(results => {
         results.data.$$config = results.config;
         return results.data;
       });
     } else {
-      return this.request('GET', this.indexPattern.getIndexForToday() + url).then((results: any) => {
+      return this.request('GET', this.indexPattern.getIndexForToday() + url).then(results => {
         results.data.$$config = results.config;
         return results.data;
       });
     }
   }
 
-  private post(url: string, data: any) {
+  private post(url, data) {
     return this.request('POST', url, data)
-      .then((results: any) => {
+      .then(results => {
         results.data.$$config = results.config;
         return results.data;
       })
-      .catch((err: any) => {
+      .catch(err => {
         if (err.data && err.data.error) {
           throw {
             message: 'Elasticsearch error: ' + err.data.error.reason,
@@ -116,14 +89,14 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
       });
   }
 
-  annotationQuery(options: any) {
+  annotationQuery(options) {
     const annotation = options.annotation;
     const timeField = annotation.timeField || '@timestamp';
     const queryString = annotation.query || '*';
     const tagsField = annotation.tagsField || 'tags';
     const textField = annotation.textField || null;
 
-    const range: any = {};
+    const range = {};
     range[timeField] = {
       from: options.range.from.valueOf(),
       to: options.range.to.valueOf(),
@@ -144,8 +117,8 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
       },
     };
 
-    const data: any = {
-      query,
+    const data = {
+      query: query,
       size: 10000,
     };
 
@@ -168,11 +141,11 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
 
     const payload = angular.toJson(header) + '\n' + angular.toJson(data) + '\n';
 
-    return this.post('_msearch', payload).then((res: any) => {
+    return this.post('_msearch', payload).then(res => {
       const list = [];
       const hits = res.responses[0].hits.hits;
 
-      const getFieldFromSource = (source: any, fieldName: any) => {
+      const getFieldFromSource = (source, fieldName) => {
         if (!fieldName) {
           return;
         }
@@ -203,7 +176,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
 
         const event = {
           annotation: annotation,
-          time: toUtc(time).valueOf(),
+          time: moment.utc(time).valueOf(),
           text: getFieldFromSource(source, textField),
           tags: getFieldFromSource(source, tagsField),
         };
@@ -227,9 +200,10 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
   }
 
   testDatasource() {
+    this.timeSrv.setTime({ from: 'now-1m', to: 'now' }, true);
     // validate that the index exist and has date field
     return this.getFields({ type: 'date' }).then(
-      (dateFields: any) => {
+      dateFields => {
         const timeField: any = _.find(dateFields, { text: this.timeField });
         if (!timeField) {
           return {
@@ -239,7 +213,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
         }
         return { status: 'success', message: 'Index OK. Time field name OK.' };
       },
-      (err: any) => {
+      err => {
         console.log(err);
         if (err.data && err.data.error) {
           let message = angular.toJson(err.data.error);
@@ -254,7 +228,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     );
   }
 
-  getQueryHeader(searchType: any, timeFrom: any, timeTo: any) {
+  getQueryHeader(searchType, timeFrom, timeTo) {
     const queryHeader: any = {
       search_type: searchType,
       ignore_unavailable: true,
@@ -266,10 +240,10 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     return angular.toJson(queryHeader);
   }
 
-  query(options: DataQueryRequest<ElasticsearchQuery>): Promise<DataQueryResponse> {
+  query(options) {
     let payload = '';
     const targets = _.cloneDeep(options.targets);
-    const sentTargets: ElasticsearchQuery[] = [];
+    const sentTargets = [];
 
     // add global adhoc filters to timeFilter
     const adhocFilters = this.templateSrv.getAdhocFilters(this.name);
@@ -279,25 +253,12 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
         continue;
       }
 
-      let queryString = this.templateSrv.replace(target.query, options.scopedVars, 'lucene');
-      // Elasticsearch queryString should always be '*' if empty string
-      if (!queryString || queryString === '') {
-        queryString = '*';
+      if (target.alias) {
+        target.alias = this.templateSrv.replace(target.alias, options.scopedVars, 'lucene');
       }
 
-      let queryObj;
-      if (target.isLogsQuery) {
-        target.bucketAggs = [queryDef.defaultBucketAgg()];
-        target.metrics = [queryDef.defaultMetricAgg()];
-        queryObj = this.queryBuilder.getLogsQuery(target, queryString);
-      } else {
-        if (target.alias) {
-          target.alias = this.templateSrv.replace(target.alias, options.scopedVars, 'lucene');
-        }
-
-        queryObj = this.queryBuilder.build(target, adhocFilters, queryString);
-      }
-
+      const queryString = this.templateSrv.replace(target.query || '*', options.scopedVars, 'lucene');
+      const queryObj = this.queryBuilder.build(target, adhocFilters, queryString);
       const esQuery = angular.toJson(queryObj);
 
       const searchType = queryObj.size === 0 && this.esVersion < 5 ? 'count' : 'query_then_fetch';
@@ -305,34 +266,28 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
       payload += header + '\n';
 
       payload += esQuery + '\n';
-
       sentTargets.push(target);
     }
 
     if (sentTargets.length === 0) {
-      return Promise.resolve({ data: [] });
+      return this.$q.when([]);
     }
 
-    payload = payload.replace(/\$timeFrom/g, options.range.from.valueOf().toString());
-    payload = payload.replace(/\$timeTo/g, options.range.to.valueOf().toString());
+    payload = payload.replace(/\$timeFrom/g, options.range.from.valueOf());
+    payload = payload.replace(/\$timeTo/g, options.range.to.valueOf());
     payload = this.templateSrv.replace(payload, options.scopedVars);
 
     const url = this.getMultiSearchUrl();
 
-    return this.post(url, payload).then((res: any) => {
-      const er = new ElasticResponse(sentTargets, res);
-      if (sentTargets.some(target => target.isLogsQuery)) {
-        return er.getLogs(this.logMessageField, this.logLevelField);
-      }
-
-      return er.getTimeSeries();
+    return this.post(url, payload).then(res => {
+      return new ElasticResponse(sentTargets, res).getTimeSeries();
     });
   }
 
-  getFields(query: any) {
+  getFields(query) {
     const configuredEsVersion = this.esVersion;
-    return this.get('/_mapping').then((result: any) => {
-      const typeMap: any = {
+    return this.get('/_mapping').then(result => {
+      const typeMap = {
         float: 'number',
         double: 'number',
         integer: 'number',
@@ -344,7 +299,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
         nested: 'nested',
       };
 
-      function shouldAddField(obj: any, key: any, query: any) {
+      function shouldAddField(obj, key, query) {
         if (key[0] === '_') {
           return false;
         }
@@ -358,10 +313,10 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
       }
 
       // Store subfield names: [system, process, cpu, total] -> system.process.cpu.total
-      const fieldNameParts: any = [];
-      const fields: any = {};
+      const fieldNameParts = [];
+      const fields = {};
 
-      function getFieldsRecursively(obj: any) {
+      function getFieldsRecursively(obj) {
         for (const key in obj) {
           const subObj = obj[key];
 
@@ -415,19 +370,19 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     });
   }
 
-  getTerms(queryDef: any) {
+  getTerms(queryDef) {
     const range = this.timeSrv.timeRange();
     const searchType = this.esVersion >= 5 ? 'query_then_fetch' : 'count';
     const header = this.getQueryHeader(searchType, range.from, range.to);
     let esQuery = angular.toJson(this.queryBuilder.getTermsQuery(queryDef));
 
-    esQuery = esQuery.replace(/\$timeFrom/g, range.from.valueOf().toString());
-    esQuery = esQuery.replace(/\$timeTo/g, range.to.valueOf().toString());
+    esQuery = esQuery.replace(/\$timeFrom/g, range.from.valueOf());
+    esQuery = esQuery.replace(/\$timeTo/g, range.to.valueOf());
     esQuery = header + '\n' + esQuery + '\n';
 
     const url = this.getMultiSearchUrl();
 
-    return this.post(url, esQuery).then((res: any) => {
+    return this.post(url, esQuery).then(res => {
       if (!res.responses[0].aggregations) {
         return [];
       }
@@ -450,7 +405,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     return '_msearch';
   }
 
-  metricFindQuery(query: any) {
+  metricFindQuery(query) {
     query = angular.fromJson(query);
     if (!query) {
       return this.$q.when([]);
@@ -472,11 +427,11 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     return this.getFields({});
   }
 
-  getTagValues(options: any) {
+  getTagValues(options) {
     return this.getTerms({ field: options.key, query: '*' });
   }
 
-  targetContainsTemplate(target: any) {
+  targetContainsTemplate(target) {
     if (this.templateSrv.variableExists(target.query) || this.templateSrv.variableExists(target.alias)) {
       return true;
     }
@@ -500,7 +455,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     return false;
   }
 
-  private isPrimitive(obj: any) {
+  private isPrimitive(obj) {
     if (obj === null || obj === undefined) {
       return true;
     }
@@ -511,7 +466,7 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
     return false;
   }
 
-  private objectContainsTemplate(obj: any) {
+  private objectContainsTemplate(obj) {
     if (!obj) {
       return false;
     }
@@ -536,17 +491,4 @@ export class ElasticDatasource extends DataSourceApi<ElasticsearchQuery, Elastic
 
     return false;
   }
-}
-
-export function getMaxConcurrenShardRequestOrDefault(options: ElasticsearchOptions): number {
-  if (options.maxConcurrentShardRequests === 5 && options.esVersion < 70) {
-    return 256;
-  }
-
-  if (options.maxConcurrentShardRequests === 256 && options.esVersion >= 70) {
-    return 5;
-  }
-
-  const defaultMaxConcurrentShardRequests = options.esVersion >= 70 ? 5 : 256;
-  return options.maxConcurrentShardRequests || defaultMaxConcurrentShardRequests;
 }

@@ -56,7 +56,6 @@ func init() {
 		"AWS/Connect":           {"CallBackNotDialableNumber", "CallRecordingUploadError", "CallsBreachingConcurrencyQuota", "CallsPerInterval", "ConcurrentCalls", "ConcurrentCallsPercentage", "ContactFlowErrors", "ContactFlowFatalErrors", "LongestQueueWaitTime", "MisconfiguredPhoneNumbers", "MissedCalls", "PublicSigningKeyUsage", "QueueCapacityExceededError", "QueueSize", "ThrottledCalls", "ToInstancePacketLossRate"},
 		"AWS/DDoSProtection":    {"AllowedRequests", "BlockedRequests", "CountedRequests", "DDoSAttackBitsPerSecond", "DDoSAttackPacketsPerSecond", "DDoSAttackRequestsPerSecond", "DDoSDetected", "PassedRequests"},
 		"AWS/DMS":               {"CDCChangesDiskSource", "CDCChangesDiskTarget", "CDCChangesMemorySource", "CDCChangesMemoryTarget", "CDCIncomingChanges", "CDCLatencySource", "CDCLatencyTarget", "CDCThroughputBandwidthSource", "CDCThroughputBandwidthTarget", "CDCThroughputRowsSource", "CDCThroughputRowsTarget", "CPUUtilization", "FreeStorageSpace", "FreeableMemory", "FullLoadThroughputBandwidthSource", "FullLoadThroughputBandwidthTarget", "FullLoadThroughputRowsSource", "FullLoadThroughputRowsTarget", "NetworkReceiveThroughput", "NetworkTransmitThroughput", "ReadIOPS", "ReadLatency", "ReadThroughput", "SwapUsage", "WriteIOPS", "WriteLatency", "WriteThroughput"},
-		"AWS/DocDB":             {"BackupRetentionPeriodStorageUsed", "BufferCacheHitRatio", "CPUUtilization", "DatabaseConnections", "DBInstanceReplicaLag", "DBClusterReplicaLagMaximum", "DBClusterReplicaLagMinimum", "DiskQueueDepth", "EngineUptime", "FreeableMemory", "FreeLocalStorage", "NetworkReceiveThroughput", "NetworkThroughput", "NetworkTransmitThroughput", "ReadIOPS", "ReadLatency", "ReadThroughput", "SnapshotStorageUsed", "SwapUsage", "TotalBackupStorageBilled", "VolumeBytesUsed", "VolumeReadIOPs", "VolumeWriteIOPs", "WriteIOPS", "WriteLatency", "WriteThroughput"},
 		"AWS/DX":                {"ConnectionBpsEgress", "ConnectionBpsIngress", "ConnectionCRCErrorCount", "ConnectionLightLevelRx", "ConnectionLightLevelTx", "ConnectionPpsEgress", "ConnectionPpsIngress", "ConnectionState"},
 		"AWS/DynamoDB":          {"ConditionalCheckFailedRequests", "ConsumedReadCapacityUnits", "ConsumedWriteCapacityUnits", "OnlineIndexConsumedWriteCapacity", "OnlineIndexPercentageProgress", "OnlineIndexThrottleEvents", "PendingReplicationCount", "ProvisionedReadCapacityUnits", "ProvisionedWriteCapacityUnits", "ReadThrottleEvents", "ReplicationLatency", "ReturnedBytes", "ReturnedItemCount", "ReturnedRecordsCount", "SuccessfulRequestLatency", "SystemErrors", "ThrottledRequests", "TimeToLiveDeletedItemCount", "UserErrors", "WriteThrottleEvents"},
 		"AWS/EBS":               {"BurstBalance", "VolumeConsumedReadWriteOps", "VolumeIdleTime", "VolumeQueueLength", "VolumeReadBytes", "VolumeReadOps", "VolumeThroughputPercentage", "VolumeTotalReadTime", "VolumeTotalWriteTime", "VolumeWriteBytes", "VolumeWriteOps"},
@@ -136,7 +135,6 @@ func init() {
 		"AWS/Connect":           {"InstanceId", "MetricGroup", "Participant", "QueueName", "Stream Type", "Type of Connection"},
 		"AWS/DDoSProtection":    {"Region", "Rule", "RuleGroup", "WebACL"},
 		"AWS/DMS":               {"ReplicationInstanceIdentifier", "ReplicationTaskIdentifier"},
-		"AWS/DocDB":             {"DBClusterIdentifier"},
 		"AWS/DX":                {"ConnectionId"},
 		"AWS/DynamoDB":          {"GlobalSecondaryIndexName", "Operation", "ReceivingRegion", "StreamLabel", "TableName"},
 		"AWS/EBS":               {"VolumeId"},
@@ -155,7 +153,7 @@ func init() {
 		"AWS/Events":            {"RuleName"},
 		"AWS/FSx":               {},
 		"AWS/Firehose":          {"DeliveryStreamName"},
-		"AWS/GameLift":          {"FleetId", "InstanceType", "MatchmakingConfigurationName", "MatchmakingConfigurationName-RuleName", "MetricGroups", "OperatingSystem", "QueueName"},
+		"AWS/GameLift":          {"FleetId", "InstanceType", "MatchmakingConfigurationName", "MatchmakingConfigurationName-RuleName", "MetricGroup", "OperatingSystem", "QueueName"},
 		"AWS/Glue":              {"JobName", "JobRunId", "Type"},
 		"AWS/Inspector":         {},
 		"AWS/IoT":               {"ActionType", "BehaviorName", "CheckName", "JobId", "Protocol", "RuleName", "ScheduledAuditName", "SecurityProfileName"},
@@ -179,7 +177,7 @@ func init() {
 		"AWS/OpsWorks":          {"InstanceId", "LayerId", "StackId"},
 		"AWS/Polly":             {"Operation"},
 		"AWS/RDS":               {"DBClusterIdentifier", "DBInstanceIdentifier", "DatabaseClass", "DbClusterIdentifier", "EngineName", "Role", "SourceRegion"},
-		"AWS/Redshift":          {"ClusterIdentifier", "NodeID", "Service class", "Stage", "latency", "wlmid"},
+		"AWS/Redshift":          {"ClusterIdentifier", "NodeID", "Service class", "Stage", "latency", "wmlid"},
 		"AWS/Route53":           {"HealthCheckId", "Region"},
 		"AWS/S3":                {"BucketName", "FilterId", "StorageType"},
 		"AWS/SES":               {},
@@ -642,7 +640,7 @@ func (e *CloudWatchExecutor) cloudwatchListMetrics(region string, namespace stri
 	var resp cloudwatch.ListMetricsOutput
 	err = svc.ListMetricsPages(params,
 		func(page *cloudwatch.ListMetricsOutput, lastPage bool) bool {
-			metrics.MAwsCloudWatchListMetrics.Inc()
+			metrics.M_Aws_CloudWatch_ListMetrics.Inc()
 			metrics, _ := awsutil.ValuesAtPath(page, "Metrics")
 			for _, metric := range metrics {
 				resp.Metrics = append(resp.Metrics, metric.(*cloudwatch.Metric))
@@ -722,7 +720,7 @@ func getAllMetrics(cwData *DatasourceInfo) (cloudwatch.ListMetricsOutput, error)
 	var resp cloudwatch.ListMetricsOutput
 	err = svc.ListMetricsPages(params,
 		func(page *cloudwatch.ListMetricsOutput, lastPage bool) bool {
-			metrics.MAwsCloudWatchListMetrics.Inc()
+			metrics.M_Aws_CloudWatch_ListMetrics.Inc()
 			metrics, _ := awsutil.ValuesAtPath(page, "Metrics")
 			for _, metric := range metrics {
 				resp.Metrics = append(resp.Metrics, metric.(*cloudwatch.Metric))

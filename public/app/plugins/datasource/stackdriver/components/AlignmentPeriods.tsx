@@ -7,7 +7,7 @@ import { alignmentPeriods, alignOptions } from '../constants';
 import { TemplateSrv } from 'app/features/templating/template_srv';
 
 export interface Props {
-  onChange: (alignmentPeriod: any) => void;
+  onChange: (alignmentPeriod) => void;
   templateSrv: TemplateSrv;
   alignmentPeriod: string;
   perSeriesAligner: string;

@@ -61,6 +61,7 @@ func (ds *DataSource) GetHttpTransport() (*http.Transport, error) {
 		Dial: (&net.Dialer{
 			Timeout:   time.Duration(setting.DataProxyTimeout) * time.Second,
 			KeepAlive: 30 * time.Second,
+			DualStack: true,
 		}).Dial,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,

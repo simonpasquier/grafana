@@ -4,21 +4,12 @@ import locationUtil from 'app/core/utils/location_util';
 import { DashboardModel } from '../state/DashboardModel';
 import { removePanel } from '../utils/panel';
 import { DashboardMeta } from 'app/types';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { ILocationService } from 'angular';
-
-interface DashboardSaveOptions {
-  folderId?: number;
-  overwrite?: boolean;
-  message?: string;
-  makeEditable?: boolean;
-}
 
 export class DashboardSrv {
   dashboard: DashboardModel;
 
   /** @ngInject */
-  constructor(private backendSrv: BackendSrv, private $rootScope: any, private $location: ILocationService) {
+  constructor(private backendSrv, private $rootScope, private $location) {
     appEvents.on('save-dashboard', this.saveDashboard.bind(this), $rootScope);
     appEvents.on('panel-change-view', this.onPanelChangeView);
     appEvents.on('remove-panel', this.onRemovePanel);
@@ -44,53 +35,48 @@ export class DashboardSrv {
     removePanel(dashboard, dashboard.getPanelById(panelId), true);
   };
 
-  onPanelChangeView = ({
-    fullscreen = false,
-    edit = false,
-    panelId,
-  }: {
-    fullscreen?: boolean;
-    edit?: boolean;
-    panelId?: number;
-  }) => {
+  onPanelChangeView = options => {
     const urlParams = this.$location.search();
 
     // handle toggle logic
-    // I hate using these truthy converters (!!) but in this case
-    // I think it's appropriate. edit can be null/false/undefined and
-    // here i want all of those to compare the same
-    if (fullscreen === urlParams.fullscreen && edit === !!urlParams.edit) {
-      const paramsToRemove = ['fullscreen', 'edit', 'panelId', 'tab'];
-      for (const key of paramsToRemove) {
-        delete urlParams[key];
+    if (options.fullscreen === urlParams.fullscreen) {
+      // I hate using these truthy converters (!!) but in this case
+      // I think it's appropriate. edit can be null/false/undefined and
+      // here i want all of those to compare the same
+      if (!!options.edit === !!urlParams.edit) {
+        delete urlParams.fullscreen;
+        delete urlParams.edit;
+        delete urlParams.panelId;
+        delete urlParams.tab;
+        this.$location.search(urlParams);
+        return;
       }
-
-      this.$location.search(urlParams);
-      return;
     }
 
-    const newUrlParams = {
-      ...urlParams,
-      fullscreen: fullscreen || undefined,
-      edit: edit || undefined,
-      tab: edit ? urlParams.tab : undefined,
-      panelId,
-    };
+    if (options.fullscreen) {
+      urlParams.fullscreen = true;
+    } else {
+      delete urlParams.fullscreen;
+    }
 
-    Object.keys(newUrlParams).forEach(key => {
-      if (newUrlParams[key] === undefined) {
-        delete newUrlParams[key];
-      }
-    });
+    if (options.edit) {
+      urlParams.edit = true;
+    } else {
+      delete urlParams.edit;
+      delete urlParams.tab;
+    }
 
-    this.$location.search(newUrlParams);
+    if (options.panelId || options.panelId === 0) {
+      urlParams.panelId = options.panelId;
+    } else {
+      delete urlParams.panelId;
+    }
+
+    this.$location.search(urlParams);
   };
 
-  handleSaveDashboardError(
-    clone: any,
-    options: DashboardSaveOptions,
-    err: { data: { status: string; message: any }; isHandled: boolean }
-  ) {
+  handleSaveDashboardError(clone, options, err) {
+    options = options || {};
     options.overwrite = true;
 
     if (err.data && err.data.status === 'version-mismatch') {
@@ -137,16 +123,16 @@ export class DashboardSrv {
           this.showSaveAsModal();
         },
         onConfirm: () => {
-          this.save(clone, { ...options, overwrite: true });
+          this.save(clone, { overwrite: true });
         },
       });
     }
   }
 
-  postSave(data: { version: number; url: string }) {
+  postSave(clone, data) {
     this.dashboard.version = data.version;
 
-    // important that these happen before location redirect below
+    // important that these happens before location redirect below
     this.$rootScope.appEvent('dashboard-saved', this.dashboard);
     this.$rootScope.appEvent('alert-success', ['Dashboard saved']);
 
@@ -160,19 +146,17 @@ export class DashboardSrv {
     return this.dashboard;
   }
 
-  save(clone: any, options?: DashboardSaveOptions) {
+  save(clone, options) {
+    options = options || {};
     options.folderId = options.folderId >= 0 ? options.folderId : this.dashboard.meta.folderId || clone.folderId;
 
     return this.backendSrv
       .saveDashboard(clone, options)
-      .then((data: any) => this.postSave(data))
-      .catch(this.handleSaveDashboardError.bind(this, clone, { folderId: options.folderId }));
+      .then(this.postSave.bind(this, clone))
+      .catch(this.handleSaveDashboardError.bind(this, clone, options));
   }
 
-  saveDashboard(
-    clone?: DashboardModel,
-    { makeEditable = false, folderId, overwrite = false, message }: DashboardSaveOptions = {}
-  ) {
+  saveDashboard(options?, clone?) {
     if (clone) {
       this.setCurrent(this.create(clone, this.dashboard.meta));
     }
@@ -181,7 +165,7 @@ export class DashboardSrv {
       return this.showDashboardProvisionedModal();
     }
 
-    if (!(this.dashboard.meta.canSave || makeEditable)) {
+    if (!this.dashboard.meta.canSave && options.makeEditable !== true) {
       return Promise.resolve();
     }
 
@@ -193,7 +177,7 @@ export class DashboardSrv {
       return this.showSaveModal();
     }
 
-    return this.save(this.dashboard.getSaveModelClone(), { folderId, overwrite, message });
+    return this.save(this.dashboard.getSaveModelClone(), options);
   }
 
   saveJSONDashboard(json: string) {
@@ -220,7 +204,7 @@ export class DashboardSrv {
     });
   }
 
-  starDashboard(dashboardId: string, isStarred: any) {
+  starDashboard(dashboardId, isStarred) {
     let promise;
 
     if (isStarred) {
@@ -233,7 +217,7 @@ export class DashboardSrv {
       });
     }
 
-    return promise.then((res: boolean) => {
+    return promise.then(res => {
       if (this.dashboard && this.dashboard.id === dashboardId) {
         this.dashboard.meta.isStarred = res;
       }

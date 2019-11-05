@@ -19,7 +19,7 @@ export class TablePanelEditor extends PureComponent<PanelEditorProps<Options>> {
     this.props.onOptionsChange({ ...this.props.options, rotate: !this.props.options.rotate });
   };
 
-  onFixedColumnsChange = ({ target }: any) => {
+  onFixedColumnsChange = ({ target }) => {
     this.props.onOptionsChange({ ...this.props.options, fixedColumns: target.value });
   };
 

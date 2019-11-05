@@ -1,42 +1,28 @@
 import { PanelQueryRunner } from './PanelQueryRunner';
-import { PanelData, DataQueryRequest } from '@grafana/ui';
-import { dateTime, ScopedVars } from '@grafana/data';
-import { PanelModel } from './PanelModel';
+import {
+  PanelData,
+  DataQueryRequest,
+  DataStreamObserver,
+  DataStreamState,
+  LoadingState,
+  ScopedVars,
+} from '@grafana/ui/src/types';
+import moment from 'moment';
 
 jest.mock('app/core/services/backend_srv');
 
-// Defined within setup functions
-const panelsForCurrentDashboardMock: { [key: number]: PanelModel } = {};
-
-jest.mock('app/features/dashboard/services/DashboardSrv', () => ({
-  getDashboardSrv: () => {
-    return {
-      getCurrent: () => {
-        return {
-          getPanelById: (id: number) => {
-            return panelsForCurrentDashboardMock[id];
-          },
-        };
-      },
-    };
-  },
-}));
-
 interface ScenarioContext {
   setup: (fn: () => void) => void;
-
-  // Options used in setup
   maxDataPoints?: number | null;
   widthPixels: number;
   dsInterval?: string;
   minInterval?: string;
-  scopedVars: ScopedVars;
-
-  // Filled in by the Scenario runner
   events?: PanelData[];
   res?: PanelData;
   queryCalledWith?: DataQueryRequest;
+  observer: DataStreamObserver;
   runner: PanelQueryRunner;
+  scopedVars: ScopedVars;
 }
 
 type ScenarioFn = (ctx: ScenarioContext) => void;
@@ -51,13 +37,14 @@ function describeQueryRunnerScenario(description: string, scenarioFn: ScenarioFn
         server: { text: 'Server1', value: 'server-1' },
       },
       runner: new PanelQueryRunner(),
+      observer: (args: any) => {},
       setup: (fn: () => void) => {
         setupFn = fn;
       },
     };
 
     const response: any = {
-      data: [{ target: 'hello', datapoints: [[1, 1000], [2, 2000]] }],
+      data: [{ target: 'hello', datapoints: [] }],
     };
 
     beforeEach(async () => {
@@ -66,8 +53,9 @@ function describeQueryRunnerScenario(description: string, scenarioFn: ScenarioFn
       const datasource: any = {
         name: 'TestDB',
         interval: ctx.dsInterval,
-        query: (options: DataQueryRequest) => {
+        query: (options: DataQueryRequest, observer: DataStreamObserver) => {
           ctx.queryCalledWith = options;
+          ctx.observer = observer;
           return Promise.resolve(response);
         },
         testDatasource: jest.fn(),
@@ -80,31 +68,23 @@ function describeQueryRunnerScenario(description: string, scenarioFn: ScenarioFn
         widthPixels: ctx.widthPixels,
         maxDataPoints: ctx.maxDataPoints,
         timeRange: {
-          from: dateTime().subtract(1, 'days'),
-          to: dateTime(),
+          from: moment().subtract(1, 'days'),
+          to: moment(),
           raw: { from: '1h', to: 'now' },
         },
-        panelId: 1,
+        panelId: 0,
         queries: [{ refId: 'A', test: 1 }],
       };
 
       ctx.runner = new PanelQueryRunner();
-      ctx.runner.getData().subscribe({
+      ctx.runner.subscribe({
         next: (data: PanelData) => {
-          ctx.res = data;
           ctx.events.push(data);
         },
       });
 
-      panelsForCurrentDashboardMock[1] = {
-        id: 1,
-        getQueryRunner: () => {
-          return ctx.runner;
-        },
-      } as PanelModel;
-
       ctx.events = [];
-      ctx.runner.run(args);
+      ctx.res = await ctx.runner.run(args);
     });
 
     scenarioFn(ctx);
@@ -182,6 +162,49 @@ describe('PanelQueryRunner', () => {
 
     it('should pass maxDataPoints if specified', async () => {
       expect(ctx.queryCalledWith.maxDataPoints).toBe(10);
+    });
+  });
+
+  describeQueryRunnerScenario('when datasource is streaming data', ctx => {
+    let streamState: DataStreamState;
+    let isUnsubbed = false;
+
+    beforeEach(() => {
+      streamState = {
+        state: LoadingState.Streaming,
+        key: 'test-stream-1',
+        series: [
+          {
+            rows: [],
+            fields: [],
+            name: 'I am a magic stream',
+          },
+        ],
+        request: {
+          requestId: ctx.queryCalledWith.requestId,
+        } as any,
+        unsubscribe: () => {
+          isUnsubbed = true;
+        },
+      };
+      ctx.observer(streamState);
+    });
+
+    it('should push another update to subscriber', async () => {
+      expect(ctx.events.length).toBe(2);
+    });
+
+    it('should set state to streaming', async () => {
+      expect(ctx.events[1].state).toBe(LoadingState.Streaming);
+    });
+
+    it('should not unsubscribe', async () => {
+      expect(isUnsubbed).toBe(false);
+    });
+
+    it('destroy should unsubscribe streams', async () => {
+      ctx.runner.destroy();
+      expect(isUnsubbed).toBe(true);
     });
   });
 });

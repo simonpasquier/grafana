@@ -1,21 +1,9 @@
-import angular, { ILocationService } from 'angular';
+import angular from 'angular';
 import config from 'app/core/config';
-import { dateTime } from '@grafana/data';
-import { appendQueryToUrl, toUrlParams } from 'app/core/utils/url';
-import { TimeSrv } from '../../services/TimeSrv';
-import { TemplateSrv } from 'app/features/templating/template_srv';
-import { LinkSrv } from 'app/features/panel/panellinks/link_srv';
+import moment from 'moment';
 
 /** @ngInject */
-export function ShareModalCtrl(
-  $scope: any,
-  $rootScope: any,
-  $location: ILocationService,
-  $timeout: any,
-  timeSrv: TimeSrv,
-  templateSrv: TemplateSrv,
-  linkSrv: LinkSrv
-) {
+export function ShareModalCtrl($scope, $rootScope, $location, $timeout, timeSrv, templateSrv, linkSrv) {
   $scope.options = {
     forCurrent: true,
     includeTemplateVars: true,
@@ -84,13 +72,13 @@ export function ShareModalCtrl(
       delete params.fullscreen;
     }
 
-    $scope.shareUrl = appendQueryToUrl(baseUrl, toUrlParams(params));
+    $scope.shareUrl = linkSrv.addParamsToUrl(baseUrl, params);
 
     let soloUrl = baseUrl.replace(config.appSubUrl + '/dashboard/', config.appSubUrl + '/dashboard-solo/');
     soloUrl = soloUrl.replace(config.appSubUrl + '/d/', config.appSubUrl + '/d-solo/');
     delete params.fullscreen;
     delete params.edit;
-    soloUrl = appendQueryToUrl(soloUrl, toUrlParams(params));
+    soloUrl = linkSrv.addParamsToUrl(soloUrl, params);
 
     $scope.iframeHtml = '<iframe src="' + soloUrl + '" width="450" height="200" frameborder="0"></iframe>';
 
@@ -105,7 +93,7 @@ export function ShareModalCtrl(
   // This function will try to return the proper full name of the local timezone
   // Chrome does not handle the timezone offset (but phantomjs does)
   $scope.getLocalTimeZone = () => {
-    const utcOffset = '&tz=UTC' + encodeURIComponent(dateTime().format('Z'));
+    const utcOffset = '&tz=UTC' + encodeURIComponent(moment().format('Z'));
 
     // Older browser does not the internationalization API
     if (!(window as any).Intl) {

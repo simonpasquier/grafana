@@ -7,7 +7,7 @@ import SharedPreferences from 'app/core/components/SharedPreferences/SharedPrefe
 import { loadOrganization, setOrganizationName, updateOrganization } from './state/actions';
 import { Organization, StoreState } from 'app/types';
 import { getNavModel } from 'app/core/selectors/navModel';
-import { NavModel } from '@grafana/data';
+import { NavModel } from '@grafana/ui';
 
 export interface Props {
   navModel: NavModel;
@@ -22,7 +22,7 @@ export class OrgDetailsPage extends PureComponent<Props> {
     await this.props.loadOrganization();
   }
 
-  onOrgNameChange = (name: string) => {
+  onOrgNameChange = name => {
     this.props.setOrganizationName(name);
   };
 

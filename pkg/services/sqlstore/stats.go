@@ -75,11 +75,7 @@ func GetSystemStats(query *m.GetSystemStatsQuery) error {
 	sb.Write(`(SELECT COUNT(id) FROM ` + dialect.Quote("dashboard_provisioning") + `) AS provisioned_dashboards,`)
 	sb.Write(`(SELECT COUNT(id) FROM ` + dialect.Quote("dashboard_snapshot") + `) AS snapshots,`)
 	sb.Write(`(SELECT COUNT(id) FROM ` + dialect.Quote("team") + `) AS teams,`)
-	sb.Write(`(SELECT COUNT(id) FROM ` + dialect.Quote("user_auth_token") + `) AS auth_tokens,`)
-
-	sb.Write(roleCounterSQL("Viewer", "viewers")+`,`, activeUserDeadlineDate)
-	sb.Write(roleCounterSQL("Editor", "editors")+`,`, activeUserDeadlineDate)
-	sb.Write(roleCounterSQL("Admin", "admins")+``, activeUserDeadlineDate)
+	sb.Write(`(SELECT COUNT(id) FROM ` + dialect.Quote("user_auth_token") + `) AS auth_tokens`)
 
 	var stats m.SystemStats
 	_, err := x.SQL(sb.GetSqlString(), sb.params...).Get(&stats)
@@ -92,22 +88,33 @@ func GetSystemStats(query *m.GetSystemStatsQuery) error {
 	return err
 }
 
-func roleCounterSQL(role, alias string) string {
-	return `
-		(
-			SELECT COUNT(*)
-			FROM ` + dialect.Quote("user") + ` as u, org_user
-			WHERE ( org_user.user_id=u.id AND org_user.role='` + role + `' )
-		) as ` + alias + `,
-		(
-			SELECT COUNT(*)
-			FROM ` + dialect.Quote("user") + ` as u, org_user
-			WHERE u.last_seen_at>? AND ( org_user.user_id=u.id AND org_user.role='` + role + `' )
-		) as active_` + alias
-}
-
 func GetAdminStats(query *m.GetAdminStatsQuery) error {
 	activeEndDate := time.Now().Add(-activeUserTimeLimit)
+	roleCounter := func(role, alias string) string {
+		sql :=
+			`
+			(
+				SELECT COUNT(*)
+				FROM ` + dialect.Quote("user") + ` as u
+				WHERE 
+				(SELECT COUNT(*) 
+					FROM org_user 
+					WHERE org_user.user_id=u.id 
+					AND org_user.role='` + role + `')>0
+			) as ` + alias + `,
+			(
+				SELECT COUNT(*)
+				FROM ` + dialect.Quote("user") + ` as u
+				WHERE 
+				(SELECT COUNT(*) 
+					FROM org_user 
+					WHERE org_user.user_id=u.id 
+					AND org_user.role='` + role + `')>0
+				AND u.last_seen_at>?
+			) as active_` + alias
+
+		return sql
+	}
 
 	var rawSql = `SELECT
 		  (
@@ -149,9 +156,9 @@ func GetAdminStats(query *m.GetAdminStatsQuery) error {
 		SELECT COUNT(*)
 		FROM ` + dialect.Quote("user") + ` where last_seen_at > ?
 		) as active_users,
-		` + roleCounterSQL("Admin", "admins") + `,
-		` + roleCounterSQL("Editor", "editors") + `,
-		` + roleCounterSQL("Viewer", "viewers") + `,
+		` + roleCounter("Admin", "admins") + `,
+		` + roleCounter("Editor", "editors") + `,
+		` + roleCounter("Viewer", "viewers") + `,
 		(
 		SELECT COUNT(*)
 		FROM ` + dialect.Quote("user_auth_token") + ` where rotated_at > ?

@@ -2,17 +2,15 @@ package tracing
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"strings"
 
-	"github.com/grafana/grafana/pkg/infra/log"
+	"github.com/grafana/grafana/pkg/log"
 	"github.com/grafana/grafana/pkg/registry"
 	"github.com/grafana/grafana/pkg/setting"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
-	"github.com/uber/jaeger-client-go/zipkin"
 )
 
 func init() {
@@ -20,15 +18,13 @@ func init() {
 }
 
 type TracingService struct {
-	enabled                  bool
-	address                  string
-	customTags               map[string]string
-	samplerType              string
-	samplerParam             float64
-	log                      log.Logger
-	closer                   io.Closer
-	zipkinPropagation        bool
-	disableSharedZipkinSpans bool
+	enabled      bool
+	address      string
+	customTags   map[string]string
+	samplerType  string
+	samplerParam float64
+	log          log.Logger
+	closer       io.Closer
 
 	Cfg *setting.Cfg `inject:""`
 }
@@ -58,8 +54,6 @@ func (ts *TracingService) parseSettings() {
 	ts.customTags = splitTagSettings(section.Key("always_included_tag").MustString(""))
 	ts.samplerType = section.Key("sampler_type").MustString("")
 	ts.samplerParam = section.Key("sampler_param").MustFloat64(1)
-	ts.zipkinPropagation = section.Key("zipkin_propagation").MustBool(false)
-	ts.disableSharedZipkinSpans = section.Key("disable_shared_zipkin_spans").MustBool(false)
 }
 
 func (ts *TracingService) initGlobalTracer() error {
@@ -83,18 +77,6 @@ func (ts *TracingService) initGlobalTracer() error {
 
 	for tag, value := range ts.customTags {
 		options = append(options, jaegercfg.Tag(tag, value))
-	}
-
-	if ts.zipkinPropagation {
-		zipkinPropagator := zipkin.NewZipkinB3HTTPHeaderPropagator()
-		options = append(options,
-			jaegercfg.Injector(opentracing.HTTPHeaders, zipkinPropagator),
-			jaegercfg.Extractor(opentracing.HTTPHeaders, zipkinPropagator),
-		)
-
-		if !ts.disableSharedZipkinSpans {
-			options = append(options, jaegercfg.ZipkinSharedRPCSpan(true))
-		}
 	}
 
 	tracer, closer, err := cfg.NewTracer(options...)
@@ -142,7 +124,6 @@ func (jlw *jaegerLogWrapper) Error(msg string) {
 	jlw.logger.Error(msg)
 }
 
-func (jlw *jaegerLogWrapper) Infof(format string, args ...interface{}) {
-	msg := fmt.Sprintf(format, args...)
-	jlw.logger.Info(msg)
+func (jlw *jaegerLogWrapper) Infof(msg string, args ...interface{}) {
+	jlw.logger.Info(msg, args)
 }

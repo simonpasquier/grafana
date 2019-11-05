@@ -5,13 +5,9 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-
-	"github.com/grafana/grafana/pkg/infra/log"
 )
 
-var tlslog = log.New("tls_mysql")
-
-func makeCert(config DatabaseConfig) (*tls.Config, error) {
+func makeCert(tlsPoolName string, config DatabaseConfig) (*tls.Config, error) {
 	rootCertPool := x509.NewCertPool()
 	pem, err := ioutil.ReadFile(config.CaCertPath)
 	if err != nil {
@@ -20,16 +16,18 @@ func makeCert(config DatabaseConfig) (*tls.Config, error) {
 	if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
 		return nil, err
 	}
-
-	tlsConfig := &tls.Config{
-		RootCAs: rootCertPool,
-	}
+	clientCert := make([]tls.Certificate, 0, 1)
 	if config.ClientCertPath != "" && config.ClientKeyPath != "" {
-		tlsConfig.GetClientCertificate = func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
-			tlslog.Debug("Loading client certificate")
-			cert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientKeyPath)
-			return &cert, err
+
+		certs, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientKeyPath)
+		if err != nil {
+			return nil, err
 		}
+		clientCert = append(clientCert, certs)
+	}
+	tlsConfig := &tls.Config{
+		RootCAs:      rootCertPool,
+		Certificates: clientCert,
 	}
 	tlsConfig.ServerName = config.ServerCertName
 	if config.SslMode == "skip-verify" {

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/grafana/grafana/pkg/bus"
-	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/log"
+	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 	"github.com/grafana/grafana/pkg/setting"
 )
@@ -18,7 +18,7 @@ func init() {
 		Name: "Google Hangouts Chat",
 		Description: "Sends notifications to Google Hangouts Chat via webhooks based on the official JSON message " +
 			"format (https://developers.google.com/hangouts/chat/reference/message-formats/).",
-		Factory: newGoogleChatNotifier,
+		Factory: NewGoogleChatNotifier,
 		OptionsTemplate: `
       <h3 class="page-heading">Google Hangouts Chat settings</h3>
       <div class="gf-form max-width-30">
@@ -29,7 +29,7 @@ func init() {
 	})
 }
 
-func newGoogleChatNotifier(model *models.AlertNotification) (alerting.Notifier, error) {
+func NewGoogleChatNotifier(model *m.AlertNotification) (alerting.Notifier, error) {
 	url := model.Settings.Get("url").MustString()
 	if url == "" {
 		return nil, alerting.ValidationError{Reason: "Could not find url property in settings"}
@@ -37,16 +37,14 @@ func newGoogleChatNotifier(model *models.AlertNotification) (alerting.Notifier, 
 
 	return &GoogleChatNotifier{
 		NotifierBase: NewNotifierBase(model),
-		URL:          url,
+		Url:          url,
 		log:          log.New("alerting.notifier.googlechat"),
 	}, nil
 }
 
-// GoogleChatNotifier is responsible for sending
-// alert notifications to Google chat.
 type GoogleChatNotifier struct {
 	NotifierBase
-	URL string
+	Url string
 	log log.Logger
 }
 
@@ -92,7 +90,7 @@ type imageWidget struct {
 }
 
 type image struct {
-	ImageURL string `json:"imageUrl"`
+	ImageUrl string `json:"imageUrl"`
 }
 
 type button struct {
@@ -109,20 +107,19 @@ type onClick struct {
 }
 
 type openLink struct {
-	URL string `json:"url"`
+	Url string `json:"url"`
 }
 
-// Notify send an alert notification to Google Chat.
-func (gcn *GoogleChatNotifier) Notify(evalContext *alerting.EvalContext) error {
-	gcn.log.Info("Executing Google Chat notification")
+func (this *GoogleChatNotifier) Notify(evalContext *alerting.EvalContext) error {
+	this.log.Info("Executing Google Chat notification")
 
 	headers := map[string]string{
 		"Content-Type": "application/json; charset=UTF-8",
 	}
 
-	ruleURL, err := evalContext.GetRuleURL()
+	ruleUrl, err := evalContext.GetRuleUrl()
 	if err != nil {
-		gcn.log.Error("evalContext returned an invalid rule URL")
+		this.log.Error("evalContext returned an invalid rule URL")
 	}
 
 	// add a text paragraph widget for the message
@@ -152,14 +149,14 @@ func (gcn *GoogleChatNotifier) Notify(evalContext *alerting.EvalContext) error {
 	widgets = append(widgets, fields)
 
 	// if an image exists, add it as an image widget
-	if evalContext.ImagePublicURL != "" {
+	if evalContext.ImagePublicUrl != "" {
 		widgets = append(widgets, imageWidget{
 			Image: image{
-				ImageURL: evalContext.ImagePublicURL,
+				ImageUrl: evalContext.ImagePublicUrl,
 			},
 		})
 	} else {
-		gcn.log.Info("Could not retrieve a public image URL.")
+		this.log.Info("Could not retrieve a public image URL.")
 	}
 
 	// add a button widget (link to Grafana)
@@ -170,7 +167,7 @@ func (gcn *GoogleChatNotifier) Notify(evalContext *alerting.EvalContext) error {
 					Text: "OPEN IN GRAFANA",
 					OnClick: onClick{
 						OpenLink: openLink{
-							URL: ruleURL,
+							Url: ruleUrl,
 						},
 					},
 				},
@@ -202,15 +199,15 @@ func (gcn *GoogleChatNotifier) Notify(evalContext *alerting.EvalContext) error {
 	}
 	body, _ := json.Marshal(res1D)
 
-	cmd := &models.SendWebhookSync{
-		Url:        gcn.URL,
+	cmd := &m.SendWebhookSync{
+		Url:        this.Url,
 		HttpMethod: "POST",
 		HttpHeader: headers,
 		Body:       string(body),
 	}
 
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
-		gcn.log.Error("Failed to send Google Hangouts Chat alert", "error", err, "webhook", gcn.Name)
+		this.log.Error("Failed to send Google Hangouts Chat alert", "error", err, "webhook", this.Name)
 		return err
 	}
 

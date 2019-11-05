@@ -4,7 +4,7 @@ export class Profiler {
   $rootScope: any;
   window: any;
 
-  init(config: any, $rootScope: any) {
+  init(config, $rootScope) {
     this.$rootScope = $rootScope;
     this.window = window;
 
@@ -13,7 +13,7 @@ export class Profiler {
     }
   }
 
-  renderingCompleted() {
+  renderingCompleted(panelId) {
     // add render counter to root scope
     // used by phantomjs render.js to know when panel has rendered
     this.panelsRendered = (this.panelsRendered || 0) + 1;

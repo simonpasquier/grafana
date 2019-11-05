@@ -157,13 +157,6 @@ func TestShouldSendAlertNotification(t *testing.T) {
 
 			expect: false,
 		},
-		{
-			name:      "no_data -> ok",
-			prevState: models.AlertStateNoData,
-			newState:  models.AlertStateOK,
-
-			expect: true,
-		},
 	}
 
 	for _, tc := range tcs {
@@ -185,24 +178,24 @@ func TestShouldSendAlertNotification(t *testing.T) {
 
 func TestBaseNotifier(t *testing.T) {
 	Convey("default constructor for notifiers", t, func() {
-		bJSON := simplejson.New()
+		bJson := simplejson.New()
 
 		model := &models.AlertNotification{
 			Uid:      "1",
 			Name:     "name",
 			Type:     "email",
-			Settings: bJSON,
+			Settings: bJson,
 		}
 
 		Convey("can parse false value", func() {
-			bJSON.Set("uploadImage", false)
+			bJson.Set("uploadImage", false)
 
 			base := NewNotifierBase(model)
 			So(base.UploadImage, ShouldBeFalse)
 		})
 
 		Convey("can parse true value", func() {
-			bJSON.Set("uploadImage", true)
+			bJson.Set("uploadImage", true)
 
 			base := NewNotifierBase(model)
 			So(base.UploadImage, ShouldBeTrue)

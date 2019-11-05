@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/models"
+	m "github.com/grafana/grafana/pkg/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -14,7 +14,7 @@ func TestLineNotifier(t *testing.T) {
 			json := `{ }`
 
 			settingsJSON, _ := simplejson.NewJson([]byte(json))
-			model := &models.AlertNotification{
+			model := &m.AlertNotification{
 				Name:     "line_testing",
 				Type:     "line",
 				Settings: settingsJSON,
@@ -30,7 +30,7 @@ func TestLineNotifier(t *testing.T) {
   "token": "abcdefgh0123456789"
 			}`
 			settingsJSON, _ := simplejson.NewJson([]byte(json))
-			model := &models.AlertNotification{
+			model := &m.AlertNotification{
 				Name:     "line_testing",
 				Type:     "line",
 				Settings: settingsJSON,
@@ -44,5 +44,6 @@ func TestLineNotifier(t *testing.T) {
 			So(lineNotifier.Type, ShouldEqual, "line")
 			So(lineNotifier.Token, ShouldEqual, "abcdefgh0123456789")
 		})
+
 	})
 }

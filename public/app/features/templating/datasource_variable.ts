@@ -1,8 +1,5 @@
 import { Variable, containsVariable, assignModelProperties, variableTypes } from './variable';
-import { stringToJsRegex } from '@grafana/data';
-import { VariableSrv } from './variable_srv';
-import { TemplateSrv } from './template_srv';
-import { DatasourceSrv } from '../plugins/datasource_srv';
+import { stringToJsRegex } from '@grafana/ui';
 
 export class DatasourceVariable implements Variable {
   regex: any;
@@ -14,7 +11,7 @@ export class DatasourceVariable implements Variable {
   refresh: any;
   skipUrlSync: boolean;
 
-  defaults: any = {
+  defaults = {
     type: 'datasource',
     name: '',
     hide: 0,
@@ -30,12 +27,7 @@ export class DatasourceVariable implements Variable {
   };
 
   /** @ngInject */
-  constructor(
-    private model: any,
-    private datasourceSrv: DatasourceSrv,
-    private variableSrv: VariableSrv,
-    private templateSrv: TemplateSrv
-  ) {
+  constructor(private model, private datasourceSrv, private variableSrv, private templateSrv) {
     assignModelProperties(this, model, this.defaults);
     this.refresh = 1;
   }
@@ -48,7 +40,7 @@ export class DatasourceVariable implements Variable {
     return this.model;
   }
 
-  setValue(option: any) {
+  setValue(option) {
     return this.variableSrv.setOptionAsCurrent(this, option);
   }
 
@@ -91,14 +83,14 @@ export class DatasourceVariable implements Variable {
     this.options.unshift({ text: 'All', value: '$__all' });
   }
 
-  dependsOn(variable: any) {
+  dependsOn(variable) {
     if (this.regex) {
       return containsVariable(this.regex, variable.name);
     }
     return false;
   }
 
-  setValueFromUrl(urlValue: string | string[]) {
+  setValueFromUrl(urlValue) {
     return this.variableSrv.setOptionFromUrl(this, urlValue);
   }
 

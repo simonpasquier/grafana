@@ -1,14 +1,13 @@
 // Libraries
-
+import _ from 'lodash';
 import React from 'react';
-import { css } from 'emotion';
-import { GraphSeriesValue } from '@grafana/data';
 
+import { css } from 'emotion';
 import { Graph, GraphProps } from './Graph';
 import { LegendRenderOptions, LegendItem, LegendDisplayMode } from '../Legend/Legend';
 import { GraphLegend } from './GraphLegend';
 import { CustomScrollbar } from '../CustomScrollbar/CustomScrollbar';
-import { stylesFactory } from '../../themes';
+import { GraphSeriesValue } from '../../types/graph';
 
 export type SeriesOptionChangeHandler<TOption> = (label: string, option: TOption) => void;
 export type SeriesColorChangeHandler = SeriesOptionChangeHandler<string>;
@@ -19,13 +18,13 @@ export interface GraphWithLegendProps extends GraphProps, LegendRenderOptions {
   displayMode: LegendDisplayMode;
   sortLegendBy?: string;
   sortLegendDesc?: boolean;
-  onSeriesColorChange?: SeriesColorChangeHandler;
+  onSeriesColorChange: SeriesColorChangeHandler;
   onSeriesAxisToggle?: SeriesAxisToggleHandler;
   onSeriesToggle?: (label: string, event: React.MouseEvent<HTMLElement>) => void;
   onToggleSort: (sortBy: string) => void;
 }
 
-const getGraphWithLegendStyles = stylesFactory(({ placement }: GraphWithLegendProps) => ({
+const getGraphWithLegendStyles = ({ placement }: GraphWithLegendProps) => ({
   wrapper: css`
     display: flex;
     flex-direction: ${placement === 'under' ? 'column' : 'row'};
@@ -39,7 +38,7 @@ const getGraphWithLegendStyles = stylesFactory(({ placement }: GraphWithLegendPr
     padding: 10px 0;
     max-height: ${placement === 'under' ? '35%' : 'none'};
   `,
-}));
+});
 
 const shouldHideLegendItem = (data: GraphSeriesValue[][], hideEmpty = false, hideZero = false) => {
   const isZeroOnlySeries = data.reduce((acc, current) => acc + (current[1] || 0), 0) === 0;
@@ -68,10 +67,6 @@ export const GraphWithLegend: React.FunctionComponent<GraphWithLegendProps> = (p
     onToggleSort,
     hideEmpty,
     hideZero,
-    isStacked,
-    lineWidth,
-    onHorizontalRegionSelected,
-    timeZone,
   } = props;
   const { graphContainer, wrapper, legendContainer } = getGraphWithLegendStyles(props);
 
@@ -83,7 +78,7 @@ export const GraphWithLegend: React.FunctionComponent<GraphWithLegendProps> = (p
             label: s.label,
             color: s.color,
             isVisible: s.isVisible,
-            yAxis: s.yAxis.index,
+            yAxis: s.yAxis,
             displayValues: s.info || [],
           },
         ]);
@@ -95,16 +90,12 @@ export const GraphWithLegend: React.FunctionComponent<GraphWithLegendProps> = (p
         <Graph
           series={series.filter(s => !!s.isVisible)}
           timeRange={timeRange}
-          timeZone={timeZone}
           showLines={showLines}
           showPoints={showPoints}
           showBars={showBars}
           width={width}
           height={height}
           key={isLegendVisible ? 'legend-visible' : 'legend-invisible'}
-          isStacked={isStacked}
-          lineWidth={lineWidth}
-          onHorizontalRegionSelected={onHorizontalRegionSelected}
         />
       </div>
 

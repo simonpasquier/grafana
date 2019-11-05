@@ -1,5 +1,5 @@
 import LogAnalyticsQuerystringBuilder from './querystring_builder';
-import { dateTime } from '@grafana/data';
+import moment from 'moment';
 
 describe('LogAnalyticsDatasource', () => {
   let builder: LogAnalyticsQuerystringBuilder;
@@ -10,8 +10,8 @@ describe('LogAnalyticsDatasource', () => {
       {
         interval: '5m',
         range: {
-          from: dateTime().subtract(24, 'hours'),
-          to: dateTime(),
+          from: moment().subtract(24, 'hours'),
+          to: moment(),
         },
         rangeRaw: {
           from: 'now-24h',
@@ -90,27 +90,27 @@ describe('LogAnalyticsDatasource', () => {
     });
   });
 
-  describe('when using $__timeFrom and $__timeTo is in the query and range is until now', () => {
+  describe('when using $__from and $__to is in the query and range is until now', () => {
     beforeEach(() => {
-      builder.rawQueryString = 'query=Tablename | where myTime >= $__timeFrom() and myTime <= $__timeTo()';
+      builder.rawQueryString = 'query=Tablename | where myTime >= $__from and myTime <= $__to';
     });
 
-    it('should replace $__timeFrom and $__timeTo with a datetime and the now() function', () => {
+    it('should replace $__from and $__to with a datetime and the now() function', () => {
       const query = builder.generate().uriString;
 
       expect(query).toContain('where%20myTime%20%3E%3D%20datetime(');
-      expect(query).toContain('myTime%20%3C%3D%20datetime(');
+      expect(query).toContain('myTime%20%3C%3D%20now()');
     });
   });
 
-  describe('when using $__timeFrom and $__timeTo is in the query and range is a specific interval', () => {
+  describe('when using $__from and $__to is in the query and range is a specific interval', () => {
     beforeEach(() => {
-      builder.rawQueryString = 'query=Tablename | where myTime >= $__timeFrom() and myTime <= $__timeTo()';
-      builder.options.range.to = dateTime().subtract(1, 'hour');
+      builder.rawQueryString = 'query=Tablename | where myTime >= $__from and myTime <= $__to';
+      builder.options.range.to = moment().subtract(1, 'hour');
       builder.options.rangeRaw.to = 'now-1h';
     });
 
-    it('should replace $__timeFrom and $__timeTo with datetimes', () => {
+    it('should replace $__from and $__to with datetimes', () => {
       const query = builder.generate().uriString;
 
       expect(query).toContain('where%20myTime%20%3E%3D%20datetime(');

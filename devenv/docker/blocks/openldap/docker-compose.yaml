@@ -1,5 +1,4 @@
   openldap:
-    container_name: ldap
     build: docker/blocks/openldap
     environment:
       SLAPD_PASSWORD: grafana

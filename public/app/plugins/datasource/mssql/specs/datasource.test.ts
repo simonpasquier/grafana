@@ -1,16 +1,13 @@
+import moment from 'moment';
 import { MssqlDatasource } from '../datasource';
-import { TimeSrvStub } from 'test/specs/helpers';
+import { TemplateSrvStub, TimeSrvStub } from 'test/specs/helpers';
 import { CustomVariable } from 'app/features/templating/custom_variable';
-// @ts-ignore
 import q from 'q';
-import { dateTime } from '@grafana/data';
-import { TemplateSrv } from 'app/features/templating/template_srv';
 
 describe('MSSQLDatasource', () => {
-  const templateSrv: TemplateSrv = new TemplateSrv();
-
   const ctx: any = {
     backendSrv: {},
+    templateSrv: new TemplateSrvStub(),
     timeSrv: new TimeSrvStub(),
   };
 
@@ -18,11 +15,11 @@ describe('MSSQLDatasource', () => {
     ctx.$q = q;
     ctx.instanceSettings = { name: 'mssql' };
 
-    ctx.ds = new MssqlDatasource(ctx.instanceSettings, ctx.backendSrv, ctx.$q, templateSrv, ctx.timeSrv);
+    ctx.ds = new MssqlDatasource(ctx.instanceSettings, ctx.backendSrv, ctx.$q, ctx.templateSrv, ctx.timeSrv);
   });
 
   describe('When performing annotationQuery', () => {
-    let results: any;
+    let results;
 
     const annotationName = 'MyAnno';
 
@@ -32,8 +29,8 @@ describe('MSSQLDatasource', () => {
         rawQuery: 'select time, text, tags from table;',
       },
       range: {
-        from: dateTime(1432288354),
-        to: dateTime(1432288401),
+        from: moment(1432288354),
+        to: moment(1432288401),
       },
     };
 
@@ -56,11 +53,11 @@ describe('MSSQLDatasource', () => {
     };
 
     beforeEach(() => {
-      ctx.backendSrv.datasourceRequest = (options: any) => {
+      ctx.backendSrv.datasourceRequest = options => {
         return ctx.$q.when({ data: response, status: 200 });
       };
 
-      return ctx.ds.annotationQuery(options).then((data: any) => {
+      return ctx.ds.annotationQuery(options).then(data => {
         results = data;
       });
     });
@@ -80,7 +77,7 @@ describe('MSSQLDatasource', () => {
   });
 
   describe('When performing metricFindQuery', () => {
-    let results: any;
+    let results;
     const query = 'select * from atable';
     const response = {
       results: {
@@ -100,11 +97,11 @@ describe('MSSQLDatasource', () => {
     };
 
     beforeEach(() => {
-      ctx.backendSrv.datasourceRequest = (options: any) => {
+      ctx.backendSrv.datasourceRequest = options => {
         return ctx.$q.when({ data: response, status: 200 });
       };
 
-      return ctx.ds.metricFindQuery(query).then((data: any) => {
+      return ctx.ds.metricFindQuery(query).then(data => {
         results = data;
       });
     });
@@ -117,7 +114,7 @@ describe('MSSQLDatasource', () => {
   });
 
   describe('When performing metricFindQuery with key, value columns', () => {
-    let results: any;
+    let results;
     const query = 'select * from atable';
     const response = {
       results: {
@@ -137,11 +134,11 @@ describe('MSSQLDatasource', () => {
     };
 
     beforeEach(() => {
-      ctx.backendSrv.datasourceRequest = (options: any) => {
+      ctx.backendSrv.datasourceRequest = options => {
         return ctx.$q.when({ data: response, status: 200 });
       };
 
-      return ctx.ds.metricFindQuery(query).then((data: any) => {
+      return ctx.ds.metricFindQuery(query).then(data => {
         results = data;
       });
     });
@@ -156,7 +153,7 @@ describe('MSSQLDatasource', () => {
   });
 
   describe('When performing metricFindQuery with key, value columns and with duplicate keys', () => {
-    let results: any;
+    let results;
     const query = 'select * from atable';
     const response = {
       results: {
@@ -176,11 +173,11 @@ describe('MSSQLDatasource', () => {
     };
 
     beforeEach(() => {
-      ctx.backendSrv.datasourceRequest = (options: any) => {
+      ctx.backendSrv.datasourceRequest = options => {
         return ctx.$q.when({ data: response, status: 200 });
       };
 
-      return ctx.ds.metricFindQuery(query).then((data: any) => {
+      return ctx.ds.metricFindQuery(query).then(data => {
         results = data;
       });
     });
@@ -193,7 +190,7 @@ describe('MSSQLDatasource', () => {
   });
 
   describe('When performing metricFindQuery', () => {
-    let results: any;
+    let results;
     const query = 'select * from atable';
     const response = {
       results: {
@@ -212,14 +209,14 @@ describe('MSSQLDatasource', () => {
       },
     };
     const time = {
-      from: dateTime(1521545610656),
-      to: dateTime(1521546251185),
+      from: moment(1521545610656),
+      to: moment(1521546251185),
     };
 
     beforeEach(() => {
       ctx.timeSrv.setTime(time);
 
-      ctx.backendSrv.datasourceRequest = (options: any) => {
+      ctx.backendSrv.datasourceRequest = options => {
         results = options.data;
         return ctx.$q.when({ data: response, status: 200 });
       };
@@ -237,7 +234,7 @@ describe('MSSQLDatasource', () => {
 
   describe('When interpolating variables', () => {
     beforeEach(() => {
-      ctx.variable = new CustomVariable({}, {} as any);
+      ctx.variable = new CustomVariable({}, {});
     });
 
     describe('and value is a string', () => {
@@ -277,53 +274,6 @@ describe('MSSQLDatasource', () => {
         ctx.variable.includeAll = true;
         expect(ctx.ds.interpolateVariable('abc', ctx.variable)).toEqual("'abc'");
       });
-    });
-  });
-
-  describe('targetContainsTemplate', () => {
-    it('given query that contains template variable it should return true', () => {
-      const rawSql = `SELECT
-      $__timeGroup(createdAt,'$summarize') as time,
-      avg(value) as value,
-      hostname as metric
-    FROM
-      grafana_metric
-    WHERE
-      $__timeFilter(createdAt) AND
-      measurement = 'logins.count' AND
-      hostname IN($host)
-    GROUP BY $__timeGroup(createdAt,'$summarize'), hostname
-    ORDER BY 1`;
-      const query = {
-        rawSql,
-      };
-      templateSrv.init([
-        { type: 'query', name: 'summarize', current: { value: '1m' } },
-        { type: 'query', name: 'host', current: { value: 'a' } },
-      ]);
-      expect(ctx.ds.targetContainsTemplate(query)).toBeTruthy();
-    });
-
-    it('given query that only contains global template variable it should return false', () => {
-      const rawSql = `SELECT
-      $__timeGroup(createdAt,'$__interval') as time,
-      avg(value) as value,
-      hostname as metric
-    FROM
-      grafana_metric
-    WHERE
-      $__timeFilter(createdAt) AND
-      measurement = 'logins.count'
-    GROUP BY $__timeGroup(createdAt,'$summarize'), hostname
-    ORDER BY 1`;
-      const query = {
-        rawSql,
-      };
-      templateSrv.init([
-        { type: 'query', name: 'summarize', current: { value: '1m' } },
-        { type: 'query', name: 'host', current: { value: 'a' } },
-      ]);
-      expect(ctx.ds.targetContainsTemplate(query)).toBeFalsy();
     });
   });
 });

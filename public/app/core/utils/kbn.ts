@@ -1,18 +1,18 @@
-import { has } from 'lodash';
-import { getValueFormat, getValueFormatterIndex, getValueFormats } from '@grafana/ui';
-import { stringToJsRegex, TimeRange, deprecationWarning } from '@grafana/data';
+import _ from 'lodash';
+import { getValueFormat, getValueFormatterIndex, getValueFormats, stringToJsRegex } from '@grafana/ui';
+import deprecationWarning from '@grafana/ui/src/utils/deprecationWarning';
 
 const kbn: any = {};
 
 kbn.valueFormats = {};
 
-kbn.regexEscape = (value: string) => {
+kbn.regexEscape = value => {
   return value.replace(/[\\^$*+?.()|[\]{}\/]/g, '\\$&');
 };
 
 ///// HELPER FUNCTIONS /////
 
-kbn.round_interval = (interval: number) => {
+kbn.round_interval = interval => {
   switch (true) {
     // 0.015s
     case interval < 15:
@@ -103,7 +103,7 @@ kbn.round_interval = (interval: number) => {
   }
 };
 
-kbn.secondsToHms = (seconds: number) => {
+kbn.secondsToHms = seconds => {
   const numyears = Math.floor(seconds / 31536000);
   if (numyears) {
     return numyears + 'y';
@@ -132,8 +132,8 @@ kbn.secondsToHms = (seconds: number) => {
   return 'less than a millisecond'; //'just now' //or other string you like;
 };
 
-kbn.secondsToHhmmss = (seconds: number) => {
-  const strings: string[] = [];
+kbn.secondsToHhmmss = seconds => {
+  const strings = [];
   const numhours = Math.floor(seconds / 3600);
   const numminutes = Math.floor((seconds % 3600) / 60);
   const numseconds = Math.floor((seconds % 3600) % 60);
@@ -143,11 +143,11 @@ kbn.secondsToHhmmss = (seconds: number) => {
   return strings.join(':');
 };
 
-kbn.to_percent = (nr: number, outof: number) => {
+kbn.to_percent = (nr, outof) => {
   return Math.floor((nr / outof) * 10000) / 100 + '%';
 };
 
-kbn.addslashes = (str: string) => {
+kbn.addslashes = str => {
   str = str.replace(/\\/g, '\\\\');
   str = str.replace(/\'/g, "\\'");
   str = str.replace(/\"/g, '\\"');
@@ -169,7 +169,7 @@ kbn.intervals_in_seconds = {
   ms: 0.001,
 };
 
-kbn.calculateInterval = (range: TimeRange, resolution: number, lowLimitInterval: string[]) => {
+kbn.calculateInterval = (range, resolution, lowLimitInterval) => {
   let lowLimitMs = 1; // 1 millisecond default low limit
   let intervalMs;
 
@@ -191,9 +191,9 @@ kbn.calculateInterval = (range: TimeRange, resolution: number, lowLimitInterval:
   };
 };
 
-kbn.describe_interval = (str: string) => {
+kbn.describe_interval = str => {
   const matches = str.match(kbn.interval_regex);
-  if (!matches || !has(kbn.intervals_in_seconds, matches[2])) {
+  if (!matches || !_.has(kbn.intervals_in_seconds, matches[2])) {
     throw new Error('Invalid interval string, expecting a number followed by one of "Mwdhmsy"');
   } else {
     return {
@@ -204,17 +204,17 @@ kbn.describe_interval = (str: string) => {
   }
 };
 
-kbn.interval_to_ms = (str: string) => {
+kbn.interval_to_ms = str => {
   const info = kbn.describe_interval(str);
   return info.sec * 1000 * info.count;
 };
 
-kbn.interval_to_seconds = (str: string) => {
+kbn.interval_to_seconds = str => {
   const info = kbn.describe_interval(str);
   return info.sec * info.count;
 };
 
-kbn.query_color_dot = (color: string, diameter: string) => {
+kbn.query_color_dot = (color, diameter) => {
   return (
     '<div class="icon-circle" style="' +
     ['display:inline-block', 'color:' + color, 'font-size:' + diameter + 'px'].join(';') +
@@ -222,20 +222,20 @@ kbn.query_color_dot = (color: string, diameter: string) => {
   );
 };
 
-kbn.slugifyForUrl = (str: string) => {
+kbn.slugifyForUrl = str => {
   return str
     .toLowerCase()
     .replace(/[^\w ]+/g, '')
     .replace(/ +/g, '-');
 };
 
-/** deprecated since 6.1, use grafana/data */
-kbn.stringToJsRegex = (str: string) => {
-  deprecationWarning('kbn.ts', 'kbn.stringToJsRegex()', '@grafana/data');
+/** deprecated since 6.1, use grafana/ui */
+kbn.stringToJsRegex = str => {
+  deprecationWarning('kbn.ts', 'kbn.stringToJsRegex()', '@grafana/ui');
   return stringToJsRegex(str);
 };
 
-kbn.toFixed = (value: number | null, decimals: number) => {
+kbn.toFixed = (value, decimals) => {
   if (value === null) {
     return '';
   }
@@ -261,13 +261,7 @@ kbn.toFixed = (value: number | null, decimals: number) => {
   return formatted;
 };
 
-kbn.toFixedScaled = (
-  value: number,
-  decimals: number,
-  scaledDecimals: number | null,
-  additionalDecimals: number,
-  ext: number
-) => {
+kbn.toFixedScaled = (value, decimals, scaledDecimals, additionalDecimals, ext) => {
   if (scaledDecimals === null) {
     return kbn.toFixed(value, decimals) + ext;
   } else {
@@ -275,7 +269,7 @@ kbn.toFixedScaled = (
   }
 };
 
-kbn.roundValue = (num: number, decimals: number) => {
+kbn.roundValue = (num, decimals) => {
   if (num === null) {
     return null;
   }

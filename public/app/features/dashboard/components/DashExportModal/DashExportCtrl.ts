@@ -3,8 +3,6 @@ import { saveAs } from 'file-saver';
 
 import coreModule from 'app/core/core_module';
 import { DashboardExporter } from './DashboardExporter';
-import { DashboardSrv } from '../../services/DashboardSrv';
-import DatasourceSrv from 'app/features/plugins/datasource_srv';
 
 export class DashExportCtrl {
   dash: any;
@@ -13,12 +11,7 @@ export class DashExportCtrl {
   shareExternally: boolean;
 
   /** @ngInject */
-  constructor(
-    private dashboardSrv: DashboardSrv,
-    datasourceSrv: DatasourceSrv,
-    private $scope: any,
-    private $rootScope: any
-  ) {
+  constructor(private dashboardSrv, datasourceSrv, private $scope, private $rootScope) {
     this.exporter = new DashboardExporter(datasourceSrv);
 
     this.dash = this.dashboardSrv.getCurrent();

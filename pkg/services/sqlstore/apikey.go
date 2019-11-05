@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana/pkg/bus"
-	"github.com/grafana/grafana/pkg/models"
+	m "github.com/grafana/grafana/pkg/models"
 )
 
 func init() {
@@ -16,18 +16,14 @@ func init() {
 	bus.AddHandler("sql", AddApiKey)
 }
 
-func GetApiKeys(query *models.GetApiKeysQuery) error {
-	sess := x.Limit(100, 0).Where("org_id=? and ( expires IS NULL or expires >= ?)",
-		query.OrgId, timeNow().Unix()).Asc("name")
-	if query.IncludeInvalid {
-		sess = x.Limit(100, 0).Where("org_id=?", query.OrgId).Asc("name")
-	}
+func GetApiKeys(query *m.GetApiKeysQuery) error {
+	sess := x.Limit(100, 0).Where("org_id=?", query.OrgId).Asc("name")
 
-	query.Result = make([]*models.ApiKey, 0)
+	query.Result = make([]*m.ApiKey, 0)
 	return sess.Find(&query.Result)
 }
 
-func DeleteApiKeyCtx(ctx context.Context, cmd *models.DeleteApiKeyCommand) error {
+func DeleteApiKeyCtx(ctx context.Context, cmd *m.DeleteApiKeyCommand) error {
 	return withDbSession(ctx, func(sess *DBSession) error {
 		var rawSql = "DELETE FROM api_key WHERE id=? and org_id=?"
 		_, err := sess.Exec(rawSql, cmd.Id, cmd.OrgId)
@@ -35,30 +31,15 @@ func DeleteApiKeyCtx(ctx context.Context, cmd *models.DeleteApiKeyCommand) error
 	})
 }
 
-func AddApiKey(cmd *models.AddApiKeyCommand) error {
+func AddApiKey(cmd *m.AddApiKeyCommand) error {
 	return inTransaction(func(sess *DBSession) error {
-		key := models.ApiKey{OrgId: cmd.OrgId, Name: cmd.Name}
-		exists, _ := sess.Get(&key)
-		if exists {
-			return models.ErrDuplicateApiKey
-		}
-
-		updated := timeNow()
-		var expires *int64 = nil
-		if cmd.SecondsToLive > 0 {
-			v := updated.Add(time.Second * time.Duration(cmd.SecondsToLive)).Unix()
-			expires = &v
-		} else if cmd.SecondsToLive < 0 {
-			return models.ErrInvalidApiKeyExpiration
-		}
-		t := models.ApiKey{
+		t := m.ApiKey{
 			OrgId:   cmd.OrgId,
 			Name:    cmd.Name,
 			Role:    cmd.Role,
 			Key:     cmd.Key,
-			Created: updated,
-			Updated: updated,
-			Expires: expires,
+			Created: time.Now(),
+			Updated: time.Now(),
 		}
 
 		if _, err := sess.Insert(&t); err != nil {
@@ -69,28 +50,28 @@ func AddApiKey(cmd *models.AddApiKeyCommand) error {
 	})
 }
 
-func GetApiKeyById(query *models.GetApiKeyByIdQuery) error {
-	var apikey models.ApiKey
+func GetApiKeyById(query *m.GetApiKeyByIdQuery) error {
+	var apikey m.ApiKey
 	has, err := x.Id(query.ApiKeyId).Get(&apikey)
 
 	if err != nil {
 		return err
 	} else if !has {
-		return models.ErrInvalidApiKey
+		return m.ErrInvalidApiKey
 	}
 
 	query.Result = &apikey
 	return nil
 }
 
-func GetApiKeyByName(query *models.GetApiKeyByNameQuery) error {
-	var apikey models.ApiKey
+func GetApiKeyByName(query *m.GetApiKeyByNameQuery) error {
+	var apikey m.ApiKey
 	has, err := x.Where("org_id=? AND name=?", query.OrgId, query.KeyName).Get(&apikey)
 
 	if err != nil {
 		return err
 	} else if !has {
-		return models.ErrInvalidApiKey
+		return m.ErrInvalidApiKey
 	}
 
 	query.Result = &apikey

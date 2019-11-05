@@ -1,4 +1,4 @@
-import { NavModelItem } from '@grafana/data';
+import { NavModelItem } from '@grafana/ui';
 
 export enum ActionTypes {
   UpdateNavIndex = 'UPDATE_NAV_INDEX',

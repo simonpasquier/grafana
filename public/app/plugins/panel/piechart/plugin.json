@@ -4,6 +4,8 @@
   "id": "piechart",
   "state": "alpha",
 
+  "dataFormats": ["time_series"],
+
   "info": {
     "author": {
       "name": "Grafana Project",

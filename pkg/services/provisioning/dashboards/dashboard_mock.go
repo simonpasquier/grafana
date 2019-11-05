@@ -25,8 +25,9 @@ func (dpm *DashboardProvisionerMock) Provision() error {
 	dpm.Calls.Provision = append(dpm.Calls.Provision, nil)
 	if dpm.ProvisionFunc != nil {
 		return dpm.ProvisionFunc()
+	} else {
+		return nil
 	}
-	return nil
 }
 
 func (dpm *DashboardProvisionerMock) PollChanges(ctx context.Context) {
@@ -40,6 +41,7 @@ func (dpm *DashboardProvisionerMock) GetProvisionerResolvedPath(name string) str
 	dpm.Calls.PollChanges = append(dpm.Calls.GetProvisionerResolvedPath, name)
 	if dpm.GetProvisionerResolvedPathFunc != nil {
 		return dpm.GetProvisionerResolvedPathFunc(name)
+	} else {
+		return ""
 	}
-	return ""
 }

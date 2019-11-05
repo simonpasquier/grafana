@@ -2,7 +2,6 @@ import angular from 'angular';
 import { saveAs } from 'file-saver';
 import coreModule from 'app/core/core_module';
 import { DashboardModel } from '../../state';
-import { DashboardSrv } from '../../services/DashboardSrv';
 
 const template = `
 <div class="modal-body">
@@ -51,7 +50,7 @@ export class SaveProvisionedDashboardModalCtrl {
   dismiss: () => void;
 
   /** @ngInject */
-  constructor(dashboardSrv: DashboardSrv) {
+  constructor(dashboardSrv) {
     this.dashboardModel = dashboardSrv.getCurrent();
     this.dash = this.dashboardModel.getSaveModelClone();
     delete this.dash.id;

@@ -29,7 +29,7 @@ export interface State {
 }
 
 export class DashboardPermissions extends PureComponent<Props, State> {
-  constructor(props: Props) {
+  constructor(props) {
     super(props);
 
     this.state = {

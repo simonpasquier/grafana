@@ -1,8 +1,7 @@
 import AzureMonitorDatasource from '../datasource';
-// @ts-ignore
 import Q from 'q';
+import moment from 'moment';
 import { TemplateSrv } from 'app/features/templating/template_srv';
-import { toUtc, DataFrame } from '@grafana/data';
 
 describe('AzureMonitorDatasource', () => {
   const ctx: any = {
@@ -43,7 +42,7 @@ describe('AzureMonitorDatasource', () => {
       });
 
       it('should return error status and a detailed error message', () => {
-        return ctx.ds.testDatasource().then((results: any) => {
+        return ctx.ds.testDatasource().then(results => {
           expect(results.status).toEqual('error');
           expect(results.message).toEqual(
             '1. Azure Monitor: Bad Request: InvalidApiVersionParameter. An error message. '
@@ -70,7 +69,7 @@ describe('AzureMonitorDatasource', () => {
       });
 
       it('should return success status', () => {
-        return ctx.ds.testDatasource().then((results: any) => {
+        return ctx.ds.testDatasource().then(results => {
           expect(results.status).toEqual('success');
         });
       });
@@ -80,8 +79,8 @@ describe('AzureMonitorDatasource', () => {
   describe('When performing query', () => {
     const options = {
       range: {
-        from: toUtc('2017-08-22T20:00:00Z'),
-        to: toUtc('2017-08-22T23:59:00Z'),
+        from: moment.utc('2017-08-22T20:00:00Z'),
+        to: moment.utc('2017-08-22T23:59:00Z'),
       },
       targets: [
         {
@@ -92,52 +91,218 @@ describe('AzureMonitorDatasource', () => {
             resourceGroup: 'testRG',
             resourceName: 'testRN',
             metricDefinition: 'Microsoft.Compute/virtualMachines',
-            metricNamespace: 'default',
             metricName: 'Percentage CPU',
             timeGrain: 'PT1H',
-            alias: '{{metric}}',
+            alias: '',
           },
         },
       ],
     };
 
-    const response: any = {
-      results: {
-        A: {
-          refId: 'A',
-          meta: {
-            rawQuery:
-              'aggregation=Average&api-version=2018-01-01&interval=PT1M' +
-              '&metricnames=Percentage+CPU&timespan=2019-05-19T15%3A11%3A37Z%2F2019-05-19T21%3A11%3A37Z',
+    describe('and data field is average', () => {
+      const response = {
+        value: [
+          {
+            timeseries: [
+              {
+                data: [
+                  {
+                    timeStamp: '2017-08-22T21:00:00Z',
+                    average: 1.0503333333333331,
+                  },
+                  {
+                    timeStamp: '2017-08-22T22:00:00Z',
+                    average: 1.045083333333333,
+                  },
+                  {
+                    timeStamp: '2017-08-22T23:00:00Z',
+                    average: 1.0457499999999995,
+                  },
+                ],
+              },
+            ],
+            id:
+              '/subscriptions/xxx/resourceGroups/testRG/providers/Microsoft.Compute/virtualMachines' +
+              '/testRN/providers/Microsoft.Insights/metrics/Percentage CPU',
+            name: {
+              value: 'Percentage CPU',
+              localizedValue: 'Percentage CPU',
+            },
+            type: 'Microsoft.Insights/metrics',
             unit: 'Percent',
           },
-          series: [
-            {
-              name: 'Percentage CPU',
-              points: [[2.2075, 1558278660000], [2.29, 1558278720000]],
-            },
-          ],
-          tables: null,
-        },
-      },
-    };
-
-    beforeEach(() => {
-      ctx.backendSrv.datasourceRequest = (options: { url: string }) => {
-        expect(options.url).toContain('/api/tsdb/query');
-        return ctx.$q.when({ data: response, status: 200 });
+        ],
       };
+
+      beforeEach(() => {
+        ctx.backendSrv.datasourceRequest = (options: { url: string }) => {
+          expect(options.url).toContain(
+            '/testRG/providers/Microsoft.Compute/virtualMachines/testRN/providers/microsoft.insights/metrics'
+          );
+          return ctx.$q.when({ data: response, status: 200 });
+        };
+      });
+
+      it('should return a list of datapoints', () => {
+        return ctx.ds.query(options).then(results => {
+          expect(results.data.length).toBe(1);
+          expect(results.data[0].target).toEqual('testRN.Percentage CPU');
+          expect(results.data[0].datapoints[0][1]).toEqual(1503435600000);
+          expect(results.data[0].datapoints[0][0]).toEqual(1.0503333333333331);
+          expect(results.data[0].datapoints[2][1]).toEqual(1503442800000);
+          expect(results.data[0].datapoints[2][0]).toEqual(1.0457499999999995);
+        });
+      });
     });
 
-    it('should return a list of datapoints', () => {
-      return ctx.ds.query(options).then((results: any) => {
-        expect(results.data.length).toBe(1);
-        const data = results.data[0] as DataFrame;
-        expect(data.name).toEqual('Percentage CPU');
-        expect(data.fields[1].values.get(0)).toEqual(1558278660000);
-        expect(data.fields[0].values.get(0)).toEqual(2.2075);
-        expect(data.fields[1].values.get(1)).toEqual(1558278720000);
-        expect(data.fields[0].values.get(1)).toEqual(2.29);
+    describe('and data field is total', () => {
+      const response = {
+        value: [
+          {
+            timeseries: [
+              {
+                data: [
+                  {
+                    timeStamp: '2017-08-22T21:00:00Z',
+                    total: 1.0503333333333331,
+                  },
+                  {
+                    timeStamp: '2017-08-22T22:00:00Z',
+                    total: 1.045083333333333,
+                  },
+                  {
+                    timeStamp: '2017-08-22T23:00:00Z',
+                    total: 1.0457499999999995,
+                  },
+                ],
+              },
+            ],
+            id:
+              '/subscriptions/xxx/resourceGroups/testRG/providers/Microsoft.Compute/virtualMachines' +
+              '/testRN/providers/Microsoft.Insights/metrics/Percentage CPU',
+            name: {
+              value: 'Percentage CPU',
+              localizedValue: 'Percentage CPU',
+            },
+            type: 'Microsoft.Insights/metrics',
+            unit: 'Percent',
+          },
+        ],
+      };
+
+      beforeEach(() => {
+        ctx.backendSrv.datasourceRequest = (options: { url: string }) => {
+          expect(options.url).toContain(
+            '/testRG/providers/Microsoft.Compute/virtualMachines/testRN/providers/microsoft.insights/metrics'
+          );
+          return ctx.$q.when({ data: response, status: 200 });
+        };
+      });
+
+      it('should return a list of datapoints', () => {
+        return ctx.ds.query(options).then(results => {
+          expect(results.data.length).toBe(1);
+          expect(results.data[0].target).toEqual('testRN.Percentage CPU');
+          expect(results.data[0].datapoints[0][1]).toEqual(1503435600000);
+          expect(results.data[0].datapoints[0][0]).toEqual(1.0503333333333331);
+          expect(results.data[0].datapoints[2][1]).toEqual(1503442800000);
+          expect(results.data[0].datapoints[2][0]).toEqual(1.0457499999999995);
+        });
+      });
+    });
+
+    describe('and data has a dimension filter', () => {
+      const response = {
+        value: [
+          {
+            timeseries: [
+              {
+                data: [
+                  {
+                    timeStamp: '2017-08-22T21:00:00Z',
+                    total: 1.0503333333333331,
+                  },
+                  {
+                    timeStamp: '2017-08-22T22:00:00Z',
+                    total: 1.045083333333333,
+                  },
+                  {
+                    timeStamp: '2017-08-22T23:00:00Z',
+                    total: 1.0457499999999995,
+                  },
+                ],
+                metadatavalues: [
+                  {
+                    name: {
+                      value: 'blobtype',
+                      localizedValue: 'blobtype',
+                    },
+                    value: 'BlockBlob',
+                  },
+                ],
+              },
+            ],
+            id:
+              '/subscriptions/xxx/resourceGroups/testRG/providers/Microsoft.Compute/virtualMachines' +
+              '/testRN/providers/Microsoft.Insights/metrics/Percentage CPU',
+            name: {
+              value: 'Percentage CPU',
+              localizedValue: 'Percentage CPU',
+            },
+            type: 'Microsoft.Insights/metrics',
+            unit: 'Percent',
+          },
+        ],
+      };
+
+      describe('and with no alias specified', () => {
+        beforeEach(() => {
+          ctx.backendSrv.datasourceRequest = (options: { url: string }) => {
+            const expected =
+              '/testRG/providers/Microsoft.Compute/virtualMachines/testRN/providers/microsoft.insights/metrics';
+            expect(options.url).toContain(expected);
+            return ctx.$q.when({ data: response, status: 200 });
+          };
+        });
+
+        it('should return a list of datapoints', () => {
+          return ctx.ds.query(options).then(results => {
+            expect(results.data.length).toBe(1);
+            expect(results.data[0].target).toEqual('testRN{blobtype=BlockBlob}.Percentage CPU');
+            expect(results.data[0].datapoints[0][1]).toEqual(1503435600000);
+            expect(results.data[0].datapoints[0][0]).toEqual(1.0503333333333331);
+            expect(results.data[0].datapoints[2][1]).toEqual(1503442800000);
+            expect(results.data[0].datapoints[2][0]).toEqual(1.0457499999999995);
+          });
+        });
+      });
+
+      describe('and with an alias specified', () => {
+        beforeEach(() => {
+          options.targets[0].azureMonitor.alias =
+            '{{resourcegroup}} + {{namespace}} + {{resourcename}} + ' +
+            '{{metric}} + {{dimensionname}} + {{dimensionvalue}}';
+
+          ctx.backendSrv.datasourceRequest = (options: { url: string }) => {
+            const expected =
+              '/testRG/providers/Microsoft.Compute/virtualMachines/testRN/providers/microsoft.insights/metrics';
+            expect(options.url).toContain(expected);
+            return ctx.$q.when({ data: response, status: 200 });
+          };
+        });
+
+        it('should return a list of datapoints', () => {
+          return ctx.ds.query(options).then(results => {
+            expect(results.data.length).toBe(1);
+            const expected =
+              'testRG + Microsoft.Compute/virtualMachines + testRN + Percentage CPU + blobtype + BlockBlob';
+            expect(results.data[0].target).toEqual(expected);
+            expect(results.data[0].datapoints[0][1]).toEqual(1503435600000);
+            expect(results.data[0].datapoints[0][0]).toEqual(1.0503333333333331);
+            expect(results.data[0].datapoints[2][1]).toEqual(1503442800000);
+            expect(results.data[0].datapoints[2][0]).toEqual(1.0457499999999995);
+          });
+        });
       });
     });
   });
@@ -365,7 +530,7 @@ describe('AzureMonitorDatasource', () => {
           .metricFindQuery(
             'resourceNames(11112222-eeee-4949-9b2d-9106972f9123, nodeapp, microsoft.insights/components )'
           )
-          .then((results: any) => {
+          .then(results => {
             expect(results.length).toEqual(1);
             expect(results[0].text).toEqual('nodeapp');
             expect(results[0].value).toEqual('nodeapp');
@@ -402,7 +567,7 @@ describe('AzureMonitorDatasource', () => {
           expect(options.url).toBe(
             baseUrl +
               '/nodeapp/providers/microsoft.insights/components/rn/providers/microsoft.insights/' +
-              'metricdefinitions?api-version=2018-01-01&metricnamespace=default'
+              'metricdefinitions?api-version=2018-01-01'
           );
           return ctx.$q.when(response);
         };
@@ -410,7 +575,7 @@ describe('AzureMonitorDatasource', () => {
 
       it('should return a list of metric names', () => {
         return ctx.ds
-          .metricFindQuery('Metricnames(nodeapp, microsoft.insights/components, rn, default)')
+          .metricFindQuery('Metricnames(nodeapp, microsoft.insights/components, rn)')
           .then((results: Array<{ text: string; value: string }>) => {
             expect(results.length).toEqual(2);
             expect(results[0].text).toEqual('Percentage CPU');
@@ -451,7 +616,7 @@ describe('AzureMonitorDatasource', () => {
           expect(options.url).toBe(
             baseUrl +
               '/nodeapp/providers/microsoft.insights/components/rn/providers/microsoft.insights/' +
-              'metricdefinitions?api-version=2018-01-01&metricnamespace=default'
+              'metricdefinitions?api-version=2018-01-01'
           );
           return ctx.$q.when(response);
         };
@@ -460,7 +625,7 @@ describe('AzureMonitorDatasource', () => {
       it('should return a list of metric names', () => {
         return ctx.ds
           .metricFindQuery(
-            'Metricnames(11112222-eeee-4949-9b2d-9106972f9123, nodeapp, microsoft.insights/components, rn, default)'
+            'Metricnames(11112222-eeee-4949-9b2d-9106972f9123, nodeapp, microsoft.insights/components, rn)'
           )
           .then((results: Array<{ text: string; value: string }>) => {
             expect(results.length).toEqual(2);
@@ -469,104 +634,6 @@ describe('AzureMonitorDatasource', () => {
 
             expect(results[1].text).toEqual('Used capacity');
             expect(results[1].value).toEqual('UsedCapacity');
-          });
-      });
-    });
-
-    describe('with metric namespace query', () => {
-      const response = {
-        data: {
-          value: [
-            {
-              name: 'Microsoft.Compute-virtualMachines',
-              properties: {
-                metricNamespaceName: 'Microsoft.Compute/virtualMachines',
-              },
-            },
-            {
-              name: 'Telegraf-mem',
-              properties: {
-                metricNamespaceName: 'Telegraf/mem',
-              },
-            },
-          ],
-        },
-        status: 200,
-        statusText: 'OK',
-      };
-
-      beforeEach(() => {
-        ctx.backendSrv.datasourceRequest = (options: { url: string }) => {
-          const baseUrl =
-            'http://azuremonitor.com/azuremonitor/subscriptions/9935389e-9122-4ef9-95f9-1513dd24753f/resourceGroups';
-          expect(options.url).toBe(
-            baseUrl +
-              '/nodeapp/providers/Microsoft.Compute/virtualMachines/rn/providers/microsoft.insights/metricNamespaces?api-version=2017-12-01-preview'
-          );
-          return ctx.$q.when(response);
-        };
-      });
-
-      it('should return a list of metric names', () => {
-        return ctx.ds
-          .metricFindQuery('Metricnamespace(nodeapp, Microsoft.Compute/virtualMachines, rn)')
-          .then((results: Array<{ text: string; value: string }>) => {
-            expect(results.length).toEqual(2);
-            expect(results[0].text).toEqual('Microsoft.Compute-virtualMachines');
-            expect(results[0].value).toEqual('Microsoft.Compute/virtualMachines');
-
-            expect(results[1].text).toEqual('Telegraf-mem');
-            expect(results[1].value).toEqual('Telegraf/mem');
-          });
-      });
-    });
-
-    describe('with metric namespace query and specifies a subscription id', () => {
-      const response = {
-        data: {
-          value: [
-            {
-              name: 'Microsoft.Compute-virtualMachines',
-              properties: {
-                metricNamespaceName: 'Microsoft.Compute/virtualMachines',
-              },
-            },
-            {
-              name: 'Telegraf-mem',
-              properties: {
-                metricNamespaceName: 'Telegraf/mem',
-              },
-            },
-          ],
-        },
-        status: 200,
-        statusText: 'OK',
-      };
-
-      beforeEach(() => {
-        ctx.backendSrv.datasourceRequest = (options: { url: string }) => {
-          const baseUrl =
-            'http://azuremonitor.com/azuremonitor/subscriptions/11112222-eeee-4949-9b2d-9106972f9123/resourceGroups';
-          expect(options.url).toBe(
-            baseUrl +
-              '/nodeapp/providers/Microsoft.Compute/virtualMachines/rn/providers/microsoft.insights/metricNamespaces?api-version=2017-12-01-preview'
-          );
-          return ctx.$q.when(response);
-        };
-      });
-
-      it('should return a list of metric namespaces', () => {
-        return ctx.ds
-          .metricFindQuery(
-            'Metricnamespace(11112222-eeee-4949-9b2d-9106972f9123, nodeapp, Microsoft.Compute/virtualMachines, rn)'
-          )
-          .then((results: Array<{ text: string; value: string }>) => {
-            expect(results.length).toEqual(2);
-            expect(results[0].text).toEqual('Microsoft.Compute-virtualMachines');
-            expect(results[0].value).toEqual('Microsoft.Compute/virtualMachines');
-
-            expect(results[1].text).toEqual('Telegraf-mem');
-            expect(results[1].value).toEqual('Telegraf/mem');
           });
       });
     });
@@ -833,7 +900,7 @@ describe('AzureMonitorDatasource', () => {
         const expected =
           baseUrl +
           '/providers/microsoft.insights/components/resource1' +
-          '/providers/microsoft.insights/metricdefinitions?api-version=2018-01-01&metricnamespace=default';
+          '/providers/microsoft.insights/metricdefinitions?api-version=2018-01-01';
         expect(options.url).toBe(expected);
         return ctx.$q.when(response);
       };
@@ -841,13 +908,7 @@ describe('AzureMonitorDatasource', () => {
 
     it('should return list of Metric Definitions', () => {
       return ctx.ds
-        .getMetricNames(
-          '9935389e-9122-4ef9-95f9-1513dd24753f',
-          'nodeapp',
-          'microsoft.insights/components',
-          'resource1',
-          'default'
-        )
+        .getMetricNames('9935389e-9122-4ef9-95f9-1513dd24753f', 'nodeapp', 'microsoft.insights/components', 'resource1')
         .then((results: Array<{ text: string; value: string }>) => {
           expect(results.length).toEqual(2);
           expect(results[0].text).toEqual('Used capacity');
@@ -905,7 +966,7 @@ describe('AzureMonitorDatasource', () => {
         const expected =
           baseUrl +
           '/providers/microsoft.insights/components/resource1' +
-          '/providers/microsoft.insights/metricdefinitions?api-version=2018-01-01&metricnamespace=default';
+          '/providers/microsoft.insights/metricdefinitions?api-version=2018-01-01';
         expect(options.url).toBe(expected);
         return ctx.$q.when(response);
       };
@@ -918,7 +979,6 @@ describe('AzureMonitorDatasource', () => {
           'nodeapp',
           'microsoft.insights/components',
           'resource1',
-          'default',
           'UsedCapacity'
         )
         .then((results: any) => {
@@ -979,7 +1039,7 @@ describe('AzureMonitorDatasource', () => {
         const expected =
           baseUrl +
           '/providers/microsoft.insights/components/resource1' +
-          '/providers/microsoft.insights/metricdefinitions?api-version=2018-01-01&metricnamespace=default';
+          '/providers/microsoft.insights/metricdefinitions?api-version=2018-01-01';
         expect(options.url).toBe(expected);
         return ctx.$q.when(response);
       };
@@ -992,10 +1052,9 @@ describe('AzureMonitorDatasource', () => {
           'nodeapp',
           'microsoft.insights/components',
           'resource1',
-          'default',
           'Transactions'
         )
-        .then((results: any) => {
+        .then(results => {
           expect(results.dimensions.length).toEqual(4);
           expect(results.dimensions[0].text).toEqual('None');
           expect(results.dimensions[0].value).toEqual('None');
@@ -1011,10 +1070,9 @@ describe('AzureMonitorDatasource', () => {
           'nodeapp',
           'microsoft.insights/components',
           'resource1',
-          'default',
           'FreeCapacity'
         )
-        .then((results: any) => {
+        .then(results => {
           expect(results.dimensions.length).toEqual(0);
         });
     });

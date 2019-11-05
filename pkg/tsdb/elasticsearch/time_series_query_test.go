@@ -635,8 +635,6 @@ func newFakeClient(version int) *fakeClient {
 	}
 }
 
-func (c *fakeClient) EnableDebug() {}
-
 func (c *fakeClient) GetVersion() int {
 	return c.version
 }

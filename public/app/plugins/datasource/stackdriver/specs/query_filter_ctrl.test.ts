@@ -3,9 +3,9 @@ import { TemplateSrvStub } from 'test/specs/helpers';
 import { DefaultRemoveFilterValue, DefaultFilterValue } from '../filter_segments';
 
 describe('StackdriverQueryFilterCtrl', () => {
-  let ctrl: StackdriverFilterCtrl;
-  let result: any;
-  let groupByChangedMock: any;
+  let ctrl;
+  let result;
+  let groupByChangedMock;
 
   describe('when initializing query editor', () => {
     beforeEach(() => {
@@ -363,34 +363,34 @@ describe('StackdriverQueryFilterCtrl', () => {
 
 function createCtrlWithFakes(existingFilters?: string[]) {
   const fakeSegmentServer = {
-    newKey: (val: any) => {
+    newKey: val => {
       return { value: val, type: 'key' };
     },
-    newKeyValue: (val: any) => {
+    newKeyValue: val => {
       return { value: val, type: 'value' };
     },
-    newSegment: (obj: any) => {
+    newSegment: obj => {
       return { value: obj.value ? obj.value : obj };
     },
-    newOperators: (ops: any) => {
-      return ops.map((o: any) => {
+    newOperators: ops => {
+      return ops.map(o => {
         return { type: 'operator', value: o };
       });
     },
-    newFake: (value: any, type: any, cssClass: any) => {
+    newFake: (value, type, cssClass) => {
       return { value, type, cssClass };
     },
-    newOperator: (op: any) => {
+    newOperator: op => {
       return { value: op, type: 'operator' };
     },
     newPlusButton: () => {
       return { type: 'plus-button' };
     },
-    newCondition: (val: any) => {
+    newCondition: val => {
       return { type: 'condition', value: val };
     },
   };
-  const scope: any = {
+  const scope = {
     hideGroupBys: false,
     groupBys: [],
     filters: existingFilters || [],
@@ -410,6 +410,5 @@ function createCtrlWithFakes(existingFilters?: string[]) {
   };
 
   Object.assign(StackdriverFilterCtrl.prototype, scope);
-  // @ts-ignore
   return new StackdriverFilterCtrl(scope, fakeSegmentServer, new TemplateSrvStub());
 }

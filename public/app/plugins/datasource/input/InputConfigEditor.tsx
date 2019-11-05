@@ -4,9 +4,7 @@ import React, { PureComponent } from 'react';
 // Types
 import { InputOptions } from './types';
 
-import { DataSourcePluginOptionsEditorProps, DataSourceSettings, TableInputCSV } from '@grafana/ui';
-import { DataFrame, MutableDataFrame } from '@grafana/data';
-import { dataFrameToCSV } from './utils';
+import { DataSourcePluginOptionsEditorProps, DataSourceSettings, SeriesData, TableInputCSV, toCSV } from '@grafana/ui';
 
 type InputSettings = DataSourceSettings<InputOptions>;
 
@@ -24,15 +22,20 @@ export class InputConfigEditor extends PureComponent<Props, State> {
   componentDidMount() {
     const { options } = this.props;
     if (options.jsonData.data) {
-      const text = dataFrameToCSV(options.jsonData.data);
+      const text = toCSV(options.jsonData.data);
       this.setState({ text });
     }
   }
 
-  onSeriesParsed = (data: DataFrame[], text: string) => {
+  onSeriesParsed = (data: SeriesData[], text: string) => {
     const { options, onOptionsChange } = this.props;
     if (!data) {
-      data = [new MutableDataFrame()];
+      data = [
+        {
+          fields: [],
+          rows: [],
+        },
+      ];
     }
     // data is a property on 'jsonData'
     const jsonData = {

@@ -1,12 +1,11 @@
 import _ from 'lodash';
 import TableModel from 'app/core/table_model';
-import { TimeSeries, FieldType } from '@grafana/data';
-import { TemplateSrv } from 'app/features/templating/template_srv';
+import { TimeSeries, FieldType } from '@grafana/ui';
 
 export class ResultTransformer {
-  constructor(private templateSrv: TemplateSrv) {}
+  constructor(private templateSrv) {}
 
-  transform(response: any, options: any): Array<TableModel | TimeSeries> {
+  transform(response: any, options: any): any[] {
     const prometheusResult = response.data.data.result;
 
     if (options.format === 'table') {
@@ -40,7 +39,7 @@ export class ResultTransformer {
     return [];
   }
 
-  transformMetricData(metricData: any, options: any, start: number, end: number) {
+  transformMetricData(metricData, options, start, end) {
     const dps = [];
     let metricLabel = null;
 
@@ -76,14 +75,13 @@ export class ResultTransformer {
       datapoints: dps,
       query: options.query,
       target: metricLabel,
-      tags: metricData.metric,
     };
   }
 
-  transformMetricDataToTable(md: any, resultCount: number, refId: string, valueWithRefId?: boolean): TableModel {
+  transformMetricDataToTable(md, resultCount: number, refId: string, valueWithRefId?: boolean) {
     const table = new TableModel();
-    let i: number, j: number;
-    const metricLabels: { [key: string]: number } = {};
+    let i, j;
+    const metricLabels = {};
 
     if (!md || md.length === 0) {
       return table;
@@ -136,7 +134,7 @@ export class ResultTransformer {
     return table;
   }
 
-  transformInstantMetricData(md: any, options: any) {
+  transformInstantMetricData(md, options) {
     const dps = [];
     let metricLabel = null;
     metricLabel = this.createMetricLabel(md.metric, options);
@@ -144,7 +142,7 @@ export class ResultTransformer {
     return { target: metricLabel, datapoints: dps, labels: md.metric };
   }
 
-  createMetricLabel(labelData: { [key: string]: string }, options: any) {
+  createMetricLabel(labelData, options) {
     let label = '';
     if (_.isUndefined(options) || _.isEmpty(options.legendFormat)) {
       label = this.getOriginalMetricName(labelData);
@@ -157,7 +155,7 @@ export class ResultTransformer {
     return label;
   }
 
-  renderTemplate(aliasPattern: string, aliasData: { [key: string]: string }) {
+  renderTemplate(aliasPattern, aliasData) {
     const aliasRegex = /\{\{\s*(.+?)\s*\}\}/g;
     return aliasPattern.replace(aliasRegex, (match, g1) => {
       if (aliasData[g1]) {
@@ -167,7 +165,7 @@ export class ResultTransformer {
     });
   }
 
-  getOriginalMetricName(labelData: { [key: string]: string }) {
+  getOriginalMetricName(labelData) {
     const metricName = labelData.__name__ || '';
     delete labelData.__name__;
     const labelPart = _.map(_.toPairs(labelData), label => {
@@ -176,7 +174,7 @@ export class ResultTransformer {
     return metricName + '{' + labelPart + '}';
   }
 
-  transformToHistogramOverTime(seriesList: TimeSeries[]) {
+  transformToHistogramOverTime(seriesList) {
     /*      t1 = timestamp1, t2 = timestamp2 etc.
             t1  t2  t3          t1  t2  t3
     le10    10  10  0     =>    10  10  0

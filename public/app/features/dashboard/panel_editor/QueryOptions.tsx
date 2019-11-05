@@ -1,20 +1,13 @@
 // Libraries
-import React, { PureComponent, ChangeEvent, FocusEvent, ReactText } from 'react';
+import React, { PureComponent, ChangeEvent, FocusEvent } from 'react';
 
 // Utils
-import { rangeUtil } from '@grafana/data';
+import { isValidTimeSpan } from '@grafana/ui/src/utils/rangeutil';
 
 // Components
-import {
-  DataSourceSelectItem,
-  EventsWithValidation,
-  Input,
-  InputStatus,
-  Switch,
-  ValidationEvents,
-  FormLabel,
-} from '@grafana/ui';
+import { DataSourceSelectItem, EventsWithValidation, Input, InputStatus, Switch, ValidationEvents } from '@grafana/ui';
 import { DataSourceOption } from './DataSourceOption';
+import { FormLabel } from '@grafana/ui';
 
 // Types
 import { PanelModel } from '../state';
@@ -26,7 +19,7 @@ const timeRangeValidationEvents: ValidationEvents = {
         if (!value) {
           return true;
         }
-        return rangeUtil.isValidTimeSpan(value);
+        return isValidTimeSpan(value);
       },
       errorMessage: 'Not a valid timespan',
     },
@@ -46,13 +39,13 @@ interface State {
   relativeTime: string;
   timeShift: string;
   cacheTimeout: string;
-  maxDataPoints: string | ReactText;
+  maxDataPoints: string;
   interval: string;
   hideTimeOverride: boolean;
 }
 
 export class QueryOptions extends PureComponent<Props, State> {
-  allOptions: any = {
+  allOptions = {
     cacheTimeout: {
       label: 'Cache timeout',
       placeholder: '60',
@@ -71,8 +64,7 @@ export class QueryOptions extends PureComponent<Props, State> {
       tooltipInfo: (
         <>
           The maximum data points the query should return. For graphs this is automatically set to one data point per
-          pixel. For some data sources this can also be capped in the datasource settings page. With streaming data,
-          this value is used for the rolling buffer.
+          pixel.
         </>
       ),
     },
@@ -92,7 +84,7 @@ export class QueryOptions extends PureComponent<Props, State> {
     },
   };
 
-  constructor(props: Props) {
+  constructor(props) {
     super(props);
 
     this.state = {
@@ -148,7 +140,6 @@ export class QueryOptions extends PureComponent<Props, State> {
   onDataSourceOptionBlur = (panelKey: string) => () => {
     const { panel } = this.props;
 
-    // @ts-ignore
     panel[panelKey] = this.state[panelKey];
     panel.refresh();
   };
@@ -157,33 +148,26 @@ export class QueryOptions extends PureComponent<Props, State> {
     this.setState({ ...this.state, [panelKey]: event.target.value });
   };
 
-  /**
-   * Show options for any value that is set, or values that the
-   * current datasource says it will use
-   */
   renderOptions = () => {
     const { datasource } = this.props;
-    const queryOptions: any = datasource.meta.queryOptions || {};
+    const { queryOptions } = datasource.meta;
 
-    return Object.keys(this.allOptions).map(key => {
+    if (!queryOptions) {
+      return null;
+    }
+
+    return Object.keys(queryOptions).map(key => {
       const options = this.allOptions[key];
       const panelKey = options.panelKey || key;
-
-      // @ts-ignore
-      const value = this.state[panelKey];
-
-      if (queryOptions[key]) {
-        return (
-          <DataSourceOption
-            key={key}
-            {...options}
-            onChange={this.onDataSourceOptionChange(panelKey)}
-            onBlur={this.onDataSourceOptionBlur(panelKey)}
-            value={value}
-          />
-        );
-      }
-      return null; // nothing to render
+      return (
+        <DataSourceOption
+          key={key}
+          {...options}
+          onChange={this.onDataSourceOptionChange(panelKey)}
+          onBlur={this.onDataSourceOptionBlur(panelKey)}
+          value={this.state[panelKey]}
+        />
+      );
     });
   };
 

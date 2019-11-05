@@ -1,9 +1,6 @@
 import _ from 'lodash';
 import coreModule from 'app/core/core_module';
 import appEvents from 'app/core/app_events';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { ValidationSrv } from 'app/features/manage-dashboards';
-import { ContextSrv } from 'app/core/services/context_srv';
 
 export class FolderPickerCtrl {
   initialTitle: string;
@@ -27,7 +24,7 @@ export class FolderPickerCtrl {
   dashboardId?: number;
 
   /** @ngInject */
-  constructor(private backendSrv: BackendSrv, private validationSrv: ValidationSrv, private contextSrv: ContextSrv) {
+  constructor(private backendSrv, private validationSrv, private contextSrv) {
     this.isEditor = this.contextSrv.isEditor;
 
     if (!this.labelClass) {
@@ -37,14 +34,14 @@ export class FolderPickerCtrl {
     this.loadInitialValue();
   }
 
-  getOptions(query: string) {
+  getOptions(query) {
     const params = {
-      query,
+      query: query,
       type: 'dash-folder',
       permission: 'Edit',
     };
 
-    return this.backendSrv.get('api/search', params).then((result: any) => {
+    return this.backendSrv.get('api/search', params).then(result => {
       if (
         this.isEditor &&
         (query === '' ||
@@ -73,7 +70,7 @@ export class FolderPickerCtrl {
     });
   }
 
-  onFolderChange(option: { value: number; text: string }) {
+  onFolderChange(option) {
     if (!option) {
       option = { value: 0, text: this.rootName };
     } else if (option.value === -1) {
@@ -92,19 +89,19 @@ export class FolderPickerCtrl {
       .then(() => {
         this.hasValidationError = false;
       })
-      .catch((err: any) => {
+      .catch(err => {
         this.hasValidationError = true;
         this.validationError = err.message;
       });
   }
 
-  createFolder(evt: any) {
+  createFolder(evt) {
     if (evt) {
       evt.stopPropagation();
       evt.preventDefault();
     }
 
-    return this.backendSrv.createFolder({ title: this.newFolderName }).then((result: { title: string; id: number }) => {
+    return this.backendSrv.createFolder({ title: this.newFolderName }).then(result => {
       appEvents.emit('alert-success', ['Folder Created', 'OK']);
 
       this.closeCreateFolder();
@@ -113,7 +110,7 @@ export class FolderPickerCtrl {
     });
   }
 
-  cancelCreateFolder(evt: any) {
+  cancelCreateFolder(evt) {
     if (evt) {
       evt.stopPropagation();
       evt.preventDefault();
@@ -133,13 +130,12 @@ export class FolderPickerCtrl {
   }
 
   private loadInitialValue() {
-    const resetFolder: { text: string; value: any } = { text: this.initialTitle, value: null };
-    const rootFolder: { text: string; value: any } = { text: this.rootName, value: 0 };
+    const resetFolder = { text: this.initialTitle, value: null };
+    const rootFolder = { text: this.rootName, value: 0 };
 
-    this.getOptions('').then((result: any[]) => {
-      let folder: { text: string; value: any };
+    this.getOptions('').then(result => {
+      let folder;
       if (this.initialFolderId) {
-        // @ts-ignore
         folder = _.find(result, { value: this.initialFolderId });
       } else if (this.enableReset && this.initialTitle && this.initialFolderId === null) {
         folder = resetFolder;

@@ -1,16 +1,16 @@
 import angular from 'angular';
 
 const directiveModule = angular.module('grafana.directives');
-const directiveCache: any = {};
+const directiveCache = {};
 
 /** @ngInject */
-function panelEditorTab(dynamicDirectiveSrv: any) {
+function panelEditorTab(dynamicDirectiveSrv) {
   return dynamicDirectiveSrv.create({
     scope: {
       ctrl: '=',
       editorTab: '=',
     },
-    directive: (scope: any) => {
+    directive: scope => {
       const pluginId = scope.ctrl.pluginId;
       const tabName = scope.editorTab.title
         .toLowerCase()

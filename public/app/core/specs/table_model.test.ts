@@ -1,14 +1,13 @@
 import TableModel, { mergeTablesIntoModel } from 'app/core/table_model';
 
 describe('when sorting table desc', () => {
-  let table: TableModel;
+  let table;
   const panel = {
     sort: { col: 0, desc: true },
   };
 
   beforeEach(() => {
     table = new TableModel();
-    // @ts-ignore
     table.columns = [{}, {}];
     table.rows = [[100, 12], [105, 10], [103, 11]];
     table.sort(panel.sort);
@@ -27,14 +26,13 @@ describe('when sorting table desc', () => {
 });
 
 describe('when sorting table asc', () => {
-  let table: TableModel;
+  let table;
   const panel = {
     sort: { col: 1, desc: false },
   };
 
   beforeEach(() => {
     table = new TableModel();
-    // @ts-ignore
     table.columns = [{}, {}];
     table.rows = [[100, 11], [105, 15], [103, 10]];
     table.sort(panel.sort);
@@ -48,12 +46,11 @@ describe('when sorting table asc', () => {
 });
 
 describe('when sorting with nulls', () => {
-  let table: TableModel;
+  let table;
   let values;
 
   beforeEach(() => {
     table = new TableModel();
-    // @ts-ignore
     table.columns = [{}, {}];
     table.rows = [[42, ''], [19, 'a'], [null, 'b'], [0, 'd'], [null, null], [2, 'c'], [0, null], [-8, '']];
   });

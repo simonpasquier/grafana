@@ -99,6 +99,7 @@ exports[`Render when feature toggle editorsCanAdmin is turned off should not ren
           isMulti={false}
           isSearchable={false}
           maxMenuHeight={300}
+          menuIsOpen={false}
           onChange={[Function]}
           openMenuOnFocus={false}
           options={
@@ -115,7 +116,6 @@ exports[`Render when feature toggle editorsCanAdmin is turned off should not ren
               },
             ]
           }
-          tabSelectsValue={true}
           value={
             Object {
               "description": "Is team member",
@@ -123,6 +123,7 @@ exports[`Render when feature toggle editorsCanAdmin is turned off should not ren
               "value": 0,
             }
           }
+          width={null}
         />
       </div>
     </td>
@@ -184,6 +185,7 @@ exports[`Render when feature toggle editorsCanAdmin is turned on should render p
           isMulti={false}
           isSearchable={false}
           maxMenuHeight={300}
+          menuIsOpen={false}
           onChange={[Function]}
           openMenuOnFocus={false}
           options={
@@ -200,7 +202,6 @@ exports[`Render when feature toggle editorsCanAdmin is turned on should render p
               },
             ]
           }
-          tabSelectsValue={true}
           value={
             Object {
               "description": "Is team member",
@@ -208,6 +209,7 @@ exports[`Render when feature toggle editorsCanAdmin is turned on should render p
               "value": 0,
             }
           }
+          width={null}
         />
       </div>
     </td>

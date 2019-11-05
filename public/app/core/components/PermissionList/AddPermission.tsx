@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import { UserPicker } from 'app/core/components/Select/UserPicker';
 import { TeamPicker, Team } from 'app/core/components/Select/TeamPicker';
-import { Select } from '@grafana/ui';
-import { SelectableValue } from '@grafana/data';
+import { Select, SelectOptionItem } from '@grafana/ui';
 import { User } from 'app/types';
 import {
   dashboardPermissionLevels,
@@ -23,7 +22,7 @@ class AddPermissions extends Component<Props, NewDashboardAclItem> {
     showPermissionLevels: true,
   };
 
-  constructor(props: Props) {
+  constructor(props) {
     super(props);
     this.state = this.getCleanState();
   }
@@ -37,7 +36,7 @@ class AddPermissions extends Component<Props, NewDashboardAclItem> {
     };
   }
 
-  onTypeChanged = (evt: any) => {
+  onTypeChanged = evt => {
     const type = evt.target.value as AclTarget;
 
     switch (type) {
@@ -62,11 +61,11 @@ class AddPermissions extends Component<Props, NewDashboardAclItem> {
     this.setState({ teamId: team && !Array.isArray(team) ? team.id : 0 });
   };
 
-  onPermissionChanged = (permission: SelectableValue<PermissionLevel>) => {
+  onPermissionChanged = (permission: SelectOptionItem<PermissionLevel>) => {
     this.setState({ permission: permission.value });
   };
 
-  onSubmit = async (evt: React.SyntheticEvent) => {
+  onSubmit = async evt => {
     evt.preventDefault();
     await this.props.onAddPermission(this.state);
     this.setState(this.getCleanState());

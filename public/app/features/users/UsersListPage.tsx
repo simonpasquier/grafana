@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import { hot } from 'react-hot-loader';
 import { connect } from 'react-redux';
-import { renderMarkdown } from '@grafana/data';
+import Remarkable from 'remarkable';
 import Page from 'app/core/components/Page/Page';
 import UsersActionBar from './UsersActionBar';
 import UsersTable from './UsersTable';
@@ -11,7 +11,7 @@ import appEvents from 'app/core/app_events';
 import { loadUsers, loadInvitees, setUsersSearchQuery, updateUser, removeUser } from './state/actions';
 import { getNavModel } from 'app/core/selectors/navModel';
 import { getInvitees, getUsers, getUsersSearchQuery } from './state/selectors';
-import { NavModel } from '@grafana/data';
+import { NavModel } from '@grafana/ui';
 
 export interface Props {
   navModel: NavModel;
@@ -34,11 +34,12 @@ export interface State {
 export class UsersListPage extends PureComponent<Props, State> {
   externalUserMngInfoHtml: string;
 
-  constructor(props: Props) {
+  constructor(props) {
     super(props);
 
     if (this.props.externalUserMngInfo) {
-      this.externalUserMngInfoHtml = renderMarkdown(this.props.externalUserMngInfo);
+      const markdownRenderer = new Remarkable();
+      this.externalUserMngInfoHtml = markdownRenderer.render(this.props.externalUserMngInfo);
     }
 
     this.state = {
@@ -59,13 +60,13 @@ export class UsersListPage extends PureComponent<Props, State> {
     return await this.props.loadInvitees();
   }
 
-  onRoleChange = (role: string, user: OrgUser) => {
+  onRoleChange = (role, user) => {
     const updatedUser = { ...user, role: role };
 
     this.props.updateUser(updatedUser);
   };
 
-  onRemoveUser = (user: OrgUser) => {
+  onRemoveUser = user => {
     appEvents.emit('confirm-modal', {
       title: 'Delete',
       text: 'Are you sure you want to delete user ' + user.login + '?',
@@ -119,7 +120,7 @@ export class UsersListPage extends PureComponent<Props, State> {
   }
 }
 
-function mapStateToProps(state: any) {
+function mapStateToProps(state) {
   return {
     navModel: getNavModel(state.navIndex, 'users'),
     users: getUsers(state.users),

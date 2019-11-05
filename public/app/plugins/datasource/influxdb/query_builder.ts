@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import kbn from 'app/core/utils/kbn';
 
-function renderTagCondition(tag: { operator: any; value: string; condition: any; key: string }, index: number) {
+function renderTagCondition(tag, index) {
   let str = '';
   let operator = tag.operator;
   let value = tag.value;
@@ -26,7 +26,7 @@ function renderTagCondition(tag: { operator: any; value: string; condition: any;
 }
 
 export class InfluxQueryBuilder {
-  constructor(private target: { measurement: any; tags: any; policy?: any }, private database?: string) {}
+  constructor(private target, private database?) {}
 
   buildExploreQuery(type: string, withKey?: string, withMeasurementFilter?: string) {
     let query;

@@ -1,18 +1,15 @@
 import '../datasource';
 import CloudWatchDatasource from '../datasource';
-import { dateMath } from '@grafana/data';
+import * as dateMath from '@grafana/ui/src/utils/datemath';
 import { TemplateSrv } from 'app/features/templating/template_srv';
 import { CustomVariable } from 'app/features/templating/all';
 import _ from 'lodash';
 import { CloudWatchQuery } from '../types';
-import { DataSourceInstanceSettings } from '@grafana/ui';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { TimeSrv } from 'app/features/dashboard/services/TimeSrv';
 
 describe('CloudWatchDatasource', () => {
   const instanceSettings = {
-    jsonData: { defaultRegion: 'us-east-1' },
-  } as DataSourceInstanceSettings;
+    jsonData: { defaultRegion: 'us-east-1', access: 'proxy' },
+  };
 
   const templateSrv = new TemplateSrv();
 
@@ -24,15 +21,15 @@ describe('CloudWatchDatasource', () => {
         to: dateMath.parse(timeSrv.time.to, true),
       };
     },
-  } as TimeSrv;
-  const backendSrv = {} as BackendSrv;
+  };
+  const backendSrv = {};
   const ctx = {
     backendSrv,
     templateSrv,
   } as any;
 
   beforeEach(() => {
-    ctx.ds = new CloudWatchDatasource(instanceSettings, {} as any, backendSrv, templateSrv, timeSrv);
+    ctx.ds = new CloudWatchDatasource(instanceSettings, {}, backendSrv, templateSrv, timeSrv);
   });
 
   describe('When performing CloudWatch query', () => {
@@ -56,7 +53,7 @@ describe('CloudWatchDatasource', () => {
       ],
     };
 
-    const response: any = {
+    const response = {
       timings: [null],
       results: {
         A: {
@@ -105,7 +102,7 @@ describe('CloudWatchDatasource', () => {
             },
             multi: false,
           },
-          {} as any
+          {}
         ),
       ]);
 
@@ -156,7 +153,7 @@ describe('CloudWatchDatasource', () => {
     });
 
     it('should return series list', done => {
-      ctx.ds.query(query).then((result: any) => {
+      ctx.ds.query(query).then(result => {
         expect(result.data[0].target).toBe(response.results.A.series[0].name);
         expect(result.data[0].datapoints[0][0]).toBe(response.results.A.series[0].points[0][0]);
         done();
@@ -204,7 +201,7 @@ describe('CloudWatchDatasource', () => {
         ],
       };
 
-      ctx.ds.query(query).then((result: any) => {
+      ctx.ds.query(query).then(result => {
         expect(requestParams.queries[0].region).toBe(instanceSettings.jsonData.defaultRegion);
         done();
       });
@@ -231,7 +228,7 @@ describe('CloudWatchDatasource', () => {
       ],
     };
 
-    const response: any = {
+    const response = {
       timings: [null],
       results: {
         A: {
@@ -259,7 +256,7 @@ describe('CloudWatchDatasource', () => {
     });
 
     it('should return series list', done => {
-      ctx.ds.query(query).then((result: any) => {
+      ctx.ds.query(query).then(result => {
         expect(result.data[0].target).toBe(response.results.A.series[0].name);
         expect(result.data[0].datapoints[0][0]).toBe(response.results.A.series[0].points[0][0]);
         done();
@@ -279,7 +276,7 @@ describe('CloudWatchDatasource', () => {
             },
             multi: false,
           },
-          {} as any
+          {}
         ),
         new CustomVariable(
           {
@@ -289,7 +286,7 @@ describe('CloudWatchDatasource', () => {
             },
             multi: false,
           },
-          {} as any
+          {}
         ),
         new CustomVariable(
           {
@@ -304,7 +301,7 @@ describe('CloudWatchDatasource', () => {
             },
             multi: true,
           },
-          {} as any
+          {}
         ),
       ]);
 
@@ -411,7 +408,7 @@ describe('CloudWatchDatasource', () => {
     });
 
     it('should generate the correct query for multilple template variables with expression', done => {
-      const query: any = {
+      const query = {
         range: { from: 'now-1h', to: 'now' },
         rangeRaw: { from: 1483228800, to: 1483232400 },
         targets: [
@@ -466,17 +463,17 @@ describe('CloudWatchDatasource', () => {
     });
   });
 
-  function describeMetricFindQuery(query: any, func: any) {
+  function describeMetricFindQuery(query, func) {
     describe('metricFindQuery ' + query, () => {
       const scenario: any = {};
-      scenario.setup = (setupCallback: any) => {
+      scenario.setup = setupCallback => {
         beforeEach(() => {
           setupCallback();
           ctx.backendSrv.datasourceRequest = jest.fn(args => {
             scenario.request = args.data;
             return Promise.resolve({ data: scenario.requestResponse });
           });
-          ctx.ds.metricFindQuery(query).then((args: any) => {
+          ctx.ds.metricFindQuery(query).then(args => {
             scenario.result = args;
           });
         });
@@ -486,7 +483,7 @@ describe('CloudWatchDatasource', () => {
     });
   }
 
-  describeMetricFindQuery('regions()', (scenario: any) => {
+  describeMetricFindQuery('regions()', scenario => {
     scenario.setup(() => {
       scenario.requestResponse = {
         results: {
@@ -504,7 +501,7 @@ describe('CloudWatchDatasource', () => {
     });
   });
 
-  describeMetricFindQuery('namespaces()', (scenario: any) => {
+  describeMetricFindQuery('namespaces()', scenario => {
     scenario.setup(() => {
       scenario.requestResponse = {
         results: {
@@ -522,7 +519,7 @@ describe('CloudWatchDatasource', () => {
     });
   });
 
-  describeMetricFindQuery('metrics(AWS/EC2)', (scenario: any) => {
+  describeMetricFindQuery('metrics(AWS/EC2)', scenario => {
     scenario.setup(() => {
       scenario.requestResponse = {
         results: {
@@ -540,7 +537,7 @@ describe('CloudWatchDatasource', () => {
     });
   });
 
-  describeMetricFindQuery('dimension_keys(AWS/EC2)', (scenario: any) => {
+  describeMetricFindQuery('dimension_keys(AWS/EC2)', scenario => {
     scenario.setup(() => {
       scenario.requestResponse = {
         results: {
@@ -558,7 +555,7 @@ describe('CloudWatchDatasource', () => {
     });
   });
 
-  describeMetricFindQuery('dimension_values(us-east-1,AWS/EC2,CPUUtilization,InstanceId)', (scenario: any) => {
+  describeMetricFindQuery('dimension_values(us-east-1,AWS/EC2,CPUUtilization,InstanceId)', scenario => {
     scenario.setup(() => {
       scenario.requestResponse = {
         results: {
@@ -576,7 +573,7 @@ describe('CloudWatchDatasource', () => {
     });
   });
 
-  describeMetricFindQuery('dimension_values(default,AWS/EC2,CPUUtilization,InstanceId)', (scenario: any) => {
+  describeMetricFindQuery('dimension_values(default,AWS/EC2,CPUUtilization,InstanceId)', scenario => {
     scenario.setup(() => {
       scenario.requestResponse = {
         results: {
@@ -594,7 +591,7 @@ describe('CloudWatchDatasource', () => {
     });
   });
 
-  describeMetricFindQuery('resource_arns(default,ec2:instance,{"environment":["production"]})', (scenario: any) => {
+  describeMetricFindQuery('resource_arns(default,ec2:instance,{"environment":["production"]})', scenario => {
     scenario.setup(() => {
       scenario.requestResponse = {
         results: {

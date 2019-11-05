@@ -13,14 +13,15 @@ weight = 2
 
 # Installing on RPM-based Linux (CentOS, Fedora, OpenSuse, RedHat)
 
-Read [Upgrading Grafana]({{< relref "installation/upgrading.md" >}}) for tips and guidance on updating an existing
-installation.
+Description | Download
+------------ | -------------
+Stable for CentOS / Fedora / OpenSuse / Redhat Linux | [x86-64](https://grafana.com/grafana/download?platform=linux)
+Stable for CentOS / Fedora / OpenSuse / Redhat Linux | [ARM64](https://grafana.com/grafana/download?platform=arm)
+Stable for CentOS / Fedora / OpenSuse / Redhat Linux | [ARMv7](https://grafana.com/grafana/download?platform=arm)
 
-## Download
+Read [Upgrading Grafana]({{< relref "installation/upgrading.md" >}}) for tips and guidance on updating an existing installation.
 
-Go to the [download page](https://grafana.com/grafana/download?platform=linux) for the latest download
-links.
-
+## Install Stable
 
 You can install Grafana using Yum directly.
 
@@ -28,12 +29,22 @@ You can install Grafana using Yum directly.
 $ sudo yum install <rpm package url>
 ```
 
-You will find package urls on the [download page](https://grafana.com/grafana/download?platform=linux).
+Example:
+
+```bash
+$ sudo yum install https://dl.grafana.com/oss/release/grafana-5.4.2-1.x86_64.rpm
+```
 
 Or install manually using `rpm`. First execute
 
 ```bash
 $ wget <rpm package url>
+```
+
+Example:
+
+```bash
+$ wget https://dl.grafana.com/oss/release/grafana-5.4.2-1.x86_64.rpm
 ```
 
 ### On CentOS / Fedora / Redhat:

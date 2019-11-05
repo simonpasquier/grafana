@@ -1,8 +1,8 @@
+import moment from 'moment';
 import _ from 'lodash';
-import { dateTime } from '@grafana/data';
 
 export default class ResponseParser {
-  constructor(private results: any) {}
+  constructor(private results) {}
 
   parseQueryResult() {
     let data: any = [];
@@ -27,17 +27,17 @@ export default class ResponseParser {
     return data;
   }
 
-  parseRawQueryResultRow(query: any, columns: any, rows: any, xaxis: string, yaxises: string, spliton: string) {
+  parseRawQueryResultRow(query: any, columns, rows, xaxis: string, yaxises: string, spliton: string) {
     const data: any[] = [];
     const columnsForDropdown = _.map(columns, column => ({ text: column.ColumnName, value: column.ColumnName }));
 
-    const xaxisColumn = columns.findIndex((column: any) => column.ColumnName === xaxis);
+    const xaxisColumn = columns.findIndex(column => column.ColumnName === xaxis);
     const yaxisesSplit = yaxises.split(',');
-    const yaxisColumns: any = {};
+    const yaxisColumns = {};
     _.forEach(yaxisesSplit, yaxis => {
-      yaxisColumns[yaxis] = columns.findIndex((column: any) => column.ColumnName === yaxis);
+      yaxisColumns[yaxis] = columns.findIndex(column => column.ColumnName === yaxis);
     });
-    const splitonColumn = columns.findIndex((column: any) => column.ColumnName === spliton);
+    const splitonColumn = columns.findIndex(column => column.ColumnName === spliton);
     const convertTimestamp = xaxis === 'timestamp';
 
     _.forEach(rows, row => {
@@ -57,7 +57,7 @@ export default class ResponseParser {
     return data;
   }
 
-  parseQueryResultRow(query: any, value: any, alias: string) {
+  parseQueryResultRow(query: any, value, alias: string) {
     const data: any[] = [];
 
     if (ResponseParser.isSingleValue(value)) {
@@ -108,7 +108,7 @@ export default class ResponseParser {
     return data;
   }
 
-  getTargetName(segment: { [x: string]: string }, alias: string) {
+  getTargetName(segment, alias: string) {
     let metric = '';
     let segmentName = '';
     let segmentValue = '';
@@ -141,11 +141,11 @@ export default class ResponseParser {
     return metric + `{${segmentName}="${segmentValue}"}`;
   }
 
-  static isSingleValue(value: any) {
+  static isSingleValue(value) {
     return !ResponseParser.hasSegmentsField(value);
   }
 
-  static findOrCreateBucket(data: any[], target: string) {
+  static findOrCreateBucket(data, target) {
     let dataTarget: any = _.find(data, ['target', target]);
     if (!dataTarget) {
       dataTarget = { target: target, datapoints: [] };
@@ -155,12 +155,12 @@ export default class ResponseParser {
     return dataTarget;
   }
 
-  static hasSegmentsField(obj: any) {
+  static hasSegmentsField(obj) {
     const keys = _.keys(obj);
     return _.indexOf(keys, 'segments') > -1;
   }
 
-  static getMetricFieldKey(segment: { [x: string]: any }) {
+  static getMetricFieldKey(segment) {
     const keys = _.keys(segment);
 
     return _.filter(_.without(keys, 'start', 'end'), key => {
@@ -168,16 +168,16 @@ export default class ResponseParser {
     })[0];
   }
 
-  static getKeyForAggregationField(dataObj: any): string {
+  static getKeyForAggregationField(dataObj): string {
     const keys = _.keys(dataObj);
     return _.intersection(keys, ['sum', 'avg', 'min', 'max', 'count', 'unique'])[0];
   }
 
-  static dateTimeToEpoch(dateTimeValue: any) {
-    return dateTime(dateTimeValue).valueOf();
+  static dateTimeToEpoch(dateTime) {
+    return moment(dateTime).valueOf();
   }
 
-  static parseMetricNames(result: { data: { metrics: any } }) {
+  static parseMetricNames(result) {
     const keys = _.keys(result.data.metrics);
 
     return ResponseParser.toTextValueList(keys);
@@ -202,7 +202,7 @@ export default class ResponseParser {
   }
 
   parseQuerySchema() {
-    const result: any = {
+    const result = {
       Type: 'AppInsights',
       Tables: {},
     };
@@ -225,7 +225,7 @@ export default class ResponseParser {
     return result;
   }
 
-  static toTextValueList(values: any) {
+  static toTextValueList(values) {
     const list: any[] = [];
     for (let i = 0; i < values.length; i++) {
       list.push({

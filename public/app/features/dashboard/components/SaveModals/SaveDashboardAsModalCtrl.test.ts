@@ -2,14 +2,14 @@ import { SaveDashboardAsModalCtrl } from './SaveDashboardAsModalCtrl';
 import { describe, it, expect } from 'test/lib/common';
 
 describe('saving dashboard as', () => {
-  function scenario(name: string, panel: any, verify: Function) {
+  function scenario(name, panel, verify) {
     describe(name, () => {
       const json = {
         title: 'name',
         panels: [panel],
       };
 
-      const mockDashboardSrv: any = {
+      const mockDashboardSrv = {
         getCurrent: () => {
           return {
             id: 5,
@@ -34,7 +34,7 @@ describe('saving dashboard as', () => {
     });
   }
 
-  scenario('default values', {}, (ctx: any) => {
+  scenario('default values', {}, ctx => {
     const clone = ctx.clone;
     expect(clone.id).toBe(null);
     expect(clone.title).toBe('name Copy');
@@ -49,23 +49,19 @@ describe('saving dashboard as', () => {
     thresholds: { value: 3000 },
   };
 
-  scenario('should remove alert from graph panel', graphPanel, (ctx: any) => {
+  scenario('should remove alert from graph panel', graphPanel, ctx => {
     expect(ctx.panel.alert).toBe(undefined);
   });
 
-  scenario('should remove threshold from graph panel', graphPanel, (ctx: any) => {
+  scenario('should remove threshold from graph panel', graphPanel, ctx => {
     expect(ctx.panel.thresholds).toBe(undefined);
   });
 
-  scenario(
-    'singlestat should keep threshold',
-    { id: 1, type: 'singlestat', thresholds: { value: 3000 } },
-    (ctx: any) => {
-      expect(ctx.panel.thresholds).not.toBe(undefined);
-    }
-  );
+  scenario('singlestat should keep threshold', { id: 1, type: 'singlestat', thresholds: { value: 3000 } }, ctx => {
+    expect(ctx.panel.thresholds).not.toBe(undefined);
+  });
 
-  scenario('table should keep threshold', { id: 1, type: 'table', thresholds: { value: 3000 } }, (ctx: any) => {
+  scenario('table should keep threshold', { id: 1, type: 'table', thresholds: { value: 3000 } }, ctx => {
     expect(ctx.panel.thresholds).not.toBe(undefined);
   });
 });

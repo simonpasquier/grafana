@@ -9,6 +9,10 @@ export interface GaugeOptions extends SingleStatBaseOptions {
 
 export const standardGaugeFieldOptions: FieldDisplayOptions = {
   ...standardFieldDisplayOptions,
+  defaults: {
+    min: 0,
+    max: 100,
+  },
 };
 
 export const defaults: GaugeOptions = {

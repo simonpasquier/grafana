@@ -1,4 +1,3 @@
-// @ts-ignore
 import configureMockStore from 'redux-mock-store';
 import { PlaylistSrv } from '../playlist_srv';
 import { setStore } from 'app/store/store';

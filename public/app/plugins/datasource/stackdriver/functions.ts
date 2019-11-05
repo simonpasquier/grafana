@@ -1,24 +1,17 @@
 import uniqBy from 'lodash/uniqBy';
-import { alignOptions, aggOptions, ValueTypes, MetricKind } from './constants';
-import { TemplateSrv } from 'app/features/templating/template_srv';
-import { StackdriverQuery } from './types';
+import { alignOptions, aggOptions } from './constants';
 
-export const extractServicesFromMetricDescriptors = (metricDescriptors: any) => uniqBy(metricDescriptors, 'service');
+export const extractServicesFromMetricDescriptors = metricDescriptors => uniqBy(metricDescriptors, 'service');
 
-export const getMetricTypesByService = (metricDescriptors: any, service: any) =>
-  metricDescriptors.filter((m: any) => m.service === service);
+export const getMetricTypesByService = (metricDescriptors, service) =>
+  metricDescriptors.filter(m => m.service === service);
 
-export const getMetricTypes = (
-  metricDescriptors: any[],
-  metricType: string,
-  interpolatedMetricType: any,
-  selectedService: any
-) => {
-  const metricTypes = getMetricTypesByService(metricDescriptors, selectedService).map((m: any) => ({
+export const getMetricTypes = (metricDescriptors, metricType, interpolatedMetricType, selectedService) => {
+  const metricTypes = getMetricTypesByService(metricDescriptors, selectedService).map(m => ({
     value: m.type,
     name: m.displayName,
   }));
-  const metricTypeExistInArray = metricTypes.some((m: any) => m.value === interpolatedMetricType);
+  const metricTypeExistInArray = metricTypes.some(m => m.value === interpolatedMetricType);
   const selectedMetricType = metricTypeExistInArray ? metricType : metricTypes[0].value;
   return {
     metricTypes,
@@ -26,7 +19,7 @@ export const getMetricTypes = (
   };
 };
 
-export const getAlignmentOptionsByMetric = (metricValueType: any, metricKind: any) => {
+export const getAlignmentOptionsByMetric = (metricValueType, metricKind) => {
   return !metricValueType
     ? []
     : alignOptions.filter(i => {
@@ -34,7 +27,7 @@ export const getAlignmentOptionsByMetric = (metricValueType: any, metricKind: an
       });
 };
 
-export const getAggregationOptionsByMetric = (valueType: ValueTypes, metricKind: MetricKind) => {
+export const getAggregationOptionsByMetric = (valueType, metricKind) => {
   return !metricKind
     ? []
     : aggOptions.filter(i => {
@@ -42,7 +35,7 @@ export const getAggregationOptionsByMetric = (valueType: ValueTypes, metricKind:
       });
 };
 
-export const getLabelKeys = async (datasource: any, selectedMetricType: any) => {
+export const getLabelKeys = async (datasource, selectedMetricType) => {
   const refId = 'handleLabelKeysQuery';
   const response = await datasource.getLabels(selectedMetricType, refId);
   const labelKeys = response.meta
@@ -54,10 +47,7 @@ export const getLabelKeys = async (datasource: any, selectedMetricType: any) => 
   return labelKeys;
 };
 
-export const getAlignmentPickerData = (
-  { valueType, metricKind, perSeriesAligner }: Partial<StackdriverQuery>,
-  templateSrv: TemplateSrv
-) => {
+export const getAlignmentPickerData = ({ valueType, metricKind, perSeriesAligner }, templateSrv) => {
   const options = getAlignmentOptionsByMetric(valueType, metricKind).map(option => ({
     ...option,
     label: option.text,

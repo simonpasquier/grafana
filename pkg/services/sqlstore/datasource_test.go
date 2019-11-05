@@ -5,7 +5,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/grafana/grafana/pkg/models"
+	m "github.com/grafana/grafana/pkg/models"
 )
 
 type Test struct {
@@ -17,11 +17,11 @@ func TestDataAccess(t *testing.T) {
 	Convey("Testing DB", t, func() {
 		InitTestDB(t)
 		Convey("Can add datasource", func() {
-			err := AddDataSource(&models.AddDataSourceCommand{
+			err := AddDataSource(&m.AddDataSourceCommand{
 				OrgId:    10,
 				Name:     "laban",
-				Type:     models.DS_INFLUXDB,
-				Access:   models.DS_ACCESS_DIRECT,
+				Type:     m.DS_INFLUXDB,
+				Access:   m.DS_ACCESS_DIRECT,
 				Url:      "http://test",
 				Database: "site",
 				ReadOnly: true,
@@ -29,7 +29,7 @@ func TestDataAccess(t *testing.T) {
 
 			So(err, ShouldBeNil)
 
-			query := models.GetDataSourcesQuery{OrgId: 10}
+			query := m.GetDataSourcesQuery{OrgId: 10}
 			err = GetDataSources(&query)
 			So(err, ShouldBeNil)
 
@@ -43,28 +43,28 @@ func TestDataAccess(t *testing.T) {
 		})
 
 		Convey("Given a datasource", func() {
-			err := AddDataSource(&models.AddDataSourceCommand{
+			err := AddDataSource(&m.AddDataSourceCommand{
 				OrgId:  10,
 				Name:   "nisse",
-				Type:   models.DS_GRAPHITE,
-				Access: models.DS_ACCESS_DIRECT,
+				Type:   m.DS_GRAPHITE,
+				Access: m.DS_ACCESS_DIRECT,
 				Url:    "http://test",
 			})
 			So(err, ShouldBeNil)
 
-			query := models.GetDataSourcesQuery{OrgId: 10}
+			query := m.GetDataSourcesQuery{OrgId: 10}
 			err = GetDataSources(&query)
 			So(err, ShouldBeNil)
 
 			ds := query.Result[0]
 
 			Convey(" updated ", func() {
-				cmd := &models.UpdateDataSourceCommand{
+				cmd := &m.UpdateDataSourceCommand{
 					Id:      ds.Id,
 					OrgId:   10,
 					Name:    "nisse",
-					Type:    models.DS_GRAPHITE,
-					Access:  models.DS_ACCESS_PROXY,
+					Type:    m.DS_GRAPHITE,
+					Access:  m.DS_ACCESS_PROXY,
 					Url:     "http://test",
 					Version: ds.Version,
 				}
@@ -75,27 +75,27 @@ func TestDataAccess(t *testing.T) {
 				})
 
 				Convey("when someone else updated between read and update", func() {
-					query := models.GetDataSourcesQuery{OrgId: 10}
+					query := m.GetDataSourcesQuery{OrgId: 10}
 					err = GetDataSources(&query)
 					So(err, ShouldBeNil)
 
 					ds := query.Result[0]
-					intendedUpdate := &models.UpdateDataSourceCommand{
+					intendedUpdate := &m.UpdateDataSourceCommand{
 						Id:      ds.Id,
 						OrgId:   10,
 						Name:    "nisse",
-						Type:    models.DS_GRAPHITE,
-						Access:  models.DS_ACCESS_PROXY,
+						Type:    m.DS_GRAPHITE,
+						Access:  m.DS_ACCESS_PROXY,
 						Url:     "http://test",
 						Version: ds.Version,
 					}
 
-					updateFromOtherUser := &models.UpdateDataSourceCommand{
+					updateFromOtherUser := &m.UpdateDataSourceCommand{
 						Id:      ds.Id,
 						OrgId:   10,
 						Name:    "nisse",
-						Type:    models.DS_GRAPHITE,
-						Access:  models.DS_ACCESS_PROXY,
+						Type:    m.DS_GRAPHITE,
+						Access:  m.DS_ACCESS_PROXY,
 						Url:     "http://test",
 						Version: ds.Version,
 					}
@@ -108,12 +108,12 @@ func TestDataAccess(t *testing.T) {
 				})
 
 				Convey("updating datasource without version", func() {
-					cmd := &models.UpdateDataSourceCommand{
+					cmd := &m.UpdateDataSourceCommand{
 						Id:     ds.Id,
 						OrgId:  10,
 						Name:   "nisse",
-						Type:   models.DS_GRAPHITE,
-						Access: models.DS_ACCESS_PROXY,
+						Type:   m.DS_GRAPHITE,
+						Access: m.DS_ACCESS_PROXY,
 						Url:    "http://test",
 					}
 
@@ -124,12 +124,12 @@ func TestDataAccess(t *testing.T) {
 				})
 
 				Convey("updating datasource without higher version", func() {
-					cmd := &models.UpdateDataSourceCommand{
+					cmd := &m.UpdateDataSourceCommand{
 						Id:      ds.Id,
 						OrgId:   10,
 						Name:    "nisse",
-						Type:    models.DS_GRAPHITE,
-						Access:  models.DS_ACCESS_PROXY,
+						Type:    m.DS_GRAPHITE,
+						Access:  m.DS_ACCESS_PROXY,
 						Url:     "http://test",
 						Version: 90000,
 					}
@@ -142,7 +142,7 @@ func TestDataAccess(t *testing.T) {
 			})
 
 			Convey("Can delete datasource by id", func() {
-				err := DeleteDataSourceById(&models.DeleteDataSourceByIdCommand{Id: ds.Id, OrgId: ds.OrgId})
+				err := DeleteDataSourceById(&m.DeleteDataSourceByIdCommand{Id: ds.Id, OrgId: ds.OrgId})
 				So(err, ShouldBeNil)
 
 				GetDataSources(&query)
@@ -150,7 +150,7 @@ func TestDataAccess(t *testing.T) {
 			})
 
 			Convey("Can delete datasource by name", func() {
-				err := DeleteDataSourceByName(&models.DeleteDataSourceByNameCommand{Name: ds.Name, OrgId: ds.OrgId})
+				err := DeleteDataSourceByName(&m.DeleteDataSourceByNameCommand{Name: ds.Name, OrgId: ds.OrgId})
 				So(err, ShouldBeNil)
 
 				GetDataSources(&query)
@@ -158,7 +158,7 @@ func TestDataAccess(t *testing.T) {
 			})
 
 			Convey("Can not delete datasource with wrong orgId", func() {
-				err := DeleteDataSourceById(&models.DeleteDataSourceByIdCommand{Id: ds.Id, OrgId: 123123})
+				err := DeleteDataSourceById(&m.DeleteDataSourceByIdCommand{Id: ds.Id, OrgId: 123123})
 				So(err, ShouldBeNil)
 
 				GetDataSources(&query)

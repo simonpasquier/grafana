@@ -1,7 +1,6 @@
 package remotecache
 
 import (
-	"crypto/tls"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,7 +8,7 @@ import (
 
 	"github.com/grafana/grafana/pkg/setting"
 	"github.com/grafana/grafana/pkg/util/errutil"
-	redis "gopkg.in/redis.v5"
+	redis "gopkg.in/redis.v2"
 )
 
 const redisCacheType = "redis"
@@ -22,14 +21,9 @@ type redisStorage struct {
 func parseRedisConnStr(connStr string) (*redis.Options, error) {
 	keyValueCSV := strings.Split(connStr, ",")
 	options := &redis.Options{Network: "tcp"}
-	setTLSIsTrue := false
 	for _, rawKeyValue := range keyValueCSV {
-		keyValueTuple := strings.SplitN(rawKeyValue, "=", 2)
+		keyValueTuple := strings.Split(rawKeyValue, "=")
 		if len(keyValueTuple) != 2 {
-			if strings.HasPrefix(rawKeyValue, "password") {
-				// don't log the password
-				rawKeyValue = "password******"
-			}
 			return nil, fmt.Errorf("incorrect redis connection string format detected for '%v', format is key=value,key=value", rawKeyValue)
 		}
 		connKey := keyValueTuple[0]
@@ -40,7 +34,7 @@ func parseRedisConnStr(connStr string) (*redis.Options, error) {
 		case "password":
 			options.Password = connVal
 		case "db":
-			i, err := strconv.Atoi(connVal)
+			i, err := strconv.ParseInt(connVal, 10, 64)
 			if err != nil {
 				return nil, errutil.Wrap("value for db in redis connection string must be a number", err)
 			}
@@ -51,27 +45,9 @@ func parseRedisConnStr(connStr string) (*redis.Options, error) {
 				return nil, errutil.Wrap("value for pool_size in redis connection string must be a number", err)
 			}
 			options.PoolSize = i
-		case "ssl":
-			if connVal != "true" && connVal != "false" && connVal != "insecure" {
-				return nil, fmt.Errorf("ssl must be set to 'true', 'false', or 'insecure' when present")
-			}
-			if connVal == "true" {
-				setTLSIsTrue = true // Needs addr already parsed, so set later
-			}
-			if connVal == "insecure" {
-				options.TLSConfig = &tls.Config{InsecureSkipVerify: true}
-			}
 		default:
-			return nil, fmt.Errorf("unrecognized option '%v' in redis connection string", connKey)
+			return nil, fmt.Errorf("unrecorgnized option '%v' in redis connection string", connVal)
 		}
-	}
-	if setTLSIsTrue {
-		// Get hostname from the Addr property and set it on the configuration for TLS
-		sp := strings.Split(options.Addr, ":")
-		if len(sp) < 1 {
-			return nil, fmt.Errorf("unable to get hostname from the addr field, expected host:port, got '%v'", options.Addr)
-		}
-		options.TLSConfig = &tls.Config{ServerName: sp[0]}
 	}
 	return options, nil
 }
@@ -91,7 +67,7 @@ func (s *redisStorage) Set(key string, val interface{}, expires time.Duration) e
 	if err != nil {
 		return err
 	}
-	status := s.c.Set(key, string(value), expires)
+	status := s.c.SetEx(key, expires, string(value))
 	return status.Err()
 }
 
@@ -105,10 +81,16 @@ func (s *redisStorage) Get(key string) (interface{}, error) {
 	if err == nil {
 		return item.Val, nil
 	}
+
 	if err.Error() == "EOF" {
 		return nil, ErrCacheItemNotFound
 	}
-	return nil, err
+
+	if err != nil {
+		return nil, err
+	}
+
+	return item.Val, nil
 }
 
 // Delete delete a key from session.

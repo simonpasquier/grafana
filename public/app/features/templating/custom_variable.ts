@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import { Variable, assignModelProperties, variableTypes } from './variable';
-import { VariableSrv } from './variable_srv';
 
 export class CustomVariable implements Variable {
   query: string;
@@ -10,7 +9,7 @@ export class CustomVariable implements Variable {
   current: any;
   skipUrlSync: boolean;
 
-  defaults: any = {
+  defaults = {
     type: 'custom',
     name: '',
     label: '',
@@ -25,11 +24,11 @@ export class CustomVariable implements Variable {
   };
 
   /** @ngInject */
-  constructor(private model: any, private variableSrv: VariableSrv) {
+  constructor(private model, private variableSrv) {
     assignModelProperties(this, model, this.defaults);
   }
 
-  setValue(option: any) {
+  setValue(option) {
     return this.variableSrv.setOptionAsCurrent(this, option);
   }
 
@@ -56,11 +55,11 @@ export class CustomVariable implements Variable {
     this.options.unshift({ text: 'All', value: '$__all' });
   }
 
-  dependsOn(variable: any) {
+  dependsOn(variable) {
     return false;
   }
 
-  setValueFromUrl(urlValue: string[]) {
+  setValueFromUrl(urlValue) {
     return this.variableSrv.setOptionFromUrl(this, urlValue);
   }
 

@@ -6,7 +6,7 @@ import { TemplateSrv } from 'app/features/templating/template_srv';
 import StackdriverDatasource from '../datasource';
 import { Metrics } from './Metrics';
 import { Filter } from './Filter';
-import { AnnotationTarget, MetricDescriptor } from '../types';
+import { AnnotationTarget } from '../types';
 import { AnnotationsHelp } from './AnnotationsHelp';
 
 export interface Props {
@@ -40,7 +40,7 @@ export class AnnotationQueryEditor extends React.Component<Props, State> {
     });
   }
 
-  onMetricTypeChange = ({ valueType, metricKind, type, unit }: MetricDescriptor) => {
+  onMetricTypeChange = ({ valueType, metricKind, type, unit }) => {
     const { onQueryChange } = this.props;
     this.setState(
       {
@@ -55,7 +55,7 @@ export class AnnotationQueryEditor extends React.Component<Props, State> {
     );
   };
 
-  onChange(prop: string, value: string | string[]) {
+  onChange(prop, value) {
     this.setState({ [prop]: value }, () => {
       this.props.onQueryChange(this.state);
     });

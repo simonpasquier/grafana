@@ -8,60 +8,53 @@ import (
 	"time"
 
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/models"
+	m "github.com/grafana/grafana/pkg/models"
 )
 
 var (
-	// ErrFrequencyCannotBeZeroOrLess frequency cannot be below zero
 	ErrFrequencyCannotBeZeroOrLess = errors.New(`"evaluate every" cannot be zero or below`)
-
-	// ErrFrequencyCouldNotBeParsed frequency cannot be parsed
-	ErrFrequencyCouldNotBeParsed = errors.New(`"evaluate every" field could not be parsed`)
+	ErrFrequencyCouldNotBeParsed   = errors.New(`"evaluate every" field could not be parsed`)
 )
 
-// Rule is the in-memory version of an alert rule.
 type Rule struct {
-	ID                  int64
-	OrgID               int64
-	DashboardID         int64
-	PanelID             int64
+	Id                  int64
+	OrgId               int64
+	DashboardId         int64
+	PanelId             int64
 	Frequency           int64
 	Name                string
 	Message             string
 	LastStateChange     time.Time
 	For                 time.Duration
-	NoDataState         models.NoDataOption
-	ExecutionErrorState models.ExecutionErrorOption
-	State               models.AlertStateType
+	NoDataState         m.NoDataOption
+	ExecutionErrorState m.ExecutionErrorOption
+	State               m.AlertStateType
 	Conditions          []Condition
 	Notifications       []string
-	AlertRuleTags       []*models.Tag
 
 	StateChanges int64
 }
 
-// ValidationError is a typed error with meta data
-// about the validation error.
 type ValidationError struct {
 	Reason      string
 	Err         error
-	AlertID     int64
-	DashboardID int64
-	PanelID     int64
+	Alertid     int64
+	DashboardId int64
+	PanelId     int64
 }
 
 func (e ValidationError) Error() string {
 	extraInfo := e.Reason
-	if e.AlertID != 0 {
-		extraInfo = fmt.Sprintf("%s AlertId: %v", extraInfo, e.AlertID)
+	if e.Alertid != 0 {
+		extraInfo = fmt.Sprintf("%s AlertId: %v", extraInfo, e.Alertid)
 	}
 
-	if e.PanelID != 0 {
-		extraInfo = fmt.Sprintf("%s PanelId: %v", extraInfo, e.PanelID)
+	if e.PanelId != 0 {
+		extraInfo = fmt.Sprintf("%s PanelId: %v", extraInfo, e.PanelId)
 	}
 
-	if e.DashboardID != 0 {
-		extraInfo = fmt.Sprintf("%s DashboardId: %v", extraInfo, e.DashboardID)
+	if e.DashboardId != 0 {
+		extraInfo = fmt.Sprintf("%s DashboardId: %v", extraInfo, e.DashboardId)
 	}
 
 	if e.Err != nil {
@@ -72,8 +65,8 @@ func (e ValidationError) Error() string {
 }
 
 var (
-	valueFormatRegex = regexp.MustCompile(`^\d+`)
-	unitFormatRegex  = regexp.MustCompile(`\w{1}$`)
+	ValueFormatRegex = regexp.MustCompile(`^\d+`)
+	UnitFormatRegex  = regexp.MustCompile(`\w{1}$`)
 )
 
 var unitMultiplier = map[string]int{
@@ -86,7 +79,7 @@ var unitMultiplier = map[string]int{
 func getTimeDurationStringToSeconds(str string) (int64, error) {
 	multiplier := 1
 
-	matches := valueFormatRegex.FindAllString(str, 1)
+	matches := ValueFormatRegex.FindAllString(str, 1)
 
 	if len(matches) <= 0 {
 		return 0, ErrFrequencyCouldNotBeParsed
@@ -101,7 +94,7 @@ func getTimeDurationStringToSeconds(str string) (int64, error) {
 		return 0, ErrFrequencyCannotBeZeroOrLess
 	}
 
-	unit := unitFormatRegex.FindAllString(str, 1)[0]
+	unit := UnitFormatRegex.FindAllString(str, 1)[0]
 
 	if val, ok := unitMultiplier[unit]; ok {
 		multiplier = val
@@ -110,21 +103,19 @@ func getTimeDurationStringToSeconds(str string) (int64, error) {
 	return int64(value * multiplier), nil
 }
 
-// NewRuleFromDBAlert mappes an db version of
-// alert to an in-memory version.
-func NewRuleFromDBAlert(ruleDef *models.Alert) (*Rule, error) {
+func NewRuleFromDBAlert(ruleDef *m.Alert) (*Rule, error) {
 	model := &Rule{}
-	model.ID = ruleDef.Id
-	model.OrgID = ruleDef.OrgId
-	model.DashboardID = ruleDef.DashboardId
-	model.PanelID = ruleDef.PanelId
+	model.Id = ruleDef.Id
+	model.OrgId = ruleDef.OrgId
+	model.DashboardId = ruleDef.DashboardId
+	model.PanelId = ruleDef.PanelId
 	model.Name = ruleDef.Name
 	model.Message = ruleDef.Message
 	model.State = ruleDef.State
 	model.LastStateChange = ruleDef.NewStateDate
 	model.For = ruleDef.For
-	model.NoDataState = models.NoDataOption(ruleDef.Settings.Get("noDataState").MustString("no_data"))
-	model.ExecutionErrorState = models.ExecutionErrorOption(ruleDef.Settings.Get("executionErrorState").MustString("alerting"))
+	model.NoDataState = m.NoDataOption(ruleDef.Settings.Get("noDataState").MustString("no_data"))
+	model.ExecutionErrorState = m.ExecutionErrorOption(ruleDef.Settings.Get("executionErrorState").MustString("alerting"))
 	model.StateChanges = ruleDef.StateChanges
 
 	model.Frequency = ruleDef.Frequency
@@ -141,23 +132,22 @@ func NewRuleFromDBAlert(ruleDef *models.Alert) (*Rule, error) {
 		} else {
 			uid, err := jsonModel.Get("uid").String()
 			if err != nil {
-				return nil, ValidationError{Reason: "Neither id nor uid is specified in 'notifications' block, " + err.Error(), DashboardID: model.DashboardID, AlertID: model.ID, PanelID: model.PanelID}
+				return nil, ValidationError{Reason: "Neither id nor uid is specified, " + err.Error(), DashboardId: model.DashboardId, Alertid: model.Id, PanelId: model.PanelId}
 			}
 			model.Notifications = append(model.Notifications, uid)
 		}
 	}
-	model.AlertRuleTags = ruleDef.GetTagsFromSettings()
 
 	for index, condition := range ruleDef.Settings.Get("conditions").MustArray() {
 		conditionModel := simplejson.NewFromAny(condition)
 		conditionType := conditionModel.Get("type").MustString()
 		factory, exist := conditionFactories[conditionType]
 		if !exist {
-			return nil, ValidationError{Reason: "Unknown alert condition: " + conditionType, DashboardID: model.DashboardID, AlertID: model.ID, PanelID: model.PanelID}
+			return nil, ValidationError{Reason: "Unknown alert condition: " + conditionType, DashboardId: model.DashboardId, Alertid: model.Id, PanelId: model.PanelId}
 		}
 		queryCondition, err := factory(conditionModel, index)
 		if err != nil {
-			return nil, ValidationError{Err: err, DashboardID: model.DashboardID, AlertID: model.ID, PanelID: model.PanelID}
+			return nil, ValidationError{Err: err, DashboardId: model.DashboardId, Alertid: model.Id, PanelId: model.PanelId}
 		}
 		model.Conditions = append(model.Conditions, queryCondition)
 	}
@@ -169,12 +159,10 @@ func NewRuleFromDBAlert(ruleDef *models.Alert) (*Rule, error) {
 	return model, nil
 }
 
-// ConditionFactory is the function signature for creating `Conditions`.
 type ConditionFactory func(model *simplejson.Json, index int) (Condition, error)
 
 var conditionFactories = make(map[string]ConditionFactory)
 
-// RegisterCondition adds support for alerting conditions.
 func RegisterCondition(typeName string, factory ConditionFactory) {
 	conditionFactories[typeName] = factory
 }

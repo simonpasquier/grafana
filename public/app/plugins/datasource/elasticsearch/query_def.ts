@@ -128,7 +128,7 @@ export const movingAvgModelOptions = [
   { text: 'Holt Winters', value: 'holt_winters' },
 ];
 
-export const pipelineOptions: any = {
+export const pipelineOptions = {
   moving_avg: [
     { text: 'window', default: 5 },
     { text: 'model', default: 'simple' },
@@ -139,7 +139,7 @@ export const pipelineOptions: any = {
   bucket_script: [],
 };
 
-export const movingAvgModelSettings: any = {
+export const movingAvgModelSettings = {
   simple: [],
   linear: [],
   ewma: [{ text: 'Alpha', value: 'alpha', default: undefined }],
@@ -153,7 +153,7 @@ export const movingAvgModelSettings: any = {
   ],
 };
 
-export function getMetricAggTypes(esVersion: any) {
+export function getMetricAggTypes(esVersion) {
   return _.filter(metricAggTypes, f => {
     if (f.minVersion) {
       return f.minVersion <= esVersion;
@@ -163,7 +163,7 @@ export function getMetricAggTypes(esVersion: any) {
   });
 }
 
-export function getPipelineOptions(metric: any) {
+export function getPipelineOptions(metric) {
   if (!isPipelineAgg(metric.type)) {
     return [];
   }
@@ -171,7 +171,7 @@ export function getPipelineOptions(metric: any) {
   return pipelineOptions[metric.type];
 }
 
-export function isPipelineAgg(metricType: any) {
+export function isPipelineAgg(metricType) {
   if (metricType) {
     const po = pipelineOptions[metricType];
     return po !== null && po !== undefined;
@@ -180,7 +180,7 @@ export function isPipelineAgg(metricType: any) {
   return false;
 }
 
-export function isPipelineAggWithMultipleBucketPaths(metricType: any) {
+export function isPipelineAggWithMultipleBucketPaths(metricType) {
   if (metricType) {
     return metricAggTypes.find(t => t.value === metricType && t.supportsMultipleBucketPaths) !== undefined;
   }
@@ -188,8 +188,8 @@ export function isPipelineAggWithMultipleBucketPaths(metricType: any) {
   return false;
 }
 
-export function getPipelineAggOptions(targets: any) {
-  const result: any[] = [];
+export function getPipelineAggOptions(targets) {
+  const result = [];
   _.each(targets.metrics, metric => {
     if (!isPipelineAgg(metric.type)) {
       result.push({ text: describeMetric(metric), value: metric.id });
@@ -199,8 +199,8 @@ export function getPipelineAggOptions(targets: any) {
   return result;
 }
 
-export function getMovingAvgSettings(model: any, filtered: boolean) {
-  const filteredResult: any[] = [];
+export function getMovingAvgSettings(model, filtered) {
+  const filteredResult = [];
   if (filtered) {
     _.each(movingAvgModelSettings[model], setting => {
       if (!setting.isCheckbox) {
@@ -212,8 +212,8 @@ export function getMovingAvgSettings(model: any, filtered: boolean) {
   return movingAvgModelSettings[model];
 }
 
-export function getOrderByOptions(target: any) {
-  const metricRefs: any[] = [];
+export function getOrderByOptions(target) {
+  const metricRefs = [];
   _.each(target.metrics, metric => {
     if (metric.type !== 'count') {
       metricRefs.push({ text: describeMetric(metric), value: metric.id });
@@ -223,12 +223,12 @@ export function getOrderByOptions(target: any) {
   return orderByOptions.concat(metricRefs);
 }
 
-export function describeOrder(order: string) {
+export function describeOrder(order) {
   const def: any = _.find(orderOptions, { value: order });
   return def.text;
 }
 
-export function describeMetric(metric: { type: string; field: string }) {
+export function describeMetric(metric) {
   const def: any = _.find(metricAggTypes, { value: metric.type });
   if (!def.requiresField && !isPipelineAgg(metric.type)) {
     return def.text;
@@ -236,7 +236,7 @@ export function describeMetric(metric: { type: string; field: string }) {
   return def.text + ' ' + metric.field;
 }
 
-export function describeOrderBy(orderBy: any, target: any) {
+export function describeOrderBy(orderBy, target) {
   const def: any = _.find(orderByOptions, { value: orderBy });
   if (def) {
     return def.text;

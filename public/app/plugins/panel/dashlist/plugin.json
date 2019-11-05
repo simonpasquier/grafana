@@ -3,7 +3,7 @@
   "name": "Dashboard list",
   "id": "dashlist",
 
-  "skipDataQuery": true,
+  "dataFormats": [],
 
   "info": {
     "description": "List of dynamic links to other dashboards",

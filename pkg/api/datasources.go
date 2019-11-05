@@ -231,6 +231,7 @@ func GetDataSourceByName(c *m.ReqContext) Response {
 	}
 
 	dtos := convertModelToDtos(query.Result)
+	dtos.ReadOnly = true
 	return JSON(200, &dtos)
 }
 

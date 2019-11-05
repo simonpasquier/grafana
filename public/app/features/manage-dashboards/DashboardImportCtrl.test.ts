@@ -4,9 +4,9 @@ import config from 'app/core/config';
 describe('DashboardImportCtrl', () => {
   const ctx: any = {};
 
-  let navModelSrv: any;
-  let backendSrv: any;
-  let validationSrv: any;
+  let navModelSrv;
+  let backendSrv;
+  let validationSrv;
 
   beforeEach(() => {
     navModelSrv = {
@@ -23,7 +23,7 @@ describe('DashboardImportCtrl', () => {
       validateNewDashboardName: jest.fn().mockReturnValue(Promise.resolve()),
     };
 
-    ctx.ctrl = new DashboardImportCtrl(backendSrv, validationSrv, navModelSrv, {} as any, {} as any);
+    ctx.ctrl = new DashboardImportCtrl(backendSrv, validationSrv, navModelSrv, {}, {});
   });
 
   describe('when uploading json', () => {

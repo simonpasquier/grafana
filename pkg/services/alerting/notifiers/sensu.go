@@ -6,8 +6,8 @@ import (
 
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/log"
+	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 )
 
@@ -44,8 +44,7 @@ func init() {
 
 }
 
-// NewSensuNotifier is the constructor for the Sensu Notifier.
-func NewSensuNotifier(model *models.AlertNotification) (alerting.Notifier, error) {
+func NewSensuNotifier(model *m.AlertNotification) (alerting.Notifier, error) {
 	url := model.Settings.Get("url").MustString()
 	if url == "" {
 		return nil, alerting.ValidationError{Reason: "Could not find url property in settings"}
@@ -53,7 +52,7 @@ func NewSensuNotifier(model *models.AlertNotification) (alerting.Notifier, error
 
 	return &SensuNotifier{
 		NotifierBase: NewNotifierBase(model),
-		URL:          url,
+		Url:          url,
 		User:         model.Settings.Get("username").MustString(),
 		Source:       model.Settings.Get("source").MustString(),
 		Password:     model.Settings.Get("password").MustString(),
@@ -62,11 +61,9 @@ func NewSensuNotifier(model *models.AlertNotification) (alerting.Notifier, error
 	}, nil
 }
 
-// SensuNotifier is responsible for sending
-// alert notifications to Sensu.
 type SensuNotifier struct {
 	NotifierBase
-	URL      string
+	Url      string
 	Source   string
 	User     string
 	Password string
@@ -74,20 +71,19 @@ type SensuNotifier struct {
 	log      log.Logger
 }
 
-// Notify send alert notification to Sensu
-func (sn *SensuNotifier) Notify(evalContext *alerting.EvalContext) error {
-	sn.log.Info("Sending sensu result")
+func (this *SensuNotifier) Notify(evalContext *alerting.EvalContext) error {
+	this.log.Info("Sending sensu result")
 
 	bodyJSON := simplejson.New()
-	bodyJSON.Set("ruleId", evalContext.Rule.ID)
+	bodyJSON.Set("ruleId", evalContext.Rule.Id)
 	// Sensu alerts cannot have spaces in them
 	bodyJSON.Set("name", strings.Replace(evalContext.Rule.Name, " ", "_", -1))
 	// Sensu alerts require a source. We set it to the user-specified value (optional),
 	// else we fallback and use the grafana ruleID.
-	if sn.Source != "" {
-		bodyJSON.Set("source", sn.Source)
+	if this.Source != "" {
+		bodyJSON.Set("source", this.Source)
 	} else {
-		bodyJSON.Set("source", "grafana_rule_"+strconv.FormatInt(evalContext.Rule.ID, 10))
+		bodyJSON.Set("source", "grafana_rule_"+strconv.FormatInt(evalContext.Rule.Id, 10))
 	}
 	// Finally, sensu expects an output
 	// We set it to a default output
@@ -102,17 +98,17 @@ func (sn *SensuNotifier) Notify(evalContext *alerting.EvalContext) error {
 		bodyJSON.Set("status", 0)
 	}
 
-	if sn.Handler != "" {
-		bodyJSON.Set("handler", sn.Handler)
+	if this.Handler != "" {
+		bodyJSON.Set("handler", this.Handler)
 	}
 
-	ruleURL, err := evalContext.GetRuleURL()
+	ruleUrl, err := evalContext.GetRuleUrl()
 	if err == nil {
-		bodyJSON.Set("ruleUrl", ruleURL)
+		bodyJSON.Set("ruleUrl", ruleUrl)
 	}
 
-	if evalContext.ImagePublicURL != "" {
-		bodyJSON.Set("imageUrl", evalContext.ImagePublicURL)
+	if evalContext.ImagePublicUrl != "" {
+		bodyJSON.Set("imageUrl", evalContext.ImagePublicUrl)
 	}
 
 	if evalContext.Rule.Message != "" {
@@ -121,16 +117,16 @@ func (sn *SensuNotifier) Notify(evalContext *alerting.EvalContext) error {
 
 	body, _ := bodyJSON.MarshalJSON()
 
-	cmd := &models.SendWebhookSync{
-		Url:        sn.URL,
-		User:       sn.User,
-		Password:   sn.Password,
+	cmd := &m.SendWebhookSync{
+		Url:        this.Url,
+		User:       this.User,
+		Password:   this.Password,
 		Body:       string(body),
 		HttpMethod: "POST",
 	}
 
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
-		sn.log.Error("Failed to send sensu event", "error", err, "sensu", sn.Name)
+		this.log.Error("Failed to send sensu event", "error", err, "sensu", this.Name)
 		return err
 	}
 

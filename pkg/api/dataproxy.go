@@ -8,7 +8,7 @@ import (
 )
 
 func (hs *HTTPServer) ProxyDataSourceRequest(c *m.ReqContext) {
-	c.TimeRequest(metrics.MDataSourceProxyReqTimer)
+	c.TimeRequest(metrics.M_DataSource_ProxyReq_Timer)
 
 	dsId := c.ParamsInt64(":id")
 	ds, err := hs.DatasourceCache.GetDatasource(dsId, c.SignedInUser, c.SkipCache)

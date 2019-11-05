@@ -6,8 +6,8 @@ import (
 
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/log"
+	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 )
 
@@ -44,57 +44,54 @@ var (
 	opsgenieAlertURL = "https://api.opsgenie.com/v2/alerts"
 )
 
-// NewOpsGenieNotifier is the constructor for OpsGenie.
-func NewOpsGenieNotifier(model *models.AlertNotification) (alerting.Notifier, error) {
+func NewOpsGenieNotifier(model *m.AlertNotification) (alerting.Notifier, error) {
 	autoClose := model.Settings.Get("autoClose").MustBool(true)
 	apiKey := model.Settings.Get("apiKey").MustString()
-	apiURL := model.Settings.Get("apiUrl").MustString()
+	apiUrl := model.Settings.Get("apiUrl").MustString()
 	if apiKey == "" {
 		return nil, alerting.ValidationError{Reason: "Could not find api key property in settings"}
 	}
-	if apiURL == "" {
-		apiURL = opsgenieAlertURL
+	if apiUrl == "" {
+		apiUrl = opsgenieAlertURL
 	}
 
 	return &OpsGenieNotifier{
 		NotifierBase: NewNotifierBase(model),
-		APIKey:       apiKey,
-		APIUrl:       apiURL,
+		ApiKey:       apiKey,
+		ApiUrl:       apiUrl,
 		AutoClose:    autoClose,
 		log:          log.New("alerting.notifier.opsgenie"),
 	}, nil
 }
 
-// OpsGenieNotifier is responsible for sending
-// alert notifications to OpsGenie
 type OpsGenieNotifier struct {
 	NotifierBase
-	APIKey    string
-	APIUrl    string
+	ApiKey    string
+	ApiUrl    string
 	AutoClose bool
 	log       log.Logger
 }
 
-// Notify sends an alert notification to OpsGenie.
-func (on *OpsGenieNotifier) Notify(evalContext *alerting.EvalContext) error {
+func (this *OpsGenieNotifier) Notify(evalContext *alerting.EvalContext) error {
+
 	var err error
 	switch evalContext.Rule.State {
-	case models.AlertStateOK:
-		if on.AutoClose {
-			err = on.closeAlert(evalContext)
+	case m.AlertStateOK:
+		if this.AutoClose {
+			err = this.closeAlert(evalContext)
 		}
-	case models.AlertStateAlerting:
-		err = on.createAlert(evalContext)
+	case m.AlertStateAlerting:
+		err = this.createAlert(evalContext)
 	}
 	return err
 }
 
-func (on *OpsGenieNotifier) createAlert(evalContext *alerting.EvalContext) error {
-	on.log.Info("Creating OpsGenie alert", "ruleId", evalContext.Rule.ID, "notification", on.Name)
+func (this *OpsGenieNotifier) createAlert(evalContext *alerting.EvalContext) error {
+	this.log.Info("Creating OpsGenie alert", "ruleId", evalContext.Rule.Id, "notification", this.Name)
 
-	ruleURL, err := evalContext.GetRuleURL()
+	ruleUrl, err := evalContext.GetRuleUrl()
 	if err != nil {
-		on.log.Error("Failed get rule link", "error", err)
+		this.log.Error("Failed get rule link", "error", err)
 		return err
 	}
 
@@ -106,54 +103,54 @@ func (on *OpsGenieNotifier) createAlert(evalContext *alerting.EvalContext) error
 	bodyJSON := simplejson.New()
 	bodyJSON.Set("message", evalContext.Rule.Name)
 	bodyJSON.Set("source", "Grafana")
-	bodyJSON.Set("alias", "alertId-"+strconv.FormatInt(evalContext.Rule.ID, 10))
-	bodyJSON.Set("description", fmt.Sprintf("%s - %s\n%s\n%s", evalContext.Rule.Name, ruleURL, evalContext.Rule.Message, customData))
+	bodyJSON.Set("alias", "alertId-"+strconv.FormatInt(evalContext.Rule.Id, 10))
+	bodyJSON.Set("description", fmt.Sprintf("%s - %s\n%s\n%s", evalContext.Rule.Name, ruleUrl, evalContext.Rule.Message, customData))
 
 	details := simplejson.New()
-	details.Set("url", ruleURL)
-	if evalContext.ImagePublicURL != "" {
-		details.Set("image", evalContext.ImagePublicURL)
+	details.Set("url", ruleUrl)
+	if evalContext.ImagePublicUrl != "" {
+		details.Set("image", evalContext.ImagePublicUrl)
 	}
 
 	bodyJSON.Set("details", details)
 	body, _ := bodyJSON.MarshalJSON()
 
-	cmd := &models.SendWebhookSync{
-		Url:        on.APIUrl,
+	cmd := &m.SendWebhookSync{
+		Url:        this.ApiUrl,
 		Body:       string(body),
 		HttpMethod: "POST",
 		HttpHeader: map[string]string{
 			"Content-Type":  "application/json",
-			"Authorization": fmt.Sprintf("GenieKey %s", on.APIKey),
+			"Authorization": fmt.Sprintf("GenieKey %s", this.ApiKey),
 		},
 	}
 
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
-		on.log.Error("Failed to send notification to OpsGenie", "error", err, "body", string(body))
+		this.log.Error("Failed to send notification to OpsGenie", "error", err, "body", string(body))
 	}
 
 	return nil
 }
 
-func (on *OpsGenieNotifier) closeAlert(evalContext *alerting.EvalContext) error {
-	on.log.Info("Closing OpsGenie alert", "ruleId", evalContext.Rule.ID, "notification", on.Name)
+func (this *OpsGenieNotifier) closeAlert(evalContext *alerting.EvalContext) error {
+	this.log.Info("Closing OpsGenie alert", "ruleId", evalContext.Rule.Id, "notification", this.Name)
 
 	bodyJSON := simplejson.New()
 	bodyJSON.Set("source", "Grafana")
 	body, _ := bodyJSON.MarshalJSON()
 
-	cmd := &models.SendWebhookSync{
-		Url:        fmt.Sprintf("%s/alertId-%d/close?identifierType=alias", on.APIUrl, evalContext.Rule.ID),
+	cmd := &m.SendWebhookSync{
+		Url:        fmt.Sprintf("%s/alertId-%d/close?identifierType=alias", this.ApiUrl, evalContext.Rule.Id),
 		Body:       string(body),
 		HttpMethod: "POST",
 		HttpHeader: map[string]string{
 			"Content-Type":  "application/json",
-			"Authorization": fmt.Sprintf("GenieKey %s", on.APIKey),
+			"Authorization": fmt.Sprintf("GenieKey %s", this.ApiKey),
 		},
 	}
 
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
-		on.log.Error("Failed to send notification to OpsGenie", "error", err, "body", string(body))
+		this.log.Error("Failed to send notification to OpsGenie", "error", err, "body", string(body))
 		return err
 	}
 

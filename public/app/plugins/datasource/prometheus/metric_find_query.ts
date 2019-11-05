@@ -1,13 +1,11 @@
 import _ from 'lodash';
-import { TimeRange } from '@grafana/data';
-import { TimeSrv } from 'app/features/dashboard/services/TimeSrv';
-import { PrometheusDatasource, PromDataQueryResponse } from './datasource';
-import { PromQueryRequest } from './types';
 
 export default class PrometheusMetricFindQuery {
-  range: TimeRange;
+  datasource: any;
+  query: any;
+  range: any;
 
-  constructor(private datasource: PrometheusDatasource, private query: string, timeSrv: TimeSrv) {
+  constructor(datasource, query, timeSrv) {
     this.datasource = datasource;
     this.query = query;
     this.range = timeSrv.timeRange();
@@ -49,21 +47,21 @@ export default class PrometheusMetricFindQuery {
 
   labelNamesQuery() {
     const url = '/api/v1/labels';
-    return this.datasource.metadataRequest(url).then((result: any) => {
+    return this.datasource.metadataRequest(url).then(result => {
       return _.map(result.data.data, value => {
         return { text: value };
       });
     });
   }
 
-  labelValuesQuery(label: string, metric?: string) {
-    let url: string;
+  labelValuesQuery(label, metric) {
+    let url;
 
     if (!metric) {
       // return label values globally
       url = '/api/v1/label/' + label + '/values';
 
-      return this.datasource.metadataRequest(url).then((result: any) => {
+      return this.datasource.metadataRequest(url).then(result => {
         return _.map(result.data.data, value => {
           return { text: value };
         });
@@ -73,7 +71,7 @@ export default class PrometheusMetricFindQuery {
       const end = this.datasource.getPrometheusTime(this.range.to, true);
       url = '/api/v1/series?match[]=' + encodeURIComponent(metric) + '&start=' + start + '&end=' + end;
 
-      return this.datasource.metadataRequest(url).then((result: any) => {
+      return this.datasource.metadataRequest(url).then(result => {
         const _labels = _.map(result.data.data, metric => {
           return metric[label] || '';
         }).filter(label => {
@@ -90,10 +88,10 @@ export default class PrometheusMetricFindQuery {
     }
   }
 
-  metricNameQuery(metricFilterPattern: string) {
+  metricNameQuery(metricFilterPattern) {
     const url = '/api/v1/label/__name__/values';
 
-    return this.datasource.metadataRequest(url).then((result: any) => {
+    return this.datasource.metadataRequest(url).then(result => {
       return _.chain(result.data.data)
         .filter(metricName => {
           const r = new RegExp(metricFilterPattern);
@@ -109,10 +107,9 @@ export default class PrometheusMetricFindQuery {
     });
   }
 
-  queryResultQuery(query: string) {
+  queryResultQuery(query) {
     const end = this.datasource.getPrometheusTime(this.range.to, true);
-    const instantQuery: PromQueryRequest = { expr: query } as PromQueryRequest;
-    return this.datasource.performInstantQuery(instantQuery, end).then((result: PromDataQueryResponse) => {
+    return this.datasource.performInstantQuery({ expr: query }, end).then(result => {
       return _.map(result.data.data.result, metricData => {
         let text = metricData.metric.__name__ || '';
         delete metricData.metric.__name__;
@@ -132,14 +129,14 @@ export default class PrometheusMetricFindQuery {
     });
   }
 
-  metricNameAndLabelsQuery(query: string) {
+  metricNameAndLabelsQuery(query) {
     const start = this.datasource.getPrometheusTime(this.range.from, false);
     const end = this.datasource.getPrometheusTime(this.range.to, true);
     const url = '/api/v1/series?match[]=' + encodeURIComponent(query) + '&start=' + start + '&end=' + end;
 
     const self = this;
-    return this.datasource.metadataRequest(url).then((result: PromDataQueryResponse) => {
-      return _.map(result.data.data, (metric: { [key: string]: string }) => {
+    return this.datasource.metadataRequest(url).then(result => {
+      return _.map(result.data.data, metric => {
         return {
           text: self.datasource.getOriginalMetricName(metric),
           expandable: true,

@@ -1,10 +1,10 @@
 import config from 'app/core/config';
 import 'app/features/plugins/datasource_srv';
 import { DatasourceSrv } from 'app/features/plugins/datasource_srv';
-import { PluginMeta, DataSourcePluginMeta } from '@grafana/ui';
+import { PluginMeta, DataSourcePluginMeta } from '@grafana/ui/src/types';
 
 // Datasource variable $datasource with current value 'BBB'
-const templateSrv: any = {
+const templateSrv = {
   variables: [
     {
       type: 'datasource',
@@ -17,7 +17,7 @@ const templateSrv: any = {
 };
 
 describe('datasource_srv', () => {
-  const _datasourceSrv = new DatasourceSrv({}, {} as any, {}, templateSrv);
+  const _datasourceSrv = new DatasourceSrv({}, {}, {}, templateSrv);
 
   describe('when loading external datasources', () => {
     beforeEach(() => {
@@ -55,7 +55,7 @@ describe('datasource_srv', () => {
   });
 
   describe('when loading metric sources', () => {
-    let metricSources: any;
+    let metricSources;
     const unsortedDatasources = {
       mmm: {
         type: 'test-db',

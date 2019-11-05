@@ -5,8 +5,8 @@ class TablePanelCtrl {}
 
 describe('PanelModel', () => {
   describe('when creating new panel model', () => {
-    let model: any;
-    let modelJson: any;
+    let model;
+    let modelJson;
     let persistedOptionsMock;
     const defaultOptionsMock = {
       fieldOptions: {
@@ -93,14 +93,24 @@ describe('PanelModel', () => {
       expect(saveModel.gridPos).toBe(undefined);
     });
 
-    it('getSaveModel should not remove datasource default', () => {
-      const saveModel = model.getSaveModel();
-      expect(saveModel.datasource).toBe(null);
-    });
-
     it('getSaveModel should remove nonPersistedProperties', () => {
       const saveModel = model.getSaveModel();
       expect(saveModel.events).toBe(undefined);
+    });
+
+    it('should restore -Infinity value for base threshold', () => {
+      expect(model.options.fieldOptions.thresholds).toEqual([
+        {
+          color: '#F2495C',
+          index: 1,
+          value: 50,
+        },
+        {
+          color: '#73BF69',
+          index: 0,
+          value: -Infinity,
+        },
+      ]);
     });
 
     describe('when changing panel type', () => {
@@ -170,7 +180,7 @@ describe('PanelModel', () => {
       it('should call react onPanelTypeChanged', () => {
         expect(onPanelTypeChanged.mock.calls.length).toBe(1);
         expect(onPanelTypeChanged.mock.calls[0][1]).toBe('table');
-        expect(onPanelTypeChanged.mock.calls[0][2].angular).toBeDefined();
+        expect(onPanelTypeChanged.mock.calls[0][2].fieldOptions.thresholds).toBeDefined();
       });
 
       it('getQueryRunner() should return same instance after changing to another react panel', () => {

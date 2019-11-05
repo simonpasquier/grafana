@@ -9,7 +9,7 @@ import { PieChart, getFieldDisplayValues } from '@grafana/ui';
 
 // Types
 import { PieChartOptions } from './types';
-import { PanelProps } from '@grafana/ui';
+import { PanelProps } from '@grafana/ui/src/types';
 
 interface Props extends PanelProps<PieChartOptions> {}
 

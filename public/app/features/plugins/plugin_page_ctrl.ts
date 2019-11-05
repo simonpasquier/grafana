@@ -1,9 +1,8 @@
-import angular, { IQService } from 'angular';
+import angular from 'angular';
 import _ from 'lodash';
 
 import { getPluginSettings } from './PluginSettingsCache';
 import { PluginMeta } from '@grafana/ui';
-import { NavModelSrv } from 'app/core/core';
 
 export class AppPageCtrl {
   page: any;
@@ -12,12 +11,7 @@ export class AppPageCtrl {
   navModel: any;
 
   /** @ngInject */
-  constructor(
-    private $routeParams: any,
-    private $rootScope: any,
-    private navModelSrv: NavModelSrv,
-    private $q: IQService
-  ) {
+  constructor(private $routeParams: any, private $rootScope, private navModelSrv, private $q) {
     this.pluginId = $routeParams.pluginId;
 
     this.$q
@@ -41,7 +35,7 @@ export class AppPageCtrl {
       return;
     }
     if (app.type !== 'app' || !app.enabled) {
-      this.$rootScope.appEvent('alert-error', ['Application Not Enabled', '']);
+      this.$rootScope.appEvent('alert-error', ['Applicaiton Not Enabled', '']);
       this.navModel = this.navModelSrv.getNotFoundNav();
       return;
     }

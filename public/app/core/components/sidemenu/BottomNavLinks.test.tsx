@@ -10,9 +10,7 @@ jest.mock('../../app_events', () => ({
 const setup = (propOverrides?: object) => {
   const props = Object.assign(
     {
-      link: {
-        text: 'Hello',
-      },
+      link: {},
       user: {
         id: 1,
         isGrafanaAdmin: false,
@@ -89,9 +87,9 @@ describe('Functions', () => {
     const wrapper = setup();
     const mockEvent = { preventDefault: jest.fn() };
     it('should emit show modal event if url matches shortcut', () => {
-      const child = { url: '/shortcuts', text: 'hello' };
+      const child = { url: '/shortcuts' };
       const instance = wrapper.instance() as BottomNavLinks;
-      instance.itemClicked(mockEvent as any, child);
+      instance.itemClicked(mockEvent, child);
 
       expect(appEvents.emit).toHaveBeenCalledWith('show-modal', { templateHtml: '<help-modal></help-modal>' });
     });

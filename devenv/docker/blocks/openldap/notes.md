@@ -2,6 +2,8 @@
 
 Any ldif files added to the prepopulate subdirectory will be automatically imported into the OpenLdap database.
 
+The ldif files add eight users, `ldap-admin`, `ldap-editor`, `ldap-viewer`, `ldap-carl`, `ldap-daniel`, `ldap-leo`, `ldap-tobias` and `ldap-torkel`. Two groups, `admins` and `users`, are added that correspond with the group mappings in the default conf/ldap.toml. `ldap-admin` is a member of `admins` and `ldap-editor` is a member of `users`.
+
 Note that users that are added here need to specify a `memberOf` attribute manually as well as the `member` attribute for the group. The `memberOf` module usually does this automatically (if you add a group in Apache Directory Studio for example) but this does not work in the entrypoint script as it uses the `slapadd` command to add entries before the server has started and before the `memberOf` module is loaded.
 
 After adding ldif files to `prepopulate`:
@@ -12,7 +14,7 @@ After adding ldif files to `prepopulate`:
 
 ## Enabling LDAP in Grafana
 
-If you want to use users/groups with `memberOf` support Copy the ldap_dev.toml file in this folder into your `conf` folder (it is gitignored already). To enable it in the .ini file to get Grafana to use this block:
+Copy the ldap_dev.toml file in this folder into your `conf` folder (it is gitignored already). To enable it in the .ini file to get Grafana to use this block:
 
 ```ini
 [auth.ldap]
@@ -21,13 +23,12 @@ config_file = conf/ldap_dev.toml
 ; allow_sign_up = true
 ```
 
-Otherwise perform same actions for `ldap_dev_posix.toml` config.
-
-## Groups & Users
+Test groups & users
 
 admins
   ldap-admin
   ldap-torkel
+  ldap-daniel
 backend
   ldap-carl
   ldap-torkel
@@ -40,11 +41,3 @@ editors
   ldap-editors
 no groups
   ldap-viewer
-
-
-## Groups & Users (POSIX)
-
-admins
-  ldap-posix-admin
-no groups
-  ldap-posix

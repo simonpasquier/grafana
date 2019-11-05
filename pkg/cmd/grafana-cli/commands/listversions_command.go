@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/grafana/grafana/pkg/cmd/grafana-cli/logger"
+	s "github.com/grafana/grafana/pkg/cmd/grafana-cli/services"
 	"github.com/grafana/grafana/pkg/cmd/grafana-cli/utils"
 )
 
@@ -23,7 +24,7 @@ func listversionsCommand(c utils.CommandLine) error {
 
 	pluginToList := c.Args().First()
 
-	plugin, err := c.ApiClient().GetPlugin(pluginToList, c.GlobalString("repo"))
+	plugin, err := s.GetPlugin(pluginToList, c.GlobalString("repo"))
 	if err != nil {
 		return err
 	}

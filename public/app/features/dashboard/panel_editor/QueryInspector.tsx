@@ -1,7 +1,8 @@
 import React, { PureComponent } from 'react';
+import { JSONFormatter } from 'app/core/components/JSONFormatter/JSONFormatter';
 import appEvents from 'app/core/app_events';
 import { CopyToClipboard } from 'app/core/components/CopyToClipboard/CopyToClipboard';
-import { LoadingPlaceholder, JSONFormatter } from '@grafana/ui';
+import { LoadingPlaceholder } from '@grafana/ui';
 
 interface DsQuery {
   isLoading: boolean;
@@ -23,7 +24,7 @@ export class QueryInspector extends PureComponent<Props, State> {
   formattedJson: any;
   clipboard: any;
 
-  constructor(props: Props) {
+  constructor(props) {
     super(props);
     this.state = {
       allNodesExpanded: null,
@@ -55,7 +56,7 @@ export class QueryInspector extends PureComponent<Props, State> {
     panel.events.off('refresh', this.onPanelRefresh);
   }
 
-  handleMocking(response: any) {
+  handleMocking(response) {
     const { mockedResponse } = this.state;
     let mockedData;
     try {
@@ -125,7 +126,7 @@ export class QueryInspector extends PureComponent<Props, State> {
     }));
   };
 
-  setFormattedJson = (formattedJson: any) => {
+  setFormattedJson = formattedJson => {
     this.formattedJson = formattedJson;
   };
 
@@ -160,7 +161,7 @@ export class QueryInspector extends PureComponent<Props, State> {
     return 1;
   };
 
-  setMockedResponse = (evt: any) => {
+  setMockedResponse = evt => {
     const mockedResponse = evt.target.value;
     this.setState(prevState => ({
       ...prevState,

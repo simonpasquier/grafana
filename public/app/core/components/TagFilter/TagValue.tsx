@@ -9,17 +9,18 @@ export interface Props {
 }
 
 export class TagValue extends React.Component<Props, any> {
-  constructor(props: Props) {
+  constructor(props) {
     super(props);
     this.onClick = this.onClick.bind(this);
   }
 
-  onClick(event: React.SyntheticEvent) {
+  onClick(event) {
     this.props.onRemove(this.props.value, event);
   }
 
   render() {
     const { value } = this.props;
+
     return <TagBadge label={value.label} removeIcon={false} count={0} onClick={this.onClick} />;
   }
 }

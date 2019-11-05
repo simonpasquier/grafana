@@ -1,9 +1,9 @@
 import { TemplateSrv } from '../template_srv';
 
 describe('templateSrv', () => {
-  let _templateSrv: any;
+  let _templateSrv;
 
-  function initTemplateSrv(variables: any) {
+  function initTemplateSrv(variables) {
     _templateSrv = new TemplateSrv();
     _templateSrv.init(variables);
   }
@@ -22,27 +22,6 @@ describe('templateSrv', () => {
   describe('replace can pass scoped vars', () => {
     beforeEach(() => {
       initTemplateSrv([{ type: 'query', name: 'test', current: { value: 'oogle' } }]);
-    });
-
-    it('scoped vars should support objects', () => {
-      const target = _templateSrv.replace('${series.name} ${series.nested.field}', {
-        series: { value: { name: 'Server1', nested: { field: 'nested' } } },
-      });
-      expect(target).toBe('Server1 nested');
-    });
-
-    it('scoped vars should support objects with propert names with dot', () => {
-      const target = _templateSrv.replace('${series.name} ${series.nested["field.with.dot"]}', {
-        series: { value: { name: 'Server1', nested: { 'field.with.dot': 'nested' } } },
-      });
-      expect(target).toBe('Server1 nested');
-    });
-
-    it('scoped vars should support arrays of objects', () => {
-      const target = _templateSrv.replace('${series.rows[0].name} ${series.rows[1].name}', {
-        series: { value: { rows: [{ name: 'first' }, { name: 'second' }] } },
-      });
-      expect(target).toBe('first second');
     });
 
     it('should replace $test with scoped value', () => {
@@ -131,23 +110,6 @@ describe('templateSrv', () => {
     it('should replace $test with globbed value', () => {
       const target = _templateSrv.replace('this.$test.filters', {}, 'glob');
       expect(target).toBe('this.{value1,value2}.filters');
-    });
-
-    describe('when the globbed variable only has one value', () => {
-      beforeEach(() => {
-        initTemplateSrv([
-          {
-            type: 'query',
-            name: 'test',
-            current: { value: ['value1'] },
-          },
-        ]);
-      });
-
-      it('should not glob the value', () => {
-        const target = _templateSrv.replace('this.$test.filters', {}, 'glob');
-        expect(target).toBe('this.value1.filters');
-      });
     });
 
     it('should replace ${test} with globbed value', () => {
@@ -412,7 +374,7 @@ describe('templateSrv', () => {
     });
 
     it('should set multiple url params', () => {
-      const params: any = {};
+      const params = {};
       _templateSrv.fillVariableValuesForUrl(params);
       expect(params['var-test']).toMatchObject(['val1', 'val2']);
     });
@@ -433,7 +395,7 @@ describe('templateSrv', () => {
     });
 
     it('should not include template variable value in url', () => {
-      const params: any = {};
+      const params = {};
       _templateSrv.fillVariableValuesForUrl(params);
       expect(params['var-test']).toBe(undefined);
     });
@@ -455,7 +417,7 @@ describe('templateSrv', () => {
     });
 
     it('should not include template variable value in url', () => {
-      const params: any = {};
+      const params = {};
       _templateSrv.fillVariableValuesForUrl(params);
       expect(params['var-test']).toBe(undefined);
     });
@@ -467,7 +429,7 @@ describe('templateSrv', () => {
     });
 
     it('should set scoped value as url params', () => {
-      const params: any = {};
+      const params = {};
       _templateSrv.fillVariableValuesForUrl(params, {
         test: { value: 'val1' },
       });
@@ -481,7 +443,7 @@ describe('templateSrv', () => {
     });
 
     it('should not set scoped value as url params', () => {
-      const params: any = {};
+      const params = {};
       _templateSrv.fillVariableValuesForUrl(params, {
         test: { name: 'test', value: 'val1', skipUrlSync: true },
       });
@@ -537,11 +499,6 @@ describe('templateSrv', () => {
   describe('built in interval variables', () => {
     beforeEach(() => {
       initTemplateSrv([]);
-    });
-
-    it('should be possible to fetch value with getBuilInIntervalValue', () => {
-      const val = _templateSrv.getBuiltInIntervalValue();
-      expect(val).toBe('1s');
     });
 
     it('should replace $__interval_ms with interval milliseconds', () => {

@@ -19,7 +19,7 @@ async function loadComponent(meta: DataSourcePluginMeta) {
 function variableQueryEditorLoader(templateSrv: TemplateSrv) {
   return {
     restrict: 'E',
-    link: async (scope: any, elem: JQuery) => {
+    link: async (scope, elem) => {
       const Component = await loadComponent(scope.currentDatasource.meta);
       const props = {
         datasource: scope.currentDatasource,

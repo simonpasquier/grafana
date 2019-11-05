@@ -1,5 +1,5 @@
-export let store: any;
+export let store;
 
-export function setStore(newStore: any) {
+export function setStore(newStore) {
   store = newStore;
 }

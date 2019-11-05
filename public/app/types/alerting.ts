@@ -8,7 +8,7 @@ export interface AlertRuleDTO {
   state: string;
   newStateDate: string;
   evalDate: string;
-  evalData?: { noData?: boolean; evalMatches?: any };
+  evalData?: object;
   executionError: string;
   url: string;
 }
@@ -26,7 +26,7 @@ export interface AlertRule {
   url: string;
   info?: string;
   executionError?: string;
-  evalData?: { noData?: boolean; evalMatches?: any };
+  evalData?: { noData: boolean };
 }
 
 export interface AlertRulesState {

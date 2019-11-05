@@ -14,7 +14,7 @@ const template = `
 `;
 
 /** @ngInject */
-export function sqlPartEditorDirective(templateSrv: any) {
+export function sqlPartEditorDirective($compile, templateSrv) {
   const paramTemplate = '<input type="text" class="hide input-mini"></input>';
 
   return {
@@ -25,16 +25,16 @@ export function sqlPartEditorDirective(templateSrv: any) {
       handleEvent: '&',
       debounce: '@',
     },
-    link: function postLink($scope: any, elem: any) {
+    link: function postLink($scope, elem) {
       const part = $scope.part;
       const partDef = part.def;
       const $paramsContainer = elem.find('.query-part-parameters');
       const debounceLookup = $scope.debounce;
-      let cancelBlur: any = null;
+      let cancelBlur = null;
 
       $scope.partActions = [];
 
-      function clickFuncParam(this: any, paramIndex: number) {
+      function clickFuncParam(this: any, paramIndex) {
         /*jshint validthis:true */
         const $link = $(this);
         const $input = $link.next();
@@ -54,13 +54,13 @@ export function sqlPartEditorDirective(templateSrv: any) {
         }
       }
 
-      function inputBlur($input: JQuery, paramIndex: number) {
+      function inputBlur($input, paramIndex) {
         cancelBlur = setTimeout(() => {
           switchToLink($input, paramIndex);
         }, 200);
       }
 
-      function switchToLink($input: JQuery, paramIndex: number) {
+      function switchToLink($input, paramIndex) {
         /*jshint validthis:true */
         const $link = $input.prev();
         const newValue = $input.val();
@@ -78,7 +78,7 @@ export function sqlPartEditorDirective(templateSrv: any) {
         $link.show();
       }
 
-      function inputKeyPress(this: any, paramIndex: number, e: any) {
+      function inputKeyPress(this: any, paramIndex, e) {
         /*jshint validthis:true */
         if (e.which === 13) {
           switchToLink($(this), paramIndex);
@@ -90,12 +90,12 @@ export function sqlPartEditorDirective(templateSrv: any) {
         this.style.width = (3 + this.value.length) * 8 + 'px';
       }
 
-      function addTypeahead($input: JQuery, param: any, paramIndex: number) {
+      function addTypeahead($input, param, paramIndex) {
         if (!param.options && !param.dynamicLookup) {
           return;
         }
 
-        const typeaheadSource = (query: string, callback: any) => {
+        const typeaheadSource = (query, callback) => {
           if (param.options) {
             let options = param.options;
             if (param.type === 'int') {
@@ -107,7 +107,7 @@ export function sqlPartEditorDirective(templateSrv: any) {
           }
 
           $scope.$apply(() => {
-            $scope.handleEvent({ $event: { name: 'get-param-options', param: param } }).then((result: any) => {
+            $scope.handleEvent({ $event: { name: 'get-param-options', param: param } }).then(result => {
               const dynamicOptions = _.map(result, op => {
                 return _.escape(op.value);
               });
@@ -128,7 +128,7 @@ export function sqlPartEditorDirective(templateSrv: any) {
           source: typeaheadSource,
           minLength: 0,
           items: 1000,
-          updater: (value: string) => {
+          updater: value => {
             value = _.unescape(value);
             if (value === part.params[paramIndex]) {
               clearTimeout(cancelBlur);
@@ -152,12 +152,12 @@ export function sqlPartEditorDirective(templateSrv: any) {
       }
 
       $scope.showActionsMenu = () => {
-        $scope.handleEvent({ $event: { name: 'get-part-actions' } }).then((res: any) => {
+        $scope.handleEvent({ $event: { name: 'get-part-actions' } }).then(res => {
           $scope.partActions = res;
         });
       };
 
-      $scope.triggerPartAction = (action: string) => {
+      $scope.triggerPartAction = action => {
         $scope.handleEvent({ $event: { name: 'action', action: action } });
       };
 

@@ -5,7 +5,7 @@ export class AdhocVariable implements Variable {
   filters: any[];
   skipUrlSync: boolean;
 
-  defaults: any = {
+  defaults = {
     type: 'adhoc',
     name: '',
     label: '',
@@ -16,11 +16,11 @@ export class AdhocVariable implements Variable {
   };
 
   /** @ngInject */
-  constructor(private model: any) {
+  constructor(private model) {
     assignModelProperties(this, model, this.defaults);
   }
 
-  setValue(option: any) {
+  setValue(option) {
     return Promise.resolve();
   }
 
@@ -33,11 +33,11 @@ export class AdhocVariable implements Variable {
     return Promise.resolve();
   }
 
-  dependsOn(variable: any) {
+  dependsOn(variable) {
     return false;
   }
 
-  setValueFromUrl(urlValue: string[] | string[]) {
+  setValueFromUrl(urlValue) {
     if (!_.isArray(urlValue)) {
       urlValue = [urlValue];
     }
@@ -66,11 +66,11 @@ export class AdhocVariable implements Variable {
     });
   }
 
-  escapeDelimiter(value: string) {
+  escapeDelimiter(value) {
     return value.replace(/\|/g, '__gfp__');
   }
 
-  unescapeDelimiter(value: string) {
+  unescapeDelimiter(value) {
     return value.replace(/__gfp__/g, '|');
   }
 

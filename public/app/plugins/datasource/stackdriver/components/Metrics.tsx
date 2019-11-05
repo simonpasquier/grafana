@@ -37,7 +37,7 @@ export class Metrics extends React.Component<Props, State> {
     defaultProject: '',
   };
 
-  constructor(props: Props) {
+  constructor(props) {
     super(props);
   }
 
@@ -83,7 +83,7 @@ export class Metrics extends React.Component<Props, State> {
     this.setState({ metricDescriptors, services, metrics, service: service, metricDescriptor });
   }
 
-  getSelectedMetricDescriptor(metricType: string) {
+  getSelectedMetricDescriptor(metricType) {
     return this.state.metricDescriptors.find(md => md.type === this.props.templateSrv.replace(metricType));
   }
 
@@ -103,7 +103,7 @@ export class Metrics extends React.Component<Props, State> {
     return metricsByService;
   }
 
-  onServiceChange = (service: any) => {
+  onServiceChange = service => {
     const { metricDescriptors } = this.state;
     const { templateSrv, metricType } = this.props;
 
@@ -123,7 +123,7 @@ export class Metrics extends React.Component<Props, State> {
     }
   };
 
-  onMetricTypeChange = (value: any) => {
+  onMetricTypeChange = value => {
     const metricDescriptor = this.getSelectedMetricDescriptor(value);
     this.setState({ metricDescriptor });
     this.props.onChange({ ...metricDescriptor, type: value });

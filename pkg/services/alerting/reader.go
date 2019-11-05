@@ -2,32 +2,45 @@ package alerting
 
 import (
 	"sync"
+	"time"
 
 	"github.com/grafana/grafana/pkg/bus"
-	"github.com/grafana/grafana/pkg/infra/log"
 	"github.com/grafana/grafana/pkg/infra/metrics"
-	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/log"
+	m "github.com/grafana/grafana/pkg/models"
 )
 
-type ruleReader interface {
-	fetch() []*Rule
+type RuleReader interface {
+	Fetch() []*Rule
 }
 
-type defaultRuleReader struct {
+type DefaultRuleReader struct {
 	sync.RWMutex
-	log log.Logger
+	//serverID       string
+	serverPosition int
+	clusterSize    int
+	log            log.Logger
 }
 
-func newRuleReader() *defaultRuleReader {
-	ruleReader := &defaultRuleReader{
+func NewRuleReader() *DefaultRuleReader {
+	ruleReader := &DefaultRuleReader{
 		log: log.New("alerting.ruleReader"),
 	}
 
+	go ruleReader.initReader()
 	return ruleReader
 }
 
-func (arr *defaultRuleReader) fetch() []*Rule {
-	cmd := &models.GetAllAlertsQuery{}
+func (arr *DefaultRuleReader) initReader() {
+	heartbeat := time.NewTicker(time.Second * 10)
+
+	for range heartbeat.C {
+		arr.heartbeat()
+	}
+}
+
+func (arr *DefaultRuleReader) Fetch() []*Rule {
+	cmd := &m.GetAllAlertsQuery{}
 
 	if err := bus.Dispatch(cmd); err != nil {
 		arr.log.Error("Could not load alerts", "error", err)
@@ -43,6 +56,11 @@ func (arr *defaultRuleReader) fetch() []*Rule {
 		}
 	}
 
-	metrics.MAlertingActiveAlerts.Set(float64(len(res)))
+	metrics.M_Alerting_Active_Alerts.Set(float64(len(res)))
 	return res
+}
+
+func (arr *DefaultRuleReader) heartbeat() {
+	arr.clusterSize = 1
+	arr.serverPosition = 1
 }

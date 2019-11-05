@@ -6,7 +6,7 @@
     .drop-content {
       border-radius: $border-radius-lg;
       position: relative;
-      font-weight: $font-weight-semi-bold;
+      font-family: inherit;
       background: $theme-bg;
       color: $theme-color;
       padding: $space-sm;

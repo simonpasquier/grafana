@@ -2,7 +2,6 @@ import React from 'react';
 import { Themeable, GrafanaTheme } from '../../types/theme';
 import { selectThemeVariant } from '../../themes/selectThemeVariant';
 import { css, cx } from 'emotion';
-import { stylesFactory } from '../../themes';
 
 export interface CallToActionCardProps extends Themeable {
   message?: string | JSX.Element;
@@ -11,7 +10,7 @@ export interface CallToActionCardProps extends Themeable {
   className?: string;
 }
 
-const getCallToActionCardStyles = stylesFactory((theme: GrafanaTheme) => ({
+const getCallToActionCardStyles = (theme: GrafanaTheme) => ({
   wrapper: css`
     label: call-to-action-card;
     padding: ${theme.spacing.lg};
@@ -29,7 +28,7 @@ const getCallToActionCardStyles = stylesFactory((theme: GrafanaTheme) => ({
   footer: css`
     margin-top: ${theme.spacing.lg};
   `,
-}));
+});
 
 export const CallToActionCard: React.FunctionComponent<CallToActionCardProps> = ({
   message,

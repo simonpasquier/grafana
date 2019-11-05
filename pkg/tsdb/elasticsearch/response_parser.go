@@ -29,14 +29,12 @@ const (
 type responseParser struct {
 	Responses []*es.SearchResponse
 	Targets   []*Query
-	DebugInfo *es.SearchDebugInfo
 }
 
-var newResponseParser = func(responses []*es.SearchResponse, targets []*Query, debugInfo *es.SearchDebugInfo) *responseParser {
+var newResponseParser = func(responses []*es.SearchResponse, targets []*Query) *responseParser {
 	return &responseParser{
 		Responses: responses,
 		Targets:   targets,
-		DebugInfo: debugInfo,
 	}
 }
 
@@ -51,19 +49,12 @@ func (rp *responseParser) getTimeSeries() (*tsdb.Response, error) {
 	for i, res := range rp.Responses {
 		target := rp.Targets[i]
 
-		var debugInfo *simplejson.Json
-		if rp.DebugInfo != nil && i == 0 {
-			debugInfo = simplejson.NewFromAny(rp.DebugInfo)
-		}
-
 		if res.Error != nil {
 			result.Results[target.RefID] = getErrorFromElasticResponse(res)
-			result.Results[target.RefID].Meta = debugInfo
 			continue
 		}
 
 		queryRes := tsdb.NewQueryResult()
-		queryRes.Meta = debugInfo
 		props := make(map[string]string)
 		table := tsdb.Table{
 			Columns: make([]tsdb.TableColumn, 0),

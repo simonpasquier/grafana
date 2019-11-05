@@ -1,10 +1,8 @@
 import _ from 'lodash';
 import LogAnalyticsQuerystringBuilder from '../log_analytics/querystring_builder';
 import ResponseParser from './response_parser';
-import { AzureMonitorQuery, AzureDataSourceJsonData } from '../types';
-import { DataQueryRequest, DataSourceInstanceSettings } from '@grafana/ui';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { TemplateSrv } from 'app/features/templating/template_srv';
+import { AzureMonitorQuery } from '../types';
+import { DataQueryRequest } from '@grafana/ui/src/types';
 
 export default class AzureLogAnalyticsDatasource {
   id: number;
@@ -16,11 +14,7 @@ export default class AzureLogAnalyticsDatasource {
   subscriptionId: string;
 
   /** @ngInject */
-  constructor(
-    private instanceSettings: DataSourceInstanceSettings<AzureDataSourceJsonData>,
-    private backendSrv: BackendSrv,
-    private templateSrv: TemplateSrv
-  ) {
+  constructor(private instanceSettings, private backendSrv, private templateSrv, private $q) {
     this.id = instanceSettings.id;
     this.baseUrl = this.instanceSettings.jsonData.azureLogAnalyticsSameAs
       ? '/sameasloganalyticsazure'
@@ -56,7 +50,7 @@ export default class AzureLogAnalyticsDatasource {
     const workspaceListUrl =
       this.azureMonitorUrl +
       `/${subscriptionId}/providers/Microsoft.OperationalInsights/workspaces?api-version=2017-04-26-preview`;
-    return this.doRequest(workspaceListUrl).then((response: any) => {
+    return this.doRequest(workspaceListUrl).then(response => {
       return (
         _.map(response.data.value, val => {
           return { text: val.name, value: val.properties.customerId };
@@ -71,7 +65,7 @@ export default class AzureLogAnalyticsDatasource {
     }
     const url = `${this.baseUrl}/${workspace}/metadata`;
 
-    return this.doRequest(url).then((response: any) => {
+    return this.doRequest(url).then(response => {
       return new ResponseParser(response.data).parseSchemaResult();
     });
   }
@@ -111,18 +105,19 @@ export default class AzureLogAnalyticsDatasource {
 
     const promises = this.doQueries(queries);
 
-    return Promise.all(promises).then(results => {
+    return this.$q.all(promises).then(results => {
       return new ResponseParser(results).parseQueryResult();
     });
   }
 
   metricFindQuery(query: string) {
-    return this.getDefaultOrFirstWorkspace().then((workspace: any) => {
+    return this.getDefaultOrFirstWorkspace().then(workspace => {
       const queries: any[] = this.buildQuery(query, null, workspace);
 
       const promises = this.doQueries(queries);
 
-      return Promise.all(promises)
+      return this.$q
+        .all(promises)
         .then(results => {
           return new ResponseParser(results).parseToVariables();
         })
@@ -159,7 +154,7 @@ export default class AzureLogAnalyticsDatasource {
     return queries;
   }
 
-  interpolateVariable(value: string, variable: { multi: any; includeAll: any }) {
+  interpolateVariable(value, variable) {
     if (typeof value === 'string') {
       if (variable.multi || variable.includeAll) {
         return "'" + value + "'";
@@ -187,15 +182,15 @@ export default class AzureLogAnalyticsDatasource {
       return Promise.resolve(this.defaultOrFirstWorkspace);
     }
 
-    return this.getWorkspaces(this.subscriptionId).then((workspaces: any[]) => {
+    return this.getWorkspaces(this.subscriptionId).then(workspaces => {
       this.defaultOrFirstWorkspace = workspaces[0].value;
       return this.defaultOrFirstWorkspace;
     });
   }
 
-  annotationQuery(options: any) {
+  annotationQuery(options) {
     if (!options.annotation.rawQuery) {
-      return Promise.reject({
+      return this.$q.reject({
         message: 'Query missing in annotation definition',
       });
     }
@@ -204,22 +199,22 @@ export default class AzureLogAnalyticsDatasource {
 
     const promises = this.doQueries(queries);
 
-    return Promise.all(promises).then(results => {
+    return this.$q.all(promises).then(results => {
       const annotations = new ResponseParser(results).transformToAnnotations(options);
       return annotations;
     });
   }
 
-  doQueries(queries: any[]) {
+  doQueries(queries) {
     return _.map(queries, query => {
       return this.doRequest(query.url)
-        .then((result: any) => {
+        .then(result => {
           return {
             result: result,
             query: query,
           };
         })
-        .catch((err: any) => {
+        .catch(err => {
           throw {
             error: err,
             query: query,
@@ -228,13 +223,13 @@ export default class AzureLogAnalyticsDatasource {
     });
   }
 
-  doRequest(url: string, maxRetries = 1) {
+  doRequest(url, maxRetries = 1) {
     return this.backendSrv
       .datasourceRequest({
         url: this.url + url,
         method: 'GET',
       })
-      .catch((error: any) => {
+      .catch(error => {
         if (maxRetries > 0) {
           return this.doRequest(url, maxRetries - 1);
         }
@@ -250,12 +245,12 @@ export default class AzureLogAnalyticsDatasource {
     }
 
     return this.getDefaultOrFirstWorkspace()
-      .then((ws: any) => {
+      .then(ws => {
         const url = `${this.baseUrl}/${ws}/metadata`;
 
         return this.doRequest(url);
       })
-      .then((response: any) => {
+      .then(response => {
         if (response.status === 200) {
           return {
             status: 'success',
@@ -269,7 +264,7 @@ export default class AzureLogAnalyticsDatasource {
           message: 'Returned http status code ' + response.status,
         };
       })
-      .catch((error: any) => {
+      .catch(error => {
         let message = 'Azure Log Analytics: ';
         if (error.config && error.config.url && error.config.url.indexOf('workspacesloganalytics') > -1) {
           message = 'Azure Log Analytics requires access to Azure Monitor but had the following error: ';

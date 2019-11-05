@@ -22,12 +22,12 @@ const global = window as any;
 global.$ = global.jQuery = $;
 
 const localStorageMock = (() => {
-  let store: any = {};
+  let store = {};
   return {
     getItem: (key: string) => {
       return store[key];
     },
-    setItem: (key: string, value: any) => {
+    setItem: (key: string, value) => {
       store[key] = value.toString();
     },
     clear: () => {

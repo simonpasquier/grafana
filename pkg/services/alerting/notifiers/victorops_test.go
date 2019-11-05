@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/models"
+	m "github.com/grafana/grafana/pkg/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -16,7 +16,7 @@ func TestVictoropsNotifier(t *testing.T) {
 				json := `{ }`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "victorops_testing",
 					Type:     "victorops",
 					Settings: settingsJSON,
@@ -33,7 +33,7 @@ func TestVictoropsNotifier(t *testing.T) {
 				}`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "victorops_testing",
 					Type:     "victorops",
 					Settings: settingsJSON,

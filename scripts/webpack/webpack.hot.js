@@ -10,7 +10,6 @@ const CleanWebpackPlugin = require('clean-webpack-plugin');
 const IgnoreNotFoundExportPlugin = require("./IgnoreNotFoundExportPlugin.js");
 
 module.exports = merge(common, {
-  mode: 'development',
   entry: {
     app: ['webpack-dev-server/client?http://localhost:3333', './public/app/dev.ts'],
   },
@@ -35,51 +34,45 @@ module.exports = merge(common, {
     proxy: {
       '!/public/build': 'http://localhost:3000',
     },
-    watchOptions: {
-      ignored: /node_modules/
-    }
   },
 
   optimization: {
     removeAvailableModules: false,
-    runtimeChunk: false,
     removeEmptyChunks: false,
-    splitChunks: false
+    splitChunks: false,
   },
 
   module: {
-    rules: [{
+    rules: [
+      {
         test: /\.tsx?$/,
         exclude: /node_modules/,
-        use: [{
-          loader: 'babel-loader',
-          options: {
-            cacheDirectory: true,
-            babelrc: false,
-            plugins: [
-              [require('@rtsao/plugin-proposal-class-properties'), {
-                loose: true
-              }],
-              'angularjs-annotate',
-              '@babel/plugin-syntax-dynamic-import', // needed for `() => import()` in routes.ts
-              'react-hot-loader/babel',
-            ],
-            presets: [
-              [
-                '@babel/preset-env',
-                {
-                  targets: {
-                    browsers: 'last 3 versions'
-                  },
-                  useBuiltIns: 'entry',
-                  modules: false
-                },
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              cacheDirectory: true,
+              babelrc: false,
+              plugins: [
+                [require('@rtsao/plugin-proposal-class-properties'), { loose: true }],
+                'angularjs-annotate',
+                '@babel/plugin-syntax-dynamic-import', // needed for `() => import()` in routes.ts
+                'react-hot-loader/babel',
               ],
-              '@babel/preset-typescript',
-              '@babel/preset-react',
-            ],
+              presets: [
+                [
+                  '@babel/preset-env',
+                  {
+                    targets: { browsers: 'last 3 versions' },
+                    useBuiltIns: 'entry',
+                  },
+                ],
+                '@babel/preset-typescript',
+                '@babel/preset-react',
+              ],
+            },
           },
-        }, ],
+        ],
       },
       {
         test: /\.scss$/,
@@ -89,9 +82,7 @@ module.exports = merge(common, {
           {
             loader: 'postcss-loader',
             options: {
-              config: {
-                path: __dirname + '/postcss.config.js'
-              },
+              config: { path: __dirname + '/postcss.config.js' },
             },
           },
           {
@@ -113,7 +104,6 @@ module.exports = merge(common, {
       template: path.resolve(__dirname, '../../public/views/index-template.html'),
       inject: 'body',
       alwaysWriteToDisk: true,
-      chunksSortMode: 'none'
     }),
     new HtmlWebpackHarddiskPlugin(),
     new webpack.NamedModulesPlugin(),

@@ -14,11 +14,11 @@ export function getPluginSettings(pluginId: string): Promise<PluginMeta> {
   }
   return getBackendSrv()
     .get(`/api/plugins/${pluginId}/settings`)
-    .then((settings: any) => {
+    .then(settings => {
       pluginInfoCache[pluginId] = settings;
       return settings;
     })
-    .catch((err: any) => {
+    .catch(err => {
       // err.isHandled = true;
       return Promise.reject('Unknown Plugin');
     });

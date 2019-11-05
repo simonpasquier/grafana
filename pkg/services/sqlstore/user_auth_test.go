@@ -12,7 +12,6 @@ import (
 	m "github.com/grafana/grafana/pkg/models"
 )
 
-//nolint:goconst
 func TestUserAuth(t *testing.T) {
 	InitTestDB(t)
 

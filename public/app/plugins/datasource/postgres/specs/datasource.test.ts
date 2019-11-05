@@ -1,18 +1,17 @@
+import moment from 'moment';
 import { PostgresDatasource } from '../datasource';
 import { CustomVariable } from 'app/features/templating/custom_variable';
-import { toUtc, dateTime } from '@grafana/data';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { IQService } from 'angular';
-import { TemplateSrv } from 'app/features/templating/template_srv';
 
 describe('PostgreSQLDatasource', () => {
   const instanceSettings = { name: 'postgresql' };
 
   const backendSrv = {};
-  const templateSrv: TemplateSrv = new TemplateSrv();
+  const templateSrv = {
+    replace: jest.fn(text => text),
+  };
   const raw = {
-    from: toUtc('2018-04-25 10:00'),
-    to: toUtc('2018-04-25 11:00'),
+    from: moment.utc('2018-04-25 10:00'),
+    to: moment.utc('2018-04-25 11:00'),
   };
   const ctx = {
     backendSrv,
@@ -26,17 +25,11 @@ describe('PostgreSQLDatasource', () => {
   } as any;
 
   beforeEach(() => {
-    ctx.ds = new PostgresDatasource(
-      instanceSettings,
-      backendSrv as BackendSrv,
-      {} as IQService,
-      templateSrv,
-      ctx.timeSrvMock
-    );
+    ctx.ds = new PostgresDatasource(instanceSettings, backendSrv, {}, templateSrv, ctx.timeSrvMock);
   });
 
   describe('When performing annotationQuery', () => {
-    let results: any;
+    let results;
 
     const annotationName = 'MyAnno';
 
@@ -46,8 +39,8 @@ describe('PostgreSQLDatasource', () => {
         rawQuery: 'select time, title, text, tags from table;',
       },
       range: {
-        from: dateTime(1432288354),
-        to: dateTime(1432288401),
+        from: moment(1432288354),
+        to: moment(1432288401),
       },
     };
 
@@ -73,7 +66,7 @@ describe('PostgreSQLDatasource', () => {
       ctx.backendSrv.datasourceRequest = jest.fn(options => {
         return Promise.resolve({ data: response, status: 200 });
       });
-      ctx.ds.annotationQuery(options).then((data: any) => {
+      ctx.ds.annotationQuery(options).then(data => {
         results = data;
       });
     });
@@ -93,7 +86,7 @@ describe('PostgreSQLDatasource', () => {
   });
 
   describe('When performing metricFindQuery', () => {
-    let results: any;
+    let results;
     const query = 'select * from atable';
     const response = {
       results: {
@@ -116,7 +109,7 @@ describe('PostgreSQLDatasource', () => {
       ctx.backendSrv.datasourceRequest = jest.fn(options => {
         return Promise.resolve({ data: response, status: 200 });
       });
-      ctx.ds.metricFindQuery(query).then((data: any) => {
+      ctx.ds.metricFindQuery(query).then(data => {
         results = data;
       });
     });
@@ -129,7 +122,7 @@ describe('PostgreSQLDatasource', () => {
   });
 
   describe('When performing metricFindQuery with key, value columns', () => {
-    let results: any;
+    let results;
     const query = 'select * from atable';
     const response = {
       results: {
@@ -152,7 +145,7 @@ describe('PostgreSQLDatasource', () => {
       ctx.backendSrv.datasourceRequest = jest.fn(options => {
         return Promise.resolve({ data: response, status: 200 });
       });
-      ctx.ds.metricFindQuery(query).then((data: any) => {
+      ctx.ds.metricFindQuery(query).then(data => {
         results = data;
       });
     });
@@ -167,7 +160,7 @@ describe('PostgreSQLDatasource', () => {
   });
 
   describe('When performing metricFindQuery with key, value columns and with duplicate keys', () => {
-    let results: any;
+    let results;
     const query = 'select * from atable';
     const response = {
       results: {
@@ -190,7 +183,7 @@ describe('PostgreSQLDatasource', () => {
       ctx.backendSrv.datasourceRequest = jest.fn(options => {
         return Promise.resolve({ data: response, status: 200 });
       });
-      ctx.ds.metricFindQuery(query).then((data: any) => {
+      ctx.ds.metricFindQuery(query).then(data => {
         results = data;
       });
       //ctx.$rootScope.$apply();
@@ -205,7 +198,7 @@ describe('PostgreSQLDatasource', () => {
 
   describe('When interpolating variables', () => {
     beforeEach(() => {
-      ctx.variable = new CustomVariable({}, {} as any);
+      ctx.variable = new CustomVariable({}, {});
     });
 
     describe('and value is a string', () => {
@@ -246,55 +239,6 @@ describe('PostgreSQLDatasource', () => {
         ctx.variable.includeAll = true;
         expect(ctx.ds.interpolateVariable('abc', ctx.variable)).toEqual("'abc'");
       });
-    });
-  });
-
-  describe('targetContainsTemplate', () => {
-    it('given query that contains template variable it should return true', () => {
-      const rawSql = `SELECT
-      $__timeGroup("createdAt",'$summarize'),
-      avg(value) as "value",
-      hostname as "metric"
-    FROM
-      grafana_metric
-    WHERE
-      $__timeFilter("createdAt") AND
-      measurement = 'logins.count' AND
-      hostname IN($host)
-    GROUP BY time, metric
-    ORDER BY time`;
-      const query = {
-        rawSql,
-        rawQuery: true,
-      };
-      templateSrv.init([
-        { type: 'query', name: 'summarize', current: { value: '1m' } },
-        { type: 'query', name: 'host', current: { value: 'a' } },
-      ]);
-      expect(ctx.ds.targetContainsTemplate(query)).toBeTruthy();
-    });
-
-    it('given query that only contains global template variable it should return false', () => {
-      const rawSql = `SELECT
-      $__timeGroup("createdAt",'$__interval'),
-      avg(value) as "value",
-      hostname as "metric"
-    FROM
-      grafana_metric
-    WHERE
-      $__timeFilter("createdAt") AND
-      measurement = 'logins.count'
-    GROUP BY time, metric
-    ORDER BY time`;
-      const query = {
-        rawSql,
-        rawQuery: true,
-      };
-      templateSrv.init([
-        { type: 'query', name: 'summarize', current: { value: '1m' } },
-        { type: 'query', name: 'host', current: { value: 'a' } },
-      ]);
-      expect(ctx.ds.targetContainsTemplate(query)).toBeFalsy();
     });
   });
 });

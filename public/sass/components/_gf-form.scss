@@ -20,10 +20,6 @@ $input-border: 1px solid $input-border-color;
     justify-content: flex-end;
   }
 
-  &--align-center {
-    align-content: center;
-  }
-
   &--alt {
     flex-direction: column;
     align-items: flex-start;
@@ -392,8 +388,8 @@ $input-border: 1px solid $input-border-color;
     margin-bottom: $space-xxs;
   }
 
-  &--small-padding {
-    padding-left: 4px;
+  &--no-padding {
+    padding-left: 0;
   }
 
   &:hover {

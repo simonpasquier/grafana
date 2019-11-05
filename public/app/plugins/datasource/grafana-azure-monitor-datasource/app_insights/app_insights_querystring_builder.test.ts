@@ -1,11 +1,11 @@
 import AppInsightsQuerystringBuilder from './app_insights_querystring_builder';
-import { toUtc } from '@grafana/data';
+import moment from 'moment';
 
 describe('AppInsightsQuerystringBuilder', () => {
   let builder: AppInsightsQuerystringBuilder;
 
   beforeEach(() => {
-    builder = new AppInsightsQuerystringBuilder(toUtc('2017-08-22 06:00'), toUtc('2017-08-22 07:00'), '1h');
+    builder = new AppInsightsQuerystringBuilder(moment.utc('2017-08-22 06:00'), moment.utc('2017-08-22 07:00'), '1h');
   });
 
   describe('with only from/to date range', () => {

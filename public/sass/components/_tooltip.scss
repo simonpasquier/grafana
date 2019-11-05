@@ -9,7 +9,7 @@
   display: block;
   visibility: visible;
   line-height: 1.4;
-  font-weight: $font-weight-semi-bold;
+  font-weight: 500;
   @include opacity(0);
 
   &.in {

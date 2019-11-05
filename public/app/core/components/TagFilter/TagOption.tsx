@@ -1,6 +1,4 @@
-// Libraries
 import React from 'react';
-// @ts-ignore
 import { components } from '@torkelo/react-select';
 import { OptionProps } from 'react-select/lib/components/Option';
 import { TagBadge } from './TagBadge';

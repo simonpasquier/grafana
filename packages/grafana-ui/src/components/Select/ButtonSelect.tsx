@@ -1,10 +1,9 @@
-import React, { PureComponent, ReactElement } from 'react';
-import Select from './Select';
-import { PopoverContent } from '../Tooltip/Tooltip';
-import { SelectableValue } from '@grafana/data';
+import React, { PureComponent } from 'react';
+import Select, { SelectOptionItem } from './Select';
+import { PopperContent } from '../Tooltip/PopperController';
 
 interface ButtonComponentProps {
-  label: ReactElement | string | undefined;
+  label: string | undefined;
   className: string | undefined;
   iconClass?: string;
 }
@@ -13,42 +12,38 @@ const ButtonComponent = (buttonProps: ButtonComponentProps) => (props: any) => {
   const { label, className, iconClass } = buttonProps;
 
   return (
-    <div // changed to div because of FireFox on MacOs issue below
+    <button
       ref={props.innerRef}
       className={`btn navbar-button navbar-button--tight ${className}`}
       onClick={props.selectProps.menuIsOpen ? props.selectProps.onMenuClose : props.selectProps.onMenuOpen}
       onBlur={props.selectProps.onMenuClose}
-      tabIndex={0} // necessary to get onBlur to work https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button#Clicking_and_focus
     >
       <div className="select-button">
         {iconClass && <i className={`select-button-icon ${iconClass}`} />}
         <span className="select-button-value">{label ? label : ''}</span>
-        {!props.menuIsOpen && <i className="fa fa-caret-down fa-fw" />}
-        {props.menuIsOpen && <i className="fa fa-caret-up fa-fw" />}
+        <i className="fa fa-caret-down fa-fw" />
       </div>
-    </div>
+    </button>
   );
 };
 
 export interface Props<T> {
   className: string | undefined;
-  options: Array<SelectableValue<T>>;
-  value?: SelectableValue<T>;
-  label?: ReactElement | string;
+  options: Array<SelectOptionItem<T>>;
+  value: SelectOptionItem<T>;
+  label?: string;
   iconClass?: string;
   components?: any;
   maxMenuHeight?: number;
-  onChange: (item: SelectableValue<T>) => void;
-  tooltipContent?: PopoverContent;
+  onChange: (item: SelectOptionItem<T>) => void;
+  tooltipContent?: PopperContent<any>;
   isMenuOpen?: boolean;
   onOpenMenu?: () => void;
   onCloseMenu?: () => void;
-  tabSelectsValue?: boolean;
-  autoFocus?: boolean;
 }
 
 export class ButtonSelect<T> extends PureComponent<Props<T>> {
-  onChange = (item: SelectableValue<T>) => {
+  onChange = (item: SelectOptionItem<T>) => {
     const { onChange } = this.props;
     onChange(item);
   };
@@ -66,31 +61,27 @@ export class ButtonSelect<T> extends PureComponent<Props<T>> {
       isMenuOpen,
       onOpenMenu,
       onCloseMenu,
-      tabSelectsValue,
-      autoFocus = true,
     } = this.props;
     const combinedComponents = {
       ...components,
       Control: ButtonComponent({ label, className, iconClass }),
     };
-
     return (
       <Select
-        autoFocus={autoFocus}
+        autoFocus
         backspaceRemovesValue={false}
         isClearable={false}
         isSearchable={false}
         options={options}
         onChange={this.onChange}
-        value={value}
-        isOpen={isMenuOpen}
-        onOpenMenu={onOpenMenu}
-        onCloseMenu={onCloseMenu}
+        defaultValue={value}
         maxMenuHeight={maxMenuHeight}
         components={combinedComponents}
         className="gf-form-select-box-button-select"
         tooltipContent={tooltipContent}
-        tabSelectsValue={tabSelectsValue}
+        isOpen={isMenuOpen}
+        onOpenMenu={onOpenMenu}
+        onCloseMenu={onCloseMenu}
       />
     );
   }

@@ -1,31 +1,26 @@
-/* tslint:disable:import-blacklist */
-import angular, { IQService } from 'angular';
+import angular from 'angular';
 import moment from 'moment';
 import _ from 'lodash';
 import $ from 'jquery';
 import kbn from 'app/core/utils/kbn';
-import { dateMath } from '@grafana/data';
+import * as dateMath from '@grafana/ui/src/utils/datemath';
 import impressionSrv from 'app/core/services/impression_srv';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { DashboardSrv } from './DashboardSrv';
-import DatasourceSrv from 'app/features/plugins/datasource_srv';
-import { UrlQueryValue } from '@grafana/runtime';
 
 export class DashboardLoaderSrv {
   /** @ngInject */
   constructor(
-    private backendSrv: BackendSrv,
-    private dashboardSrv: DashboardSrv,
-    private datasourceSrv: DatasourceSrv,
-    private $http: any,
-    private $q: IQService,
-    private $timeout: any,
-    contextSrv: any,
-    private $routeParams: any,
-    private $rootScope: any
+    private backendSrv,
+    private dashboardSrv,
+    private datasourceSrv,
+    private $http,
+    private $q,
+    private $timeout,
+    contextSrv,
+    private $routeParams,
+    private $rootScope
   ) {}
 
-  _dashboardLoadFailed(title: string, snapshot?: boolean) {
+  _dashboardLoadFailed(title, snapshot?) {
     snapshot = snapshot || false;
     return {
       meta: {
@@ -36,11 +31,11 @@ export class DashboardLoaderSrv {
         canEdit: false,
         dashboardNotFound: true,
       },
-      dashboard: { title },
+      dashboard: { title: title },
     };
   }
 
-  loadDashboard(type: UrlQueryValue, slug: any, uid: any) {
+  loadDashboard(type, slug, uid) {
     let promise;
 
     if (type === 'script') {
@@ -52,7 +47,7 @@ export class DashboardLoaderSrv {
     } else {
       promise = this.backendSrv
         .getDashboardByUid(uid)
-        .then((result: any) => {
+        .then(result => {
           if (result.meta.isFolder) {
             this.$rootScope.appEvent('alert-error', ['Dashboard not found']);
             throw new Error('Dashboard not found');
@@ -64,7 +59,7 @@ export class DashboardLoaderSrv {
         });
     }
 
-    promise.then((result: any) => {
+    promise.then(result => {
       if (result.meta.dashboardNotFound !== true) {
         impressionSrv.addDashboardImpression(result.dashboard.id);
       }
@@ -75,13 +70,13 @@ export class DashboardLoaderSrv {
     return promise;
   }
 
-  _loadScriptedDashboard(file: string) {
+  _loadScriptedDashboard(file) {
     const url = 'public/dashboards/' + file.replace(/\.(?!js)/, '/') + '?' + new Date().getTime();
 
     return this.$http({ url: url, method: 'GET' })
       .then(this._executeScript.bind(this))
       .then(
-        (result: any) => {
+        result => {
           return {
             meta: {
               fromScript: true,
@@ -92,7 +87,7 @@ export class DashboardLoaderSrv {
             dashboard: result.data,
           };
         },
-        (err: any) => {
+        err => {
           console.log('Script dashboard error ' + err);
           this.$rootScope.appEvent('alert-error', [
             'Script Error',
@@ -103,7 +98,7 @@ export class DashboardLoaderSrv {
       );
   }
 
-  _executeScript(result: any) {
+  _executeScript(result) {
     const services = {
       dashboardSrv: this.dashboardSrv,
       datasourceSrv: this.datasourceSrv,
@@ -129,7 +124,7 @@ export class DashboardLoaderSrv {
     // Handle async dashboard scripts
     if (_.isFunction(scriptResult)) {
       const deferred = this.$q.defer();
-      scriptResult((dashboard: any) => {
+      scriptResult(dashboard => {
         this.$timeout(() => {
           deferred.resolve({ data: dashboard });
         });

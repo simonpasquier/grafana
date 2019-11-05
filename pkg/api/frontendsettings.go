@@ -1,13 +1,11 @@
 package api
 
 import (
+	"github.com/grafana/grafana/pkg/util"
 	"strconv"
 
-	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/util"
-
 	"github.com/grafana/grafana/pkg/bus"
-	"github.com/grafana/grafana/pkg/infra/log"
+	"github.com/grafana/grafana/pkg/log"
 	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/plugins"
 	"github.com/grafana/grafana/pkg/setting"
@@ -87,12 +85,11 @@ func (hs *HTTPServer) getFrontendSettingsMap(c *m.ReqContext) (map[string]interf
 			defaultDatasource = ds.Name
 		}
 
-		jsonData := ds.JsonData
-		if jsonData == nil {
-			jsonData = simplejson.New()
+		if ds.JsonData != nil {
+			dsMap["jsonData"] = ds.JsonData
+		} else {
+			dsMap["jsonData"] = make(map[string]string)
 		}
-
-		dsMap["jsonData"] = jsonData
 
 		if ds.Access == m.DS_ACCESS_DIRECT {
 			if ds.BasicAuth {
@@ -115,13 +112,17 @@ func (hs *HTTPServer) getFrontendSettingsMap(c *m.ReqContext) (map[string]interf
 			}
 		}
 
-		if (ds.Type == m.DS_INFLUXDB) || (ds.Type == m.DS_ES) {
+		if ds.Type == m.DS_ES {
+			dsMap["index"] = ds.Database
+		}
+
+		if ds.Type == m.DS_INFLUXDB {
 			dsMap["database"] = ds.Database
 		}
 
 		if ds.Type == m.DS_PROMETHEUS {
 			// add unproxied server URL for link to Prometheus web UI
-			jsonData.Set("directUrl", ds.Url)
+			dsMap["directUrl"] = ds.Url
 		}
 
 		datasources[ds.Name] = dsMap
@@ -153,15 +154,15 @@ func (hs *HTTPServer) getFrontendSettingsMap(c *m.ReqContext) (map[string]interf
 		}
 
 		panels[panel.Id] = map[string]interface{}{
-			"module":        panel.Module,
-			"baseUrl":       panel.BaseUrl,
-			"name":          panel.Name,
-			"id":            panel.Id,
-			"info":          panel.Info,
-			"hideFromList":  panel.HideFromList,
-			"sort":          getPanelSort(panel.Id),
-			"skipDataQuery": panel.SkipDataQuery,
-			"state":         panel.State,
+			"module":       panel.Module,
+			"baseUrl":      panel.BaseUrl,
+			"name":         panel.Name,
+			"id":           panel.Id,
+			"info":         panel.Info,
+			"hideFromList": panel.HideFromList,
+			"sort":         getPanelSort(panel.Id),
+			"dataFormats":  panel.DataFormats,
+			"state":        panel.State,
 		}
 	}
 
@@ -172,16 +173,13 @@ func (hs *HTTPServer) getFrontendSettingsMap(c *m.ReqContext) (map[string]interf
 		"appSubUrl":                  setting.AppSubUrl,
 		"allowOrgCreate":             (setting.AllowUserOrgCreate && c.IsSignedIn) || c.IsGrafanaAdmin,
 		"authProxyEnabled":           setting.AuthProxyEnabled,
-		"ldapEnabled":                setting.LDAPEnabled,
+		"ldapEnabled":                setting.LdapEnabled,
 		"alertingEnabled":            setting.AlertingEnabled,
 		"alertingErrorOrTimeout":     setting.AlertingErrorOrTimeout,
 		"alertingNoDataOrNullValues": setting.AlertingNoDataOrNullValues,
 		"exploreEnabled":             setting.ExploreEnabled,
 		"googleAnalyticsId":          setting.GoogleAnalyticsId,
 		"disableLoginForm":           setting.DisableLoginForm,
-		"disableUserSignUp":          !setting.AllowUserSignUp,
-		"loginHint":                  setting.LoginHint,
-		"passwordHint":               setting.PasswordHint,
 		"externalUserMngInfo":        setting.ExternalUserMngInfo,
 		"externalUserMngLinkUrl":     setting.ExternalUserMngLinkUrl,
 		"externalUserMngLinkName":    setting.ExternalUserMngLinkName,
@@ -198,7 +196,6 @@ func (hs *HTTPServer) getFrontendSettingsMap(c *m.ReqContext) (map[string]interf
 			"env":           setting.Env,
 			"isEnterprise":  setting.IsEnterprise,
 		},
-		"featureToggles": hs.Cfg.FeatureToggles,
 	}
 
 	return jsonObj, nil

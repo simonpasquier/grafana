@@ -1,9 +1,7 @@
 import _ from 'lodash';
-import angular, { IQService } from 'angular';
+import angular from 'angular';
 import coreModule from 'app/core/core_module';
 import { DashboardModel } from 'app/features/dashboard/state';
-import DatasourceSrv from 'app/features/plugins/datasource_srv';
-import { VariableSrv } from 'app/features/templating/all';
 
 export class AdHocFiltersCtrl {
   segments: any;
@@ -12,13 +10,7 @@ export class AdHocFiltersCtrl {
   removeTagFilterSegment: any;
 
   /** @ngInject */
-  constructor(
-    private uiSegmentSrv: any,
-    private datasourceSrv: DatasourceSrv,
-    private $q: IQService,
-    private variableSrv: VariableSrv,
-    $scope: any
-  ) {
+  constructor(private uiSegmentSrv, private datasourceSrv, private $q, private variableSrv, $scope) {
     this.removeTagFilterSegment = uiSegmentSrv.newSegment({
       fake: true,
       value: '-- remove filter --',
@@ -48,7 +40,7 @@ export class AdHocFiltersCtrl {
     this.segments.push(this.uiSegmentSrv.newPlusButton());
   }
 
-  getOptions(segment: { type: string }, index: number) {
+  getOptions(segment, index) {
     if (segment.type === 'operator') {
       return this.$q.when(this.uiSegmentSrv.newOperators(['=', '!=', '<', '>', '=~', '!~']));
     }
@@ -68,7 +60,7 @@ export class AdHocFiltersCtrl {
         promise = ds.getTagValues ? ds.getTagValues(options) : Promise.resolve([]);
       }
 
-      return promise.then((results: any) => {
+      return promise.then(results => {
         results = _.map(results, segment => {
           return this.uiSegmentSrv.newSegment({ value: segment.text });
         });
@@ -82,7 +74,7 @@ export class AdHocFiltersCtrl {
     });
   }
 
-  segmentChanged(segment: { value: any; type: string; cssClass: string }, index: number) {
+  segmentChanged(segment, index) {
     this.segments[index] = segment;
 
     // handle remove tag condition
@@ -116,11 +108,11 @@ export class AdHocFiltersCtrl {
   }
 
   updateVariableModel() {
-    const filters: any[] = [];
+    const filters = [];
     let filterIndex = -1;
     let hasFakes = false;
 
-    this.segments.forEach((segment: any) => {
+    this.segments.forEach(segment => {
       if (segment.type === 'value' && segment.fake) {
         hasFakes = true;
         return;

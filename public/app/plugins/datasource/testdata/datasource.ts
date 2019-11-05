@@ -2,84 +2,92 @@ import _ from 'lodash';
 import {
   DataSourceApi,
   DataQueryRequest,
+  TableData,
+  TimeSeries,
   DataSourceInstanceSettings,
-  DataQueryResponse,
-  MetricFindValue,
+  DataStreamObserver,
 } from '@grafana/ui';
-import { TableData, TimeSeries } from '@grafana/data';
 import { TestDataQuery, Scenario } from './types';
 import { getBackendSrv } from 'app/core/services/backend_srv';
-import { queryMetricTree } from './metricTree';
-import { Observable, from, merge } from 'rxjs';
-import { runStream } from './runStreams';
-import templateSrv from 'app/features/templating/template_srv';
+import { StreamHandler } from './StreamHandler';
 
 type TestData = TimeSeries | TableData;
 
-export class TestDataDataSource extends DataSourceApi<TestDataQuery> {
+export interface TestDataRegistry {
+  [key: string]: TestData[];
+}
+
+export class TestDataDatasource implements DataSourceApi<TestDataQuery> {
+  id: number;
+  streams = new StreamHandler();
+
+  /** @ngInject */
   constructor(instanceSettings: DataSourceInstanceSettings) {
-    super(instanceSettings);
+    this.id = instanceSettings.id;
   }
 
-  query(options: DataQueryRequest<TestDataQuery>): Observable<DataQueryResponse> {
-    const queries: any[] = [];
-    const streams: Array<Observable<DataQueryResponse>> = [];
+  query(options: DataQueryRequest<TestDataQuery>, observer: DataStreamObserver) {
+    const queries = options.targets.map(item => {
+      return {
+        refId: item.refId,
+        scenarioId: item.scenarioId,
+        intervalMs: options.intervalMs,
+        maxDataPoints: options.maxDataPoints,
+        stringInput: item.stringInput,
+        points: item.points,
+        alias: item.alias,
+        datasourceId: this.id,
+      };
+    });
 
-    // Start streams and prepare queries
-    for (const target of options.targets) {
-      if (target.scenarioId === 'streaming_client') {
-        streams.push(runStream(target, options));
-      } else {
-        queries.push({
-          ...target,
-          intervalMs: options.intervalMs,
-          maxDataPoints: options.maxDataPoints,
-          datasourceId: this.id,
-          alias: templateSrv.replace(target.alias || ''),
-        });
-      }
+    if (queries.length === 0) {
+      return Promise.resolve({ data: [] });
     }
 
-    if (queries.length) {
-      const req: Promise<DataQueryResponse> = getBackendSrv()
-        .datasourceRequest({
-          method: 'POST',
-          url: '/api/tsdb/query',
-          data: {
-            from: options.range.from.valueOf().toString(),
-            to: options.range.to.valueOf().toString(),
-            queries: queries,
-          },
-          // This sets up a cancel token
-          requestId: options.requestId,
-        })
-        .then((res: any) => this.processQueryResult(queries, res));
-
-      streams.push(from(req));
+    // Currently we do not support mixed with client only streaming
+    const resp = this.streams.process(options, observer);
+    if (resp) {
+      return Promise.resolve(resp);
     }
 
-    return merge(...streams);
-  }
+    return getBackendSrv()
+      .datasourceRequest({
+        method: 'POST',
+        url: '/api/tsdb/query',
+        data: {
+          from: options.range.from.valueOf().toString(),
+          to: options.range.to.valueOf().toString(),
+          queries: queries,
+        },
 
-  processQueryResult(queries: any, res: any): DataQueryResponse {
-    const data: TestData[] = [];
+        // This sets up a cancel token
+        requestId: options.requestId,
+      })
+      .then((res: any) => {
+        const data: TestData[] = [];
 
-    for (const query of queries) {
-      const results = res.data.results[query.refId];
+        // Returns data in the order it was asked for.
+        // if the response has data with different refId, it is ignored
+        for (const query of queries) {
+          const results = res.data.results[query.refId];
+          if (!results) {
+            console.warn('No Results for:', query);
+            continue;
+          }
 
-      for (const t of results.tables || []) {
-        const table = t as TableData;
-        table.refId = query.refId;
-        table.name = query.alias;
-        data.push(table);
-      }
+          for (const t of results.tables || []) {
+            const table = t as TableData;
+            table.refId = query.refId;
+            data.push(table);
+          }
 
-      for (const series of results.series || []) {
-        data.push({ target: series.name, datapoints: series.points, refId: query.refId, tags: series.tags });
-      }
-    }
+          for (const series of results.series || []) {
+            data.push({ target: series.name, datapoints: series.points, refId: query.refId });
+          }
+        }
 
-    return { data };
+        return { data: data };
+      });
   }
 
   annotationQuery(options: any) {
@@ -117,15 +125,5 @@ export class TestDataDataSource extends DataSourceApi<TestDataQuery> {
 
   getScenarios(): Promise<Scenario[]> {
     return getBackendSrv().get('/api/tsdb/testdata/scenarios');
-  }
-
-  metricFindQuery(query: string) {
-    return new Promise<MetricFindValue[]>((resolve, reject) => {
-      setTimeout(() => {
-        const children = queryMetricTree(templateSrv.replace(query));
-        const items = children.map(item => ({ value: item.name, text: item.name }));
-        resolve(items);
-      }, 100);
-    });
   }
 }

@@ -2,20 +2,9 @@ import _ from 'lodash';
 import { isVersionGtOrEq } from 'app/core/utils/version';
 import { InterpolateFunction } from '@grafana/ui';
 
-const index: any = {};
+const index = {};
 
-export interface FuncDef {
-  name: any;
-  category?: string;
-  params?: any;
-  defaultParams?: any;
-  shortName?: any;
-  fake?: boolean;
-  version?: string;
-  description?: string;
-}
-
-function addFuncDef(funcDef: FuncDef) {
+function addFuncDef(funcDef) {
   funcDef.params = funcDef.params || [];
   funcDef.defaultParams = funcDef.defaultParams || [];
 
@@ -952,7 +941,7 @@ addFuncDef({
   version: '1.1',
 });
 
-function isVersionRelatedFunction(obj: { version: string }, graphiteVersion: string) {
+function isVersionRelatedFunction(obj, graphiteVersion) {
   return !obj.version || isVersionGtOrEq(graphiteVersion, obj.version);
 }
 
@@ -962,7 +951,7 @@ export class FuncInstance {
   text: any;
   added: boolean;
 
-  constructor(funcDef: any, options: { withDefaultParams: any }) {
+  constructor(funcDef, options) {
     this.def = funcDef;
     this.params = [];
 
@@ -1013,7 +1002,7 @@ export class FuncInstance {
     return str + parameters.join(', ') + ')';
   }
 
-  _hasMultipleParamsInString(strValue: any, index: number) {
+  _hasMultipleParamsInString(strValue, index) {
     if (strValue.indexOf(',') === -1) {
       return false;
     }
@@ -1029,7 +1018,7 @@ export class FuncInstance {
     return false;
   }
 
-  updateParam(strValue: any, index: any) {
+  updateParam(strValue, index) {
     // handle optional parameters
     // if string contains ',' and next param is optional, split and update both
     if (this._hasMultipleParamsInString(strValue, index)) {
@@ -1061,22 +1050,22 @@ export class FuncInstance {
   }
 }
 
-function createFuncInstance(funcDef: any, options?: { withDefaultParams: any }, idx?: any) {
+function createFuncInstance(funcDef, options?, idx?) {
   if (_.isString(funcDef)) {
     funcDef = getFuncDef(funcDef, idx);
   }
   return new FuncInstance(funcDef, options);
 }
 
-function getFuncDef(name: string, idx?: any) {
+function getFuncDef(name, idx?) {
   if (!(idx || index)[name]) {
     throw { message: 'Method not found ' + name };
   }
   return (idx || index)[name];
 }
 
-function getFuncDefs(graphiteVersion: string, idx?: any) {
-  const funcs: any = {};
+function getFuncDefs(graphiteVersion, idx?) {
+  const funcs = {};
   _.forEach(idx || index, funcDef => {
     if (isVersionRelatedFunction(funcDef, graphiteVersion)) {
       funcs[funcDef.name] = _.assign({}, funcDef, {
@@ -1090,8 +1079,8 @@ function getFuncDefs(graphiteVersion: string, idx?: any) {
 }
 
 // parse response from graphite /functions endpoint into internal format
-function parseFuncDefs(rawDefs: any) {
-  const funcDefs: any = {};
+function parseFuncDefs(rawDefs) {
+  const funcDefs = {};
 
   _.forEach(rawDefs || {}, (funcDef, funcName) => {
     // skip graphite graph functions
@@ -1108,9 +1097,9 @@ function parseFuncDefs(rawDefs: any) {
         .replace(/.. code-block *:: *none/g, '.. code-block::');
     }
 
-    const func: FuncDef = {
+    const func = {
       name: funcDef.name,
-      description,
+      description: description,
       category: funcDef.group,
       params: [],
       defaultParams: [],
@@ -1133,7 +1122,7 @@ function parseFuncDefs(rawDefs: any) {
     }
 
     _.forEach(funcDef.params, rawParam => {
-      const param: any = {
+      const param = {
         name: rawParam.name,
         type: 'string',
         optional: !rawParam.required,

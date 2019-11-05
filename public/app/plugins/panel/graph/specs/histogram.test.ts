@@ -2,7 +2,7 @@ import { convertValuesToHistogram, getSeriesValues } from '../histogram';
 
 describe('Graph Histogam Converter', () => {
   describe('Values to histogram converter', () => {
-    let values: any;
+    let values;
     let bucketSize = 10;
 
     beforeEach(() => {
@@ -27,7 +27,7 @@ describe('Graph Histogam Converter', () => {
   });
 
   describe('Series to values converter', () => {
-    let data: any;
+    let data;
 
     beforeEach(() => {
       data = [

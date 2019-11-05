@@ -3,7 +3,7 @@ import { Input } from '@grafana/ui';
 import { VariableQueryProps } from 'app/types/plugins';
 
 export default class DefaultVariableQueryEditor extends PureComponent<VariableQueryProps, any> {
-  constructor(props: VariableQueryProps) {
+  constructor(props) {
     super(props);
     this.state = { value: props.query };
   }

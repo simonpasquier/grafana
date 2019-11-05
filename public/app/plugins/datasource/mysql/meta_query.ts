@@ -1,5 +1,5 @@
 export class MysqlMetaQuery {
-  constructor(private target: any, private queryModel: any) {}
+  constructor(private target, private queryModel) {}
 
   getOperators(datatype: string) {
     switch (datatype) {
@@ -22,7 +22,7 @@ export class MysqlMetaQuery {
   }
 
   // quote identifier as literal to use in metadata queries
-  quoteIdentAsLiteral(value: string) {
+  quoteIdentAsLiteral(value) {
     return this.queryModel.quoteLiteral(this.queryModel.unquoteIdentifier(value));
   }
 

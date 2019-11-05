@@ -1,13 +1,10 @@
 import _ from 'lodash';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { IQService } from 'angular';
-import { TemplateSrv } from 'app/features/templating/template_srv';
 
 class GrafanaDatasource {
   /** @ngInject */
-  constructor(private backendSrv: BackendSrv, private $q: IQService, private templateSrv: TemplateSrv) {}
+  constructor(private backendSrv, private $q, private templateSrv) {}
 
-  query(options: any) {
+  query(options) {
     return this.backendSrv
       .get('/api/tsdb/testdata/random-walk', {
         from: options.range.from.valueOf(),
@@ -15,8 +12,8 @@ class GrafanaDatasource {
         intervalMs: options.intervalMs,
         maxDataPoints: options.maxDataPoints,
       })
-      .then((res: any) => {
-        const data: any[] = [];
+      .then(res => {
+        const data = [];
 
         if (res.results) {
           _.forEach(res.results, queryRes => {
@@ -33,11 +30,11 @@ class GrafanaDatasource {
       });
   }
 
-  metricFindQuery(options: any) {
+  metricFindQuery(options) {
     return this.$q.when({ data: [] });
   }
 
-  annotationQuery(options: any) {
+  annotationQuery(options) {
     const params: any = {
       from: options.range.from.valueOf(),
       to: options.range.to.valueOf(),
@@ -63,7 +60,7 @@ class GrafanaDatasource {
       const delimiter = '__delimiter__';
       const tags = [];
       for (const t of params.tags) {
-        const renderedValues = this.templateSrv.replace(t, {}, (value: any) => {
+        const renderedValues = this.templateSrv.replace(t, {}, value => {
           if (typeof value === 'string') {
             return value;
           }

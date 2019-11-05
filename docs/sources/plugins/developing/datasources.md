@@ -146,8 +146,7 @@ Request object passed to datasource.annotationQuery function:
     "datasource": "generic datasource",
     "enable": true,
     "name": "annotation name"
-  },
-  "dashboard": DashboardModel
+  }
 }
 ```
 

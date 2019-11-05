@@ -1,9 +1,8 @@
 import { getValueFormats } from '@grafana/ui';
-import { GraphCtrl } from './module';
 
 export class AxesEditorCtrl {
   panel: any;
-  panelCtrl: GraphCtrl;
+  panelCtrl: any;
   unitFormats: any;
   logScales: any;
   xAxisModes: any;
@@ -11,8 +10,8 @@ export class AxesEditorCtrl {
   xNameSegment: any;
 
   /** @ngInject */
-  constructor(private $scope: any) {
-    this.panelCtrl = $scope.ctrl as GraphCtrl;
+  constructor(private $scope, private $q) {
+    this.panelCtrl = $scope.ctrl;
     this.panel = this.panelCtrl.panel;
     this.$scope.ctrl = this;
 
@@ -49,7 +48,7 @@ export class AxesEditorCtrl {
     }
   }
 
-  setUnitFormat(axis: { format: any }, subItem: { value: any }) {
+  setUnitFormat(axis, subItem) {
     axis.format = subItem.value;
     this.panelCtrl.render();
   }
@@ -60,11 +59,20 @@ export class AxesEditorCtrl {
 
   xAxisModeChanged() {
     this.panelCtrl.processor.setPanelDefaultsForNewXAxisMode();
-    this.panelCtrl.onDataFramesReceived(this.panelCtrl.dataList);
+    this.panelCtrl.onDataReceived(this.panelCtrl.dataList);
   }
 
   xAxisValueChanged() {
-    this.panelCtrl.onDataFramesReceived(this.panelCtrl.dataList);
+    this.panelCtrl.onDataReceived(this.panelCtrl.dataList);
+  }
+
+  getDataFieldNames(onlyNumbers) {
+    const props = this.panelCtrl.processor.getDataFieldNames(this.panelCtrl.dataList, onlyNumbers);
+    const items = props.map(prop => {
+      return { text: prop, value: prop };
+    });
+
+    return this.$q.when(items);
   }
 }
 

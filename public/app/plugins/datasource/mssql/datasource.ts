@@ -1,9 +1,5 @@
 import _ from 'lodash';
 import ResponseParser from './response_parser';
-import { BackendSrv } from 'app/core/services/backend_srv';
-import { IQService } from 'angular';
-import { TemplateSrv } from 'app/features/templating/template_srv';
-import { TimeSrv } from 'app/features/dashboard/services/TimeSrv';
 
 export class MssqlDatasource {
   id: any;
@@ -12,20 +8,14 @@ export class MssqlDatasource {
   interval: string;
 
   /** @ngInject */
-  constructor(
-    instanceSettings: any,
-    private backendSrv: BackendSrv,
-    private $q: IQService,
-    private templateSrv: TemplateSrv,
-    private timeSrv: TimeSrv
-  ) {
+  constructor(instanceSettings, private backendSrv, private $q, private templateSrv, private timeSrv) {
     this.name = instanceSettings.name;
     this.id = instanceSettings.id;
     this.responseParser = new ResponseParser(this.$q);
     this.interval = (instanceSettings.jsonData || {}).timeInterval || '1m';
   }
 
-  interpolateVariable(value: any, variable: any) {
+  interpolateVariable(value, variable) {
     if (typeof value === 'string') {
       if (variable.multi || variable.includeAll) {
         return "'" + value.replace(/'/g, `''`) + "'";
@@ -48,7 +38,7 @@ export class MssqlDatasource {
     return quotedValues.join(',');
   }
 
-  query(options: any) {
+  query(options) {
     const queries = _.filter(options.targets, item => {
       return item.hide !== true;
     }).map(item => {
@@ -79,7 +69,7 @@ export class MssqlDatasource {
       .then(this.responseParser.processQueryResult);
   }
 
-  annotationQuery(options: any) {
+  annotationQuery(options) {
     if (!options.annotation.rawQuery) {
       return this.$q.reject({ message: 'Query missing in annotation definition' });
     }
@@ -101,10 +91,10 @@ export class MssqlDatasource {
           queries: [query],
         },
       })
-      .then((data: any) => this.responseParser.transformAnnotationResponse(options, data));
+      .then(data => this.responseParser.transformAnnotationResponse(options, data));
   }
 
-  metricFindQuery(query: string, optionalOptions: { variable: { name: string } }) {
+  metricFindQuery(query, optionalOptions) {
     let refId = 'tempvar';
     if (optionalOptions && optionalOptions.variable && optionalOptions.variable.name) {
       refId = optionalOptions.variable.name;
@@ -130,7 +120,7 @@ export class MssqlDatasource {
         method: 'POST',
         data: data,
       })
-      .then((data: any) => this.responseParser.parseMetricFindQueryResult(refId, data));
+      .then(data => this.responseParser.parseMetricFindQueryResult(refId, data));
   }
 
   testDatasource() {
@@ -153,10 +143,10 @@ export class MssqlDatasource {
           ],
         },
       })
-      .then((res: any) => {
+      .then(res => {
         return { status: 'success', message: 'Database Connection OK' };
       })
-      .catch((err: any) => {
+      .catch(err => {
         console.log(err);
         if (err.data && err.data.message) {
           return { status: 'error', message: err.data.message };
@@ -164,10 +154,5 @@ export class MssqlDatasource {
           return { status: 'error', message: err.status };
         }
       });
-  }
-
-  targetContainsTemplate(target: any) {
-    const rawSql = target.rawSql.replace('$__', '');
-    return this.templateSrv.variableExists(rawSql);
   }
 }

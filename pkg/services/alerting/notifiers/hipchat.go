@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana/pkg/bus"
-	"github.com/grafana/grafana/pkg/infra/log"
+	"github.com/grafana/grafana/pkg/log"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 )
@@ -46,8 +46,6 @@ const (
 	maxFieldCount int = 4
 )
 
-// NewHipChatNotifier is the constructor functions
-// for the HipChatNotifier
 func NewHipChatNotifier(model *models.AlertNotification) (alerting.Notifier, error) {
 	url := model.Settings.Get("url").MustString()
 	if strings.HasSuffix(url, "/") {
@@ -58,34 +56,31 @@ func NewHipChatNotifier(model *models.AlertNotification) (alerting.Notifier, err
 	}
 
 	apikey := model.Settings.Get("apikey").MustString()
-	roomID := model.Settings.Get("roomid").MustString()
+	roomId := model.Settings.Get("roomid").MustString()
 
 	return &HipChatNotifier{
 		NotifierBase: NewNotifierBase(model),
-		URL:          url,
-		APIKey:       apikey,
-		RoomID:       roomID,
+		Url:          url,
+		ApiKey:       apikey,
+		RoomId:       roomId,
 		log:          log.New("alerting.notifier.hipchat"),
 	}, nil
 }
 
-// HipChatNotifier is responsible for sending
-// alert notifications to Hipchat.
 type HipChatNotifier struct {
 	NotifierBase
-	URL    string
-	APIKey string
-	RoomID string
+	Url    string
+	ApiKey string
+	RoomId string
 	log    log.Logger
 }
 
-// Notify sends an alert notification to HipChat
-func (hc *HipChatNotifier) Notify(evalContext *alerting.EvalContext) error {
-	hc.log.Info("Executing hipchat notification", "ruleId", evalContext.Rule.ID, "notification", hc.Name)
+func (this *HipChatNotifier) Notify(evalContext *alerting.EvalContext) error {
+	this.log.Info("Executing hipchat notification", "ruleId", evalContext.Rule.Id, "notification", this.Name)
 
-	ruleURL, err := evalContext.GetRuleURL()
+	ruleUrl, err := evalContext.GetRuleUrl()
 	if err != nil {
-		hc.log.Error("Failed get rule link", "error", err)
+		this.log.Error("Failed get rule link", "error", err)
 		return err
 	}
 
@@ -138,7 +133,7 @@ func (hc *HipChatNotifier) Notify(evalContext *alerting.EvalContext) error {
 	// Add a card with link to the dashboard
 	card := map[string]interface{}{
 		"style":       "application",
-		"url":         ruleURL,
+		"url":         ruleUrl,
 		"id":          "1",
 		"title":       evalContext.GetNotificationTitle(),
 		"description": message,
@@ -148,10 +143,10 @@ func (hc *HipChatNotifier) Notify(evalContext *alerting.EvalContext) error {
 		"date":       evalContext.EndTime.Unix(),
 		"attributes": attributes,
 	}
-	if evalContext.ImagePublicURL != "" {
+	if evalContext.ImagePublicUrl != "" {
 		card["thumbnail"] = map[string]interface{}{
-			"url":    evalContext.ImagePublicURL,
-			"url@2x": evalContext.ImagePublicURL,
+			"url":    evalContext.ImagePublicUrl,
+			"url@2x": evalContext.ImagePublicUrl,
 			"width":  1193,
 			"height": 564,
 		}
@@ -165,13 +160,13 @@ func (hc *HipChatNotifier) Notify(evalContext *alerting.EvalContext) error {
 		"card":           card,
 	}
 
-	hipURL := fmt.Sprintf("%s/v2/room/%s/notification?auth_token=%s", hc.URL, hc.RoomID, hc.APIKey)
+	hipUrl := fmt.Sprintf("%s/v2/room/%s/notification?auth_token=%s", this.Url, this.RoomId, this.ApiKey)
 	data, _ := json.Marshal(&body)
-	hc.log.Info("Request payload", "json", string(data))
-	cmd := &models.SendWebhookSync{Url: hipURL, Body: string(data)}
+	this.log.Info("Request payload", "json", string(data))
+	cmd := &models.SendWebhookSync{Url: hipUrl, Body: string(data)}
 
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
-		hc.log.Error("Failed to send hipchat notification", "error", err, "webhook", hc.Name)
+		this.log.Error("Failed to send hipchat notification", "error", err, "webhook", this.Name)
 		return err
 	}
 

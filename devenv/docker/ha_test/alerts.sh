@@ -101,7 +101,7 @@ provision() {
 
 	requiresJsonnet
 
-	find grafana/provisioning/dashboards/alerts -maxdepth 1 -name 'alert*.json' -delete
+	rm -rf grafana/provisioning/dashboards/alerts/alert-*.json
 	jsonnet -m grafana/provisioning/dashboards/alerts grafana/provisioning/alerts.jsonnet --ext-code alerts=$alerts --ext-code condition=$condition
 }
 

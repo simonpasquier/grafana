@@ -10,7 +10,7 @@ import {
 } from './functions';
 
 export default class StackdriverMetricFindQuery {
-  constructor(private datasource: any) {}
+  constructor(private datasource) {}
 
   async execute(query: any) {
     try {
@@ -50,21 +50,19 @@ export default class StackdriverMetricFindQuery {
     }));
   }
 
-  async handleMetricTypesQuery({ selectedService }: any) {
+  async handleMetricTypesQuery({ selectedService }) {
     if (!selectedService) {
       return [];
     }
     const metricDescriptors = await this.datasource.getMetricTypes(this.datasource.projectName);
-    return getMetricTypesByService(metricDescriptors, this.datasource.templateSrv.replace(selectedService)).map(
-      (s: any) => ({
-        text: s.displayName,
-        value: s.type,
-        expandable: true,
-      })
-    );
+    return getMetricTypesByService(metricDescriptors, this.datasource.templateSrv.replace(selectedService)).map(s => ({
+      text: s.displayName,
+      value: s.type,
+      expandable: true,
+    }));
   }
 
-  async handleLabelKeysQuery({ selectedMetricType }: any) {
+  async handleLabelKeysQuery({ selectedMetricType }) {
     if (!selectedMetricType) {
       return [];
     }
@@ -72,7 +70,7 @@ export default class StackdriverMetricFindQuery {
     return labelKeys.map(this.toFindQueryResult);
   }
 
-  async handleLabelValuesQuery({ selectedMetricType, labelKey }: any) {
+  async handleLabelValuesQuery({ selectedMetricType, labelKey }) {
     if (!selectedMetricType) {
       return [];
     }
@@ -90,7 +88,7 @@ export default class StackdriverMetricFindQuery {
     return values.map(this.toFindQueryResult);
   }
 
-  async handleResourceTypeQuery({ selectedMetricType }: any) {
+  async handleResourceTypeQuery({ selectedMetricType }) {
     if (!selectedMetricType) {
       return [];
     }
@@ -99,24 +97,24 @@ export default class StackdriverMetricFindQuery {
     return response.meta.resourceTypes ? response.meta.resourceTypes.map(this.toFindQueryResult) : [];
   }
 
-  async handleAlignersQuery({ selectedMetricType }: any) {
+  async handleAlignersQuery({ selectedMetricType }) {
     if (!selectedMetricType) {
       return [];
     }
     const metricDescriptors = await this.datasource.getMetricTypes(this.datasource.projectName);
     const { valueType, metricKind } = metricDescriptors.find(
-      (m: any) => m.type === this.datasource.templateSrv.replace(selectedMetricType)
+      m => m.type === this.datasource.templateSrv.replace(selectedMetricType)
     );
     return getAlignmentOptionsByMetric(valueType, metricKind).map(this.toFindQueryResult);
   }
 
-  async handleAggregationQuery({ selectedMetricType }: any) {
+  async handleAggregationQuery({ selectedMetricType }) {
     if (!selectedMetricType) {
       return [];
     }
     const metricDescriptors = await this.datasource.getMetricTypes(this.datasource.projectName);
     const { valueType, metricKind } = metricDescriptors.find(
-      (m: any) => m.type === this.datasource.templateSrv.replace(selectedMetricType)
+      m => m.type === this.datasource.templateSrv.replace(selectedMetricType)
     );
     return getAggregationOptionsByMetric(valueType, metricKind).map(this.toFindQueryResult);
   }
@@ -125,7 +123,7 @@ export default class StackdriverMetricFindQuery {
     return alignmentPeriods.map(this.toFindQueryResult);
   }
 
-  toFindQueryResult(x: any) {
+  toFindQueryResult(x) {
     return isString(x) ? { text: x, expandable: true } : { ...x, expandable: true };
   }
 }

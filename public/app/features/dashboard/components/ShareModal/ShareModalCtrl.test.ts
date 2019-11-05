@@ -1,7 +1,6 @@
 import config from 'app/core/config';
 import { LinkSrv } from 'app/features/panel/panellinks/link_srv';
 import { ShareModalCtrl } from './ShareModalCtrl';
-import { TemplateSrv } from 'app/features/templating/template_srv';
 
 describe('ShareModalCtrl', () => {
   const ctx = {
@@ -42,7 +41,7 @@ describe('ShareModalCtrl', () => {
         orgId: 1,
       },
     };
-    // @ts-ignore
+
     ctx.ctrl = new ShareModalCtrl(
       ctx.scope,
       {},
@@ -50,7 +49,7 @@ describe('ShareModalCtrl', () => {
       {},
       ctx.timeSrv,
       ctx.templateSrv,
-      new LinkSrv({} as TemplateSrv, ctx.stimeSrv)
+      new LinkSrv({}, ctx.stimeSrv)
     );
   });
 
@@ -136,7 +135,7 @@ describe('ShareModalCtrl', () => {
       ctx.$location.absUrl = () => 'http://server/#!/test';
       ctx.scope.options.includeTemplateVars = true;
 
-      ctx.templateSrv.fillVariableValuesForUrl = (params: any) => {
+      ctx.templateSrv.fillVariableValuesForUrl = params => {
         params['var-app'] = 'mupp';
         params['var-server'] = 'srv-01';
       };

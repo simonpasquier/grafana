@@ -9,12 +9,12 @@ import (
 	"strconv"
 
 	"github.com/grafana/grafana/pkg/bus"
-	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/log"
+	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/alerting"
 )
 
-const pushoverEndpoint = "https://api.pushover.net/1/messages.json"
+const PUSHOVER_ENDPOINT = "https://api.pushover.net/1/messages.json"
 
 func init() {
 	sounds := ` 
@@ -95,10 +95,9 @@ func init() {
 	})
 }
 
-// NewPushoverNotifier is the constructor for the Pushover Notifier
-func NewPushoverNotifier(model *models.AlertNotification) (alerting.Notifier, error) {
+func NewPushoverNotifier(model *m.AlertNotification) (alerting.Notifier, error) {
 	userKey := model.Settings.Get("userKey").MustString()
-	APIToken := model.Settings.Get("apiToken").MustString()
+	apiToken := model.Settings.Get("apiToken").MustString()
 	device := model.Settings.Get("device").MustString()
 	priority, _ := strconv.Atoi(model.Settings.Get("priority").MustString())
 	retry, _ := strconv.Atoi(model.Settings.Get("retry").MustString())
@@ -110,13 +109,13 @@ func NewPushoverNotifier(model *models.AlertNotification) (alerting.Notifier, er
 	if userKey == "" {
 		return nil, alerting.ValidationError{Reason: "User key not given"}
 	}
-	if APIToken == "" {
+	if apiToken == "" {
 		return nil, alerting.ValidationError{Reason: "API token not given"}
 	}
 	return &PushoverNotifier{
 		NotifierBase:  NewNotifierBase(model),
 		UserKey:       userKey,
-		APIToken:      APIToken,
+		ApiToken:      apiToken,
 		Priority:      priority,
 		Retry:         retry,
 		Expire:        expire,
@@ -128,12 +127,10 @@ func NewPushoverNotifier(model *models.AlertNotification) (alerting.Notifier, er
 	}, nil
 }
 
-// PushoverNotifier is responsible for sending
-// alert notifications to Pushover
 type PushoverNotifier struct {
 	NotifierBase
 	UserKey       string
-	APIToken      string
+	ApiToken      string
 	Priority      int
 	Retry         int
 	Expire        int
@@ -144,11 +141,10 @@ type PushoverNotifier struct {
 	log           log.Logger
 }
 
-// Notify sends a alert notification to Pushover
-func (pn *PushoverNotifier) Notify(evalContext *alerting.EvalContext) error {
-	ruleURL, err := evalContext.GetRuleURL()
+func (this *PushoverNotifier) Notify(evalContext *alerting.EvalContext) error {
+	ruleUrl, err := evalContext.GetRuleUrl()
 	if err != nil {
-		pn.log.Error("Failed get rule link", "error", err)
+		this.log.Error("Failed get rule link", "error", err)
 		return err
 	}
 
@@ -167,34 +163,34 @@ func (pn *PushoverNotifier) Notify(evalContext *alerting.EvalContext) error {
 		message = "Notification message missing (Set a notification message to replace this text.)"
 	}
 
-	headers, uploadBody, err := pn.genPushoverBody(evalContext, message, ruleURL)
+	headers, uploadBody, err := this.genPushoverBody(evalContext, message, ruleUrl)
 	if err != nil {
-		pn.log.Error("Failed to generate body for pushover", "error", err)
+		this.log.Error("Failed to generate body for pushover", "error", err)
 		return err
 	}
 
-	cmd := &models.SendWebhookSync{
-		Url:        pushoverEndpoint,
+	cmd := &m.SendWebhookSync{
+		Url:        PUSHOVER_ENDPOINT,
 		HttpMethod: "POST",
 		HttpHeader: headers,
 		Body:       uploadBody.String(),
 	}
 
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {
-		pn.log.Error("Failed to send pushover notification", "error", err, "webhook", pn.Name)
+		this.log.Error("Failed to send pushover notification", "error", err, "webhook", this.Name)
 		return err
 	}
 
 	return nil
 }
 
-func (pn *PushoverNotifier) genPushoverBody(evalContext *alerting.EvalContext, message string, ruleURL string) (map[string]string, bytes.Buffer, error) {
+func (this *PushoverNotifier) genPushoverBody(evalContext *alerting.EvalContext, message string, ruleUrl string) (map[string]string, bytes.Buffer, error) {
 	var b bytes.Buffer
 	var err error
 	w := multipart.NewWriter(&b)
 
 	// Add image only if requested and available
-	if pn.Upload && evalContext.ImageOnDiskPath != "" {
+	if this.Upload && evalContext.ImageOnDiskPath != "" {
 		f, err := os.Open(evalContext.ImageOnDiskPath)
 		if err != nil {
 			return nil, b, err
@@ -213,47 +209,47 @@ func (pn *PushoverNotifier) genPushoverBody(evalContext *alerting.EvalContext, m
 	}
 
 	// Add the user token
-	err = w.WriteField("user", pn.UserKey)
+	err = w.WriteField("user", this.UserKey)
 	if err != nil {
 		return nil, b, err
 	}
 
 	// Add the api token
-	err = w.WriteField("token", pn.APIToken)
+	err = w.WriteField("token", this.ApiToken)
 	if err != nil {
 		return nil, b, err
 	}
 
 	// Add priority
-	err = w.WriteField("priority", strconv.Itoa(pn.Priority))
+	err = w.WriteField("priority", strconv.Itoa(this.Priority))
 	if err != nil {
 		return nil, b, err
 	}
 
-	if pn.Priority == 2 {
-		err = w.WriteField("retry", strconv.Itoa(pn.Retry))
+	if this.Priority == 2 {
+		err = w.WriteField("retry", strconv.Itoa(this.Retry))
 		if err != nil {
 			return nil, b, err
 		}
 
-		err = w.WriteField("expire", strconv.Itoa(pn.Expire))
+		err = w.WriteField("expire", strconv.Itoa(this.Expire))
 		if err != nil {
 			return nil, b, err
 		}
 	}
 
 	// Add device
-	if pn.Device != "" {
-		err = w.WriteField("device", pn.Device)
+	if this.Device != "" {
+		err = w.WriteField("device", this.Device)
 		if err != nil {
 			return nil, b, err
 		}
 	}
 
 	// Add sound
-	sound := pn.AlertingSound
-	if evalContext.Rule.State == models.AlertStateOK {
-		sound = pn.OkSound
+	sound := this.AlertingSound
+	if evalContext.Rule.State == m.AlertStateOK {
+		sound = this.OkSound
 	}
 	if sound != "default" {
 		err = w.WriteField("sound", sound)
@@ -269,7 +265,7 @@ func (pn *PushoverNotifier) genPushoverBody(evalContext *alerting.EvalContext, m
 	}
 
 	// Add URL
-	err = w.WriteField("url", ruleURL)
+	err = w.WriteField("url", ruleUrl)
 	if err != nil {
 		return nil, b, err
 	}

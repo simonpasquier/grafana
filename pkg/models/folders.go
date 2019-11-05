@@ -98,8 +98,3 @@ type HasEditPermissionInFoldersQuery struct {
 	SignedInUser *SignedInUser
 	Result       bool
 }
-
-type HasAdminPermissionInFoldersQuery struct {
-	SignedInUser *SignedInUser
-	Result       bool
-}

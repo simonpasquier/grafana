@@ -1,13 +1,14 @@
 import React, { FC } from 'react';
+import _ from 'lodash';
 
 import { MetricSelect } from 'app/core/components/Select/MetricSelect';
 import { TemplateSrv } from 'app/features/templating/template_srv';
-import { SelectableValue } from '@grafana/data';
+import { SelectOptionItem } from '@grafana/ui';
 
 export interface Props {
-  onChange: (perSeriesAligner: any) => void;
+  onChange: (perSeriesAligner) => void;
   templateSrv: TemplateSrv;
-  alignOptions: Array<SelectableValue<string>>;
+  alignOptions: Array<SelectOptionItem<string>>;
   perSeriesAligner: string;
 }
 

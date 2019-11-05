@@ -3,17 +3,16 @@ import '../all';
 import _ from 'lodash';
 import { VariableSrv } from '../variable_srv';
 import { DashboardModel } from '../../dashboard/state/DashboardModel';
-// @ts-ignore
 import $q from 'q';
 
 describe('VariableSrv init', function(this: any) {
   const templateSrv = {
-    init: (vars: any) => {
+    init: vars => {
       this.variables = vars;
     },
     variableInitialized: () => {},
     updateIndex: () => {},
-    replace: (str: string) =>
+    replace: str =>
       str.replace(this.regex, match => {
         return match;
       }),
@@ -28,11 +27,11 @@ describe('VariableSrv init', function(this: any) {
   const $injector = {} as any;
   let ctx = {} as any;
 
-  function describeInitScenario(desc: string, fn: Function) {
+  function describeInitScenario(desc, fn) {
     describe(desc, () => {
       const scenario: any = {
         urlParams: {},
-        setup: (setupFn: Function) => {
+        setup: setupFn => {
           scenario.setupFn = setupFn;
         },
       };
@@ -53,7 +52,7 @@ describe('VariableSrv init', function(this: any) {
         // @ts-ignore
         ctx.variableSrv = new VariableSrv($q, {}, $injector, templateSrv, timeSrv);
 
-        $injector.instantiate = (variable: any, model: any) => {
+        $injector.instantiate = (variable, model) => {
           return getVarMockConstructor(variable, model, ctx);
         };
 
@@ -75,7 +74,7 @@ describe('VariableSrv init', function(this: any) {
   }
 
   ['query', 'interval', 'custom', 'datasource'].forEach(type => {
-    describeInitScenario('when setting ' + type + ' variable via url', (scenario: any) => {
+    describeInitScenario('when setting ' + type + ' variable via url', scenario => {
       scenario.setup(() => {
         scenario.variables = [
           {
@@ -115,7 +114,7 @@ describe('VariableSrv init', function(this: any) {
       },
     ];
 
-    describeInitScenario('when setting parent const from url', (scenario: any) => {
+    describeInitScenario('when setting parent const from url', scenario => {
       scenario.setup(() => {
         scenario.variables = _.cloneDeep(variableList);
         scenario.urlParams['var-app'] = 'google';
@@ -133,7 +132,7 @@ describe('VariableSrv init', function(this: any) {
     });
   });
 
-  describeInitScenario('when datasource variable is initialized', (scenario: any) => {
+  describeInitScenario('when datasource variable is initialized', scenario => {
     scenario.setup(() => {
       scenario.variables = [
         {
@@ -158,7 +157,7 @@ describe('VariableSrv init', function(this: any) {
     });
   });
 
-  describeInitScenario('when template variable is present in url multiple times', (scenario: any) => {
+  describeInitScenario('when template variable is present in url multiple times', scenario => {
     scenario.setup(() => {
       scenario.variables = [
         {
@@ -194,7 +193,7 @@ describe('VariableSrv init', function(this: any) {
 
   describeInitScenario(
     'when template variable is present in url multiple times and variables have no text',
-    (scenario: any) => {
+    scenario => {
       scenario.setup(() => {
         scenario.variables = [
           {
@@ -216,7 +215,7 @@ describe('VariableSrv init', function(this: any) {
     }
   );
 
-  describeInitScenario('when template variable is present in url multiple times using key/values', (scenario: any) => {
+  describeInitScenario('when template variable is present in url multiple times using key/values', scenario => {
     scenario.setup(() => {
       scenario.variables = [
         {
@@ -251,7 +250,7 @@ describe('VariableSrv init', function(this: any) {
   });
 });
 
-function getVarMockConstructor(variable: any, model: any, ctx: any) {
+function getVarMockConstructor(variable, model, ctx) {
   switch (model.model.type) {
     case 'datasource':
       return new variable(model.model, ctx.datasourceSrv, ctx.variableSrv, ctx.templateSrv);

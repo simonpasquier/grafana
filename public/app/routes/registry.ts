@@ -1,12 +1,10 @@
-import { route } from 'angular';
-
 interface RegisterRoutesHandler {
-  ($routeProvider: route.IRouteProvider): any;
+  ($routeProvider): any;
 }
 
 const handlers: RegisterRoutesHandler[] = [];
 
-export function applyRouteRegistrationHandlers($routeProvider: route.IRouteProvider) {
+export function applyRouteRegistrationHandlers($routeProvider) {
   for (const handler of handlers) {
     handler($routeProvider);
   }

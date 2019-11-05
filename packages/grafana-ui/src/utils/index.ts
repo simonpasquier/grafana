@@ -1,14 +1,21 @@
+export * from './processSeriesData';
 export * from './valueFormats/valueFormats';
 export * from './colors';
 export * from './namedColorsPalette';
-export * from './displayProcessor';
+export * from './thresholds';
+export * from './string';
+export * from './csv';
+export * from './fieldReducer';
+export * from './displayValue';
 export * from './fieldDisplay';
+export * from './deprecationWarning';
+export * from './logs';
+export * from './labels';
+export { getMappedValue } from './valueMappings';
 export * from './validate';
-export { getFlotPairs, getFlotPairsConstant } from './flotPairs';
-export * from './slate';
-export * from './dataLinks';
-export { default as ansicolor } from './ansicolor';
+export { getFlotPairs } from './flotPairs';
+export * from './object';
+export * from './fieldCache';
 
-// Export with a namespace
-import * as DOMUtil from './dom'; // includes Element.closest polyfil
-export { DOMUtil };
+// Names are too general to export
+// rangeutils, datemath

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/models"
+	m "github.com/grafana/grafana/pkg/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -16,13 +16,13 @@ func TestGoogleChatNotifier(t *testing.T) {
 				json := `{ }`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "ops",
 					Type:     "googlechat",
 					Settings: settingsJSON,
 				}
 
-				_, err := newGoogleChatNotifier(model)
+				_, err := NewGoogleChatNotifier(model)
 				So(err, ShouldNotBeNil)
 			})
 
@@ -33,20 +33,21 @@ func TestGoogleChatNotifier(t *testing.T) {
 				}`
 
 				settingsJSON, _ := simplejson.NewJson([]byte(json))
-				model := &models.AlertNotification{
+				model := &m.AlertNotification{
 					Name:     "ops",
 					Type:     "googlechat",
 					Settings: settingsJSON,
 				}
 
-				not, err := newGoogleChatNotifier(model)
+				not, err := NewGoogleChatNotifier(model)
 				webhookNotifier := not.(*GoogleChatNotifier)
 
 				So(err, ShouldBeNil)
 				So(webhookNotifier.Name, ShouldEqual, "ops")
 				So(webhookNotifier.Type, ShouldEqual, "googlechat")
-				So(webhookNotifier.URL, ShouldEqual, "http://google.com")
+				So(webhookNotifier.Url, ShouldEqual, "http://google.com")
 			})
+
 		})
 	})
 }

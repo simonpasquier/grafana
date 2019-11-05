@@ -31,7 +31,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/unknwon/com"
+	"github.com/Unknwon/com"
 )
 
 const (

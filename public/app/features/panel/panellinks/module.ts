@@ -1,7 +1,6 @@
 import angular from 'angular';
 import _ from 'lodash';
 import './link_srv';
-import { BackendSrv } from 'app/core/services/backend_srv';
 
 function panelLinksEditor() {
   return {
@@ -17,7 +16,7 @@ function panelLinksEditor() {
 
 export class PanelLinksEditorCtrl {
   /** @ngInject */
-  constructor($scope: any, backendSrv: BackendSrv) {
+  constructor($scope, backendSrv) {
     $scope.panel.links = $scope.panel.links || [];
 
     $scope.addLink = () => {
@@ -26,7 +25,7 @@ export class PanelLinksEditorCtrl {
       });
     };
 
-    $scope.searchDashboards = (queryStr: string, callback: Function) => {
+    $scope.searchDashboards = (queryStr, callback) => {
       backendSrv.search({ query: queryStr }).then(hits => {
         const dashboards = _.map(hits, dash => {
           return dash.title;
@@ -36,7 +35,7 @@ export class PanelLinksEditorCtrl {
       });
     };
 
-    $scope.dashboardChanged = (link: any) => {
+    $scope.dashboardChanged = link => {
       backendSrv.search({ query: link.dashboard }).then(hits => {
         const dashboard: any = _.find(hits, { title: link.dashboard });
         if (dashboard) {
@@ -51,7 +50,7 @@ export class PanelLinksEditorCtrl {
       });
     };
 
-    $scope.deleteLink = (link: any) => {
+    $scope.deleteLink = link => {
       $scope.panel.links = _.without($scope.panel.links, link);
     };
   }

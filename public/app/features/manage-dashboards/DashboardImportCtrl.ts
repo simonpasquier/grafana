@@ -1,10 +1,6 @@
 import _ from 'lodash';
 import config from 'app/core/config';
 import locationUtil from 'app/core/utils/location_util';
-import { BackendSrv } from '@grafana/runtime';
-import { ValidationSrv } from './services/ValidationSrv';
-import { NavModelSrv } from 'app/core/core';
-import { ILocationService } from 'angular';
 
 export class DashboardImportCtrl {
   navModel: any;
@@ -31,13 +27,7 @@ export class DashboardImportCtrl {
   isValidFolderSelection: boolean;
 
   /** @ngInject */
-  constructor(
-    private backendSrv: BackendSrv,
-    private validationSrv: ValidationSrv,
-    navModelSrv: NavModelSrv,
-    private $location: ILocationService,
-    $routeParams: any
-  ) {
+  constructor(private backendSrv, private validationSrv, navModelSrv, private $location, $routeParams) {
     this.navModel = navModelSrv.getNav('create', 'import');
 
     this.step = 1;
@@ -55,7 +45,7 @@ export class DashboardImportCtrl {
     }
   }
 
-  onUpload(dash: any) {
+  onUpload(dash) {
     this.dash = dash;
     this.dash.id = null;
     this.step = 2;
@@ -63,7 +53,7 @@ export class DashboardImportCtrl {
 
     if (this.dash.__inputs) {
       for (const input of this.dash.__inputs) {
-        const inputModel: any = {
+        const inputModel = {
           name: input.name,
           label: input.label,
           info: input.description,
@@ -88,7 +78,7 @@ export class DashboardImportCtrl {
     this.uidChanged(true);
   }
 
-  setDatasourceOptions(input: { pluginId: string; pluginName: string }, inputModel: any) {
+  setDatasourceOptions(input, inputModel) {
     const sources = _.filter(config.datasources, val => {
       return val.type === input.pluginId;
     });
@@ -133,7 +123,7 @@ export class DashboardImportCtrl {
       });
   }
 
-  uidChanged(initial: boolean) {
+  uidChanged(initial) {
     this.uidExists = false;
     this.hasUidValidationError = false;
 
@@ -142,21 +132,20 @@ export class DashboardImportCtrl {
     }
 
     this.backendSrv
-      // @ts-ignore
       .getDashboardByUid(this.dash.uid)
-      .then((res: any) => {
+      .then(res => {
         this.uidExists = true;
         this.hasUidValidationError = true;
         this.uidValidationError = `Dashboard named '${res.dashboard.title}' in folder '${
           res.meta.folderTitle
         }' has the same uid`;
       })
-      .catch((err: any) => {
+      .catch(err => {
         err.isHandled = true;
       });
   }
 
-  onFolderChange(folder: any) {
+  onFolderChange(folder) {
     this.folderId = folder.id;
     this.titleChanged();
   }

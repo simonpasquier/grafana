@@ -1,5 +1,4 @@
 import $ from 'jquery';
-// @ts-ignore
 import baron from 'baron';
 import coreModule from 'app/core/core_module';
 
@@ -15,7 +14,7 @@ const scrollerClass = 'baron__scroller';
 export function geminiScrollbar() {
   return {
     restrict: 'A',
-    link: (scope: any, elem: any, attrs: any) => {
+    link: (scope, elem, attrs) => {
       let scrollRoot = elem.parent();
       const scroller = elem;
 

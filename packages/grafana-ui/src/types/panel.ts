@@ -1,48 +1,53 @@
 import { ComponentClass, ComponentType } from 'react';
-import { LoadingState, DataFrame, TimeRange, TimeZone, ScopedVars, AbsoluteTimeRange } from '@grafana/data';
-import { DataQueryRequest, DataQueryError } from './datasource';
+import { LoadingState, SeriesData } from './data';
+import { TimeRange } from './time';
+import { ScopedVars, DataQueryRequest, DataQueryError, LegacyResponseData } from './datasource';
 import { PluginMeta, GrafanaPlugin } from './plugin';
 
 export type InterpolateFunction = (value: string, scopedVars?: ScopedVars, format?: string | Function) => string;
 
 export interface PanelPluginMeta extends PluginMeta {
-  skipDataQuery?: boolean;
   hideFromList?: boolean;
   sort: number;
+
+  // if length>0 the query tab will show up
+  // Before 6.2 this could be table and/or series, but 6.2+ supports both transparently
+  // so it will be deprecated soon
+  dataFormats?: PanelDataFormat[];
+}
+
+export enum PanelDataFormat {
+  Table = 'table',
+  TimeSeries = 'time_series',
 }
 
 export interface PanelData {
   state: LoadingState;
-  series: DataFrame[];
+  series: SeriesData[];
   request?: DataQueryRequest;
   error?: DataQueryError;
-  // Contains the range from the request or a shifted time range if a request uses relative time
-  timeRange: TimeRange;
+
+  // Data format expected by Angular panels
+  legacy?: LegacyResponseData[];
 }
 
 export interface PanelProps<T = any> {
   id: number; // ID within the current dashboard
   data: PanelData;
+  // TODO: annotation?: PanelData;
+
   timeRange: TimeRange;
-  timeZone: TimeZone;
   options: T;
   onOptionsChange: (options: T) => void;
   renderCounter: number;
-  transparent: boolean;
   width: number;
   height: number;
   replaceVariables: InterpolateFunction;
-  onChangeTimeRange: (timeRange: AbsoluteTimeRange) => void;
 }
 
 export interface PanelEditorProps<T = any> {
   options: T;
-  onOptionsChange: (
-    options: T,
-    // callback can be used to run something right after update.
-    callback?: () => void
-  ) => void;
-  data: PanelData;
+  onOptionsChange: (options: T) => void;
 }
 
 export interface PanelModel<TOptions = any> {
@@ -127,14 +132,27 @@ export interface PanelMenuItem {
   subMenu?: PanelMenuItem[];
 }
 
-export interface AngularPanelMenuItem {
-  click: Function;
-  icon: string;
-  href: string;
-  divider: boolean;
+export enum MappingType {
+  ValueToText = 1,
+  RangeToText = 2,
+}
+
+interface BaseMap {
+  id: number;
+  operator: string;
   text: string;
-  shortcut: string;
-  submenu: any[];
+  type: MappingType;
+}
+
+export type ValueMapping = ValueMap | RangeMap;
+
+export interface ValueMap extends BaseMap {
+  value: string;
+}
+
+export interface RangeMap extends BaseMap {
+  from: string;
+  to: string;
 }
 
 export enum VizOrientation {
