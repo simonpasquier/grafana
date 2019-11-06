@@ -1,0 +1,1 @@
+{"version":3,"file":"8.fb2366366adbbbf1d38b.js","sources":["webpack:///webpack:///./node_modules/brace/snippets/json.js"],"sourcesContent":["ace.define(\"ace/snippets/json\",[\"require\",\"exports\",\"module\"],function(e,t,n){\"use strict\";t.snippetText=undefined,t.scope=\"json\"})"],"mappings":";;;;;;;;;AAAA;;;;A","sourceRoot":""}
