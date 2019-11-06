@@ -1,7 +1,6 @@
 import { GraphWithLegendProps } from './GraphWithLegend';
-import moment from 'moment';
 import { LegendDisplayMode } from '../Legend/Legend';
-// import { LegendList } from '../Legend/LegendList';
+import { dateTime, DefaultTimeZone } from '@grafana/data';
 
 export const mockGraphWithLegendData = ({
   displayMode,
@@ -1099,7 +1098,9 @@ export const mockGraphWithLegendData = ({
         { title: 'max', text: '18.42', numeric: 18.427101844163694 },
       ],
       isVisible: true,
-      yAxis: 1,
+      yAxis: {
+        index: 1,
+      },
     },
     {
       label: 'B-series',
@@ -2191,7 +2192,9 @@ export const mockGraphWithLegendData = ({
         { title: 'max', text: '18.42', numeric: 18.427101844163694 },
       ],
       isVisible: true,
-      yAxis: 1,
+      yAxis: {
+        index: 1,
+      },
     },
     {
       label: 'C-series',
@@ -3283,12 +3286,14 @@ export const mockGraphWithLegendData = ({
         { title: 'max', text: '18.42', numeric: 18.427101844163694 },
       ],
       isVisible: true,
-      yAxis: 1,
+      yAxis: {
+        index: 1,
+      },
     },
   ],
   timeRange: {
-    from: moment('2019-04-09T07:01:14.247Z'),
-    to: moment('2019-04-09T13:01:14.247Z'),
+    from: dateTime('2019-04-09T07:01:14.247Z'),
+    to: dateTime('2019-04-09T13:01:14.247Z'),
     raw: {
       from: 'now-6h',
       to: 'now',
@@ -3313,4 +3318,5 @@ export const mockGraphWithLegendData = ({
   },
   onToggleSort: () => {},
   displayMode: displayMode || LegendDisplayMode.List,
+  timeZone: DefaultTimeZone,
 });

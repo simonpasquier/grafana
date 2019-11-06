@@ -1,4 +1,5 @@
 import { ComponentClass } from 'react';
+import { KeyValue } from '@grafana/data';
 
 export enum PluginState {
   alpha = 'alpha', // Only included it `enable_alpha` is true
@@ -9,9 +10,10 @@ export enum PluginType {
   panel = 'panel',
   datasource = 'datasource',
   app = 'app',
+  renderer = 'renderer',
 }
 
-export interface PluginMeta {
+export interface PluginMeta<T extends {} = KeyValue> {
   id: string;
   name: string;
   type: PluginType;
@@ -27,8 +29,8 @@ export interface PluginMeta {
   dependencies?: PluginDependencies;
 
   // Filled in by the backend
-  jsonData?: { [str: string]: any };
-  secureJsonData?: { [str: string]: any };
+  jsonData?: T;
+  secureJsonData?: KeyValue;
   enabled?: boolean;
   defaultNavUrl?: string;
   hasUpdate?: boolean;
@@ -75,6 +77,20 @@ interface PluginMetaInfoLink {
   url: string;
 }
 
+export interface PluginBuildInfo {
+  time?: number;
+  repo?: string;
+  branch?: string;
+  hash?: string;
+  number?: number;
+  pr?: number;
+}
+
+export interface ScreenshotInfo {
+  name: string;
+  path: string;
+}
+
 export interface PluginMetaInfo {
   author: {
     name: string;
@@ -86,40 +102,44 @@ export interface PluginMetaInfo {
     large: string;
     small: string;
   };
-  screenshots: any[];
+  build?: PluginBuildInfo;
+  screenshots: ScreenshotInfo[];
   updated: string;
   version: string;
 }
 
-export interface PluginConfigTabProps<T extends PluginMeta> {
-  meta: T;
-  query: { [s: string]: any }; // The URL query parameters
+export interface PluginConfigPageProps<T extends GrafanaPlugin> {
+  plugin: T;
+  query: KeyValue; // The URL query parameters
 }
 
-export interface PluginConfigTab<T extends PluginMeta> {
+export interface PluginConfigPage<T extends GrafanaPlugin> {
   title: string; // Display
   icon?: string;
   id: string; // Unique, in URL
 
-  body: ComponentClass<PluginConfigTabProps<T>>;
+  body: ComponentClass<PluginConfigPageProps<T>>;
 }
 
 export class GrafanaPlugin<T extends PluginMeta = PluginMeta> {
   // Meta is filled in by the plugin loading system
   meta?: T;
 
+  // This is set if the plugin system had errors loading the plugin
+  loadError?: boolean;
+
   // Config control (app/datasource)
   angularConfigCtrl?: any;
 
   // Show configuration tabs on the plugin page
-  configTabs?: Array<PluginConfigTab<T>>;
+  configPages?: Array<PluginConfigPage<GrafanaPlugin>>;
 
   // Tabs on the plugin page
-  addConfigTab(tab: PluginConfigTab<T>) {
-    if (!this.configTabs) {
-      this.configTabs = [];
+  addConfigPage(tab: PluginConfigPage<GrafanaPlugin>) {
+    if (!this.configPages) {
+      this.configPages = [];
     }
-    this.configTabs.push(tab);
+    this.configPages.push(tab);
     return this;
   }
 }
