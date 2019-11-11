@@ -13,6 +13,11 @@ COPY build.go build.go
 COPY package.json package.json
 
 RUN go run build.go build
+# Need to copy the generated binaries to a non-platform specific location to handle
+# s390x builds for example
+RUN cp $GOPATH/src/github.com/grafana/grafana/bin/linux-$(go env GOARCH)/grafana-server \
+       $GOPATH/src/github.com/grafana/grafana/bin/linux-$(go env GOARCH)/grafana-cli \
+       /usr/bin/
 
 # Final container
 FROM openshift/origin-base
@@ -55,7 +60,7 @@ RUN mkdir -p "$GF_PATHS_HOME/.aws" && \
     chmod -R 777 "$GF_PATHS_DATA" "$GF_PATHS_HOME/.aws" "$GF_PATHS_LOGS" "$GF_PATHS_PLUGINS" "$GF_PATHS_PROVISIONING"
 
 # Note: the openshift build requires a name to reference the build container in the '--from' option instead of using the index '0' as is done upstream
-COPY --from=builder /go/src/github.com/grafana/grafana/bin/linux-amd64/grafana-server /go/src/github.com/grafana/grafana/bin/linux-amd64/grafana-cli ./bin/
+COPY --from=builder /usr/bin/grafana-server /usr/bin/grafana-cli ./bin/
 COPY public ./public
 COPY tools ./tools
 COPY tools/phantomjs/render.js ./tools/phantomjs/render.js
