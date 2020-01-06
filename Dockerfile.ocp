@@ -1,12 +1,11 @@
 # Golang build container
-FROM openshift/origin-release:golang-1.12 AS builder
+FROM openshift/origin-release:golang-1.13 AS builder
 
 WORKDIR $GOPATH/src/github.com/grafana/grafana
+ENV GOFLAGS="-mod=vendor"
 
 COPY go.mod go.sum ./
 COPY vendor vendor
-
-RUN go mod verify
 
 COPY pkg pkg
 COPY build.go build.go
