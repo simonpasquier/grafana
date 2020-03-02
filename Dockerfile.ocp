@@ -64,15 +64,6 @@ COPY public ./public
 COPY tools ./tools
 COPY tools/phantomjs/render.js ./tools/phantomjs/render.js
 
-# Add the piechart panel plugin to a temporary location.  This allows it to be installed at container startup to a volume mounted plugins dir.
-# Note: In the openshift build 'ADD' does not automatically extract the tar.gz file, so we have to use 'COPY' and then extract the files.
-RUN mkdir "${GF_PATHS_HOME}/plugins"
-COPY grafana-piechart-panel-1.3.9.tar.gz "${GF_PATHS_HOME}/plugins"
-RUN pushd ${GF_PATHS_HOME}/plugins && \
-    tar -xf grafana-piechart-panel-1.3.9.tar.gz && \
-    rm grafana-piechart-panel-1.3.9.tar.gz && \
-    popd
-
 EXPOSE 3000
 
 COPY ./packaging/docker/run.sh /run.sh
