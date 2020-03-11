@@ -25,9 +25,6 @@ if [ ! -d "$GF_PATHS_PLUGINS" ]; then
     mkdir "$GF_PATHS_PLUGINS"
 fi
 
-# Install pre-downloaded plugins
-cp -r "${GF_PATHS_HOME}/plugins/grafana-piechart-panel" "${GF_PATHS_PLUGINS}"
-
 if [ ! -z ${GF_AWS_PROFILES+x} ]; then
     > "$GF_PATHS_HOME/.aws/credentials"
 
