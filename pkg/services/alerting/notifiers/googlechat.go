@@ -55,7 +55,8 @@ Structs used to build a custom Google Hangouts Chat message card.
 See: https://developers.google.com/hangouts/chat/reference/message-formats/cards
 */
 type outerStruct struct {
-	Cards []card `json:"cards"`
+	FallbackText string `json:"fallbackText"`
+	Cards        []card `json:"cards"`
 }
 
 type card struct {
@@ -125,13 +126,15 @@ func (gcn *GoogleChatNotifier) Notify(evalContext *alerting.EvalContext) error {
 		gcn.log.Error("evalContext returned an invalid rule URL")
 	}
 
-	// add a text paragraph widget for the message
-	widgets := []widget{
-		textParagraphWidget{
+	widgets := []widget{}
+	if len(evalContext.Rule.Message) > 0 {
+		// add a text paragraph widget for the message if there is a message
+		// Google Chat API doesn't accept an empty text property
+		widgets = append(widgets, textParagraphWidget{
 			Text: text{
 				Text: evalContext.Rule.Message,
 			},
-		},
+		})
 	}
 
 	// add a text paragraph widget for the fields
@@ -187,6 +190,7 @@ func (gcn *GoogleChatNotifier) Notify(evalContext *alerting.EvalContext) error {
 
 	// nest the required structs
 	res1D := &outerStruct{
+		FallbackText: evalContext.GetNotificationTitle(),
 		Cards: []card{
 			{
 				Header: header{
