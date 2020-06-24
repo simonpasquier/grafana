@@ -17,7 +17,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -28,19 +27,9 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 )
 
-var gravatarSource string
-
-func UpdateGravatarSource() {
-	srcCfg := "//secure.gravatar.com/avatar/"
-
-	gravatarSource = srcCfg
-	if strings.HasPrefix(gravatarSource, "//") {
-		gravatarSource = "http:" + gravatarSource
-	} else if !strings.HasPrefix(gravatarSource, "http://") &&
-		!strings.HasPrefix(gravatarSource, "https://") {
-		gravatarSource = "http://" + gravatarSource
-	}
-}
+const (
+	gravatarSource = "https://secure.gravatar.com/avatar/"
+)
 
 // Avatar represents the avatar object.
 type Avatar struct {
@@ -133,8 +122,6 @@ func (this *CacheServer) Handler(ctx *models.ReqContext) {
 }
 
 func NewCacheServer() *CacheServer {
-	UpdateGravatarSource()
-
 	return &CacheServer{
 		notFound: newNotFound(),
 		cache:    gocache.New(time.Hour, time.Hour*2),
