@@ -6,9 +6,10 @@ coverage/
 awsconfig
 /.awcache
 /dist
-/public/build
-/public/views/index.html
-/public/views/error.html
+# [OCP] Keep the next 3 lines commented because we need to commit the compiled JS assets into Git.
+#/public/build
+#/public/views/index.html
+#/public/views/error.html
 /emails/dist
 /reports
 .yarnrc
