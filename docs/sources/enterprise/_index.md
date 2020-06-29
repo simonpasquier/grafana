@@ -1,7 +1,7 @@
 +++
 title = "Grafana Enterprise"
 description = "Grafana Enterprise overview"
-keywords = ["grafana", "documentation", "datasource", "permissions", "ldap", "licensing", "enterprise"]
+keywords = ["grafana", "documentation", "datasource", "permissions", "ldap", "licensing", "enterprise", "insights", "reporting"]
 type = "docs"
 [menu.docs]
 name = "Grafana Enterprise"
@@ -50,9 +50,17 @@ Supported auth providers:
 
 [Reporting]({{< relref "reporting.md" >}}) allows you to take any dashboard, generate a PDF report, and set up a schedule to have it emailed to whoever you choose.
 
+## Export dashboard as PDF
+
+[Export dashboard as PDF]({{< relref "export-pdf.md" >}}) allows you to export a dashboard as a PDF document.
+
 ## White labeling
 
 [White labeling]({{< relref "white-labeling.md" >}}) allows you to replace the Grafana brand and logo with your own corporate brand and logo. You can also change footer links to point to your custom resources.
+
+## Usage insights
+
+[Usage insights]({{< relref "usage-insights.md" >}}) allow you to understand how your Grafana instance is used. You can see who is looking at a dashboard, how often a dashboard is seen, and which dashboards are prone to errors. You'll also be able to discover what are the least and the most used dashboards.
 
 ## Enterprise plugins
 
@@ -64,6 +72,7 @@ With a Grafana Enterprise license, you get access to premium plugins, including:
 * [Dynatrace](https://grafana.com/plugins/grafana-dynatrace-datasource)
 * [New Relic](https://grafana.com/plugins/grafana-newrelic-datasource)
 * [Oracle Database](https://grafana.com/plugins/grafana-oracle-datasource)
+* [ServiceNow](https://grafana.com/grafana/plugins/grafana-servicenow-datasource)
 * [Splunk](https://grafana.com/plugins/grafana-splunk-datasource)
 
 ## Try Grafana Enterprise

@@ -6,18 +6,22 @@ coverage/
 awsconfig
 /.awcache
 /dist
-# [OCP] Keep the next 3 lines commented because we need to commit the compiled JS assets into Git.
-#/public/build
-#/public/views/index.html
-#/public/views/error.html
+/public/build
+/public/views/index.html
+/public/views/error.html
 /emails/dist
 /reports
+/e2e/tmp
 .yarnrc
 .yarn/
+vendor/
 
 # Enterprise emails
 /emails/templates/enterprise_*
 /public/emails/enterprise_*
+
+# Enterprise devenv
+/devenv/docker/blocks/grafana-enterprise
 
 /tmp
 tools/phantomjs/phantomjs
@@ -84,6 +88,8 @@ debug.test
 
 /devenv/bulk-dashboards/*.json
 /devenv/bulk_alerting_dashboards/*.json
+/devenv/datasources_bulk.yaml
+/devenv/bulk_alerting_dashboards/bulk_alerting_datasources.yaml
 
 /scripts/build/release_publisher/release_publisher
 *.patch
@@ -104,6 +110,10 @@ compilation-stats.json
 /packages/grafana-e2e/cypress/screenshots
 /packages/grafana-e2e/cypress/videos
 /packages/grafana-e2e/cypress/logs
-/public/e2e-test/screenShots/theOutput
-/public/e2e-tests/screenShots/theOutput/*.png
-/public/e2e-tests/videos
+/e2e/server.log
+/e2e/**/screenshots
+!/e2e/**/screenshots/expeced/*
+/e2e/**/videos/*
+
+# report dumping the whole system env
+/report.*.json

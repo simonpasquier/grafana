@@ -4,7 +4,7 @@ import { TemplateSrvStub } from 'test/specs/helpers';
 import { backendSrv } from 'app/core/services/backend_srv'; // will use the version in __mocks__
 
 jest.mock('@grafana/runtime', () => ({
-  ...jest.requireActual('@grafana/runtime'),
+  ...((jest.requireActual('@grafana/runtime') as unknown) as object),
   getBackendSrv: () => backendSrv,
 }));
 
@@ -72,6 +72,46 @@ describe('InfluxDataSource', () => {
 
     it('parse response correctly', () => {
       expect(response).toEqual([{ text: 'cpu' }]);
+    });
+  });
+
+  describe('When getting error on 200 after issuing a query', () => {
+    const queryOptions: any = {
+      range: {
+        from: '2018-01-01T00:00:00Z',
+        to: '2018-01-02T00:00:00Z',
+      },
+      rangeRaw: {
+        from: '2018-01-01T00:00:00Z',
+        to: '2018-01-02T00:00:00Z',
+      },
+      targets: [{}],
+      timezone: 'UTC',
+      scopedVars: {
+        interval: { text: '1m', value: '1m' },
+        __interval: { text: '1m', value: '1m' },
+        __interval_ms: { text: 60000, value: 60000 },
+      },
+    };
+
+    it('throws an error', async () => {
+      datasourceRequestMock.mockImplementation((req: any) => {
+        return Promise.resolve({
+          data: {
+            results: [
+              {
+                error: 'Query timeout',
+              },
+            ],
+          },
+        });
+      });
+
+      try {
+        await ctx.ds.query(queryOptions);
+      } catch (err) {
+        expect(err.message).toBe('InfluxDB Error: Query timeout');
+      }
     });
   });
 

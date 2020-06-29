@@ -9,6 +9,7 @@ import { auto } from 'angular';
 import { TemplateSrv } from 'app/features/templating/template_srv';
 import { CoreEvents } from 'app/types';
 import { PanelEvents } from '@grafana/data';
+import { VariableWithMultiSupport } from 'app/features/templating/types';
 
 export interface QueryMeta {
   sql: string;
@@ -196,7 +197,7 @@ export class PostgresQueryCtrl extends QueryCtrl {
       appEvents.emit(CoreEvents.showConfirmModal, {
         title: 'Warning',
         text2: 'Switching to query builder may overwrite your raw SQL.',
-        icon: 'fa-exclamation',
+        icon: 'exclamation-triangle',
         yesText: 'Switch',
         onConfirm: () => {
           this.target.rawQuery = !this.target.rawQuery;
@@ -207,10 +208,12 @@ export class PostgresQueryCtrl extends QueryCtrl {
     }
   }
 
-  resetPlusButton(button: { html: any; value: any }) {
+  resetPlusButton(button: { html: any; value: any; type: any; fake: any }) {
     const plusButton = this.uiSegmentSrv.newPlusButton();
     button.html = plusButton.html;
     button.value = plusButton.value;
+    button.type = plusButton.type;
+    button.fake = plusButton.fake;
   }
 
   getTableSegments() {
@@ -333,10 +336,10 @@ export class PostgresQueryCtrl extends QueryCtrl {
       });
 
       if (config.addTemplateVars) {
-        for (const variable of this.templateSrv.variables) {
+        for (const variable of this.templateSrv.getVariables()) {
           let value;
           value = '$' + variable.name;
-          if (config.templateQuoter && variable.multi === false) {
+          if (config.templateQuoter && ((variable as unknown) as VariableWithMultiSupport).multi === false) {
             value = config.templateQuoter(value);
           }
 

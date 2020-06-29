@@ -4,6 +4,10 @@ import { DashboardExporter } from './DashboardExporter';
 import { DashboardModel } from '../../state/DashboardModel';
 import { PanelPluginMeta } from '@grafana/data';
 
+function getStub(arg: string) {
+  return Promise.resolve(stubs[arg || 'gfdb']);
+}
+
 jest.mock('app/core/store', () => {
   return {
     getBool: jest.fn(),
@@ -12,6 +16,7 @@ jest.mock('app/core/store', () => {
 });
 
 jest.mock('@grafana/runtime', () => ({
+  ...((jest.requireActual('@grafana/runtime') as unknown) as object),
   getDataSourceSrv: () => ({
     get: jest.fn(arg => getStub(arg)),
   }),
@@ -22,7 +27,6 @@ jest.mock('@grafana/runtime', () => ({
       newVariables: false,
     },
   },
-  DataSourceWithBackend: jest.fn(),
 }));
 
 describe('given dashboard with repeated panels', () => {
@@ -261,7 +265,3 @@ stubs['-- Grafana --'] = {
     builtIn: true,
   },
 };
-
-function getStub(arg: string) {
-  return Promise.resolve(stubs[arg || 'gfdb']);
-}

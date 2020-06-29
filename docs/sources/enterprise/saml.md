@@ -12,7 +12,7 @@ weight = 500
 
 # SAML authentication
 
-SAML authentication integration allows your Grafana users to log in by using an external SAML Identity Provider (IdP). To enable this, Grafana becomes a Service Provider (SP) in the authentication flow, interacting with the IdP to exchange user information.
+SAML authentication integration allows your Grafana users to log in by using an external SAML 2.0 Identity Provider (IdP). To enable this, Grafana becomes a Service Provider (SP) in the authentication flow, interacting with the IdP to exchange user information.
 
 The SAML single-sign-on (SSO) standard is varied and flexible. Our implementation contains the subset of features needed to provide a smooth authentication experience into Grafana.
 
@@ -20,7 +20,7 @@ The SAML single-sign-on (SSO) standard is varied and flexible. Our implementatio
 
 ## Supported SAML
 
-Grafana supports the following SAML integrations.
+Grafana supports the following SAML 2.0 bindings:
 
 * From the Service Provider (SP) to the Identity Provider (IdP):
   - `HTTP-POST` binding
@@ -65,7 +65,7 @@ The SAML SSO standard uses asymmetric encryption to exchange information between
 
 Grafana supports two ways of specifying both the `certificate` and `private_key`. 
 * Without a suffix (`certificate` or `private_key`), the configuration assumes you've supplied the base64-encoded file contents. 
-* With the `_path` suffix (`certificate_path` or `private_key_path`), then Grafana treats the value entered as a file path and attempt to read the file from the file system.
+* With the `_path` suffix (`certificate_path` or `private_key_path`), then Grafana treats the value entered as a file path and attempts to read the file from the file system.
 
 You can only use one form of each configuration option. Using multiple forms, such as both `certificate` and `certificate_path`, results in an error.
 
