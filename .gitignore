@@ -6,15 +6,17 @@ coverage/
 awsconfig
 /.awcache
 /dist
-/public/build
-/public/views/index.html
-/public/views/error.html
+# [OCP] Keep the next 4 lines commented because we have to store the compiled
+# JS assets and Go dependencies into Git.
+#/public/build
+#/public/views/index.html
+#/public/views/error.html
+#vendor/
 /emails/dist
 /reports
 /e2e/tmp
 .yarnrc
 .yarn/
-vendor/
 
 # Enterprise emails
 /emails/templates/enterprise_*
