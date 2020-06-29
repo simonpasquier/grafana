@@ -62,7 +62,6 @@ RUN mkdir -p "$GF_PATHS_HOME/.aws" && \
 COPY --from=builder /usr/bin/grafana-server /usr/bin/grafana-cli ./bin/
 COPY public ./public
 COPY tools ./tools
-COPY tools/phantomjs/render.js ./tools/phantomjs/render.js
 
 EXPOSE 3000
 
