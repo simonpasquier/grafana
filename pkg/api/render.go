@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"net/textproto"
 	"runtime"
 	"strconv"
 	"strings"
@@ -47,7 +48,7 @@ func (hs *HTTPServer) RenderToPng(c *models.ReqContext) {
 	}
 
 	headers := http.Header{}
-	acceptLanguageHeader := c.Req.Header.Values("Accept-Language")
+	acceptLanguageHeader := textproto.MIMEHeader(c.Req.Header)[textproto.CanonicalMIMEHeaderKey("Accept-Language")]
 	if len(acceptLanguageHeader) > 0 {
 		headers["Accept-Language"] = acceptLanguageHeader
 	}
